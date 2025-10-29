@@ -1,0 +1,383 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import Navbar from "@/components/Navbar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { Calendar as CalendarIcon, Upload, X, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+
+const TaskForm = () => {
+  const { id } = useParams();
+  const isEditing = Boolean(id);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [loading, setLoading] = useState(false);
+  const [subjectName, setSubjectName] = useState("");
+  const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState<Date>();
+  const [isGroupWork, setIsGroupWork] = useState(false);
+  const [groupMembers, setGroupMembers] = useState("");
+  const [googleDocsLink, setGoogleDocsLink] = useState("");
+  const [canvaLink, setCanvaLink] = useState("");
+  const [status, setStatus] = useState("not_started");
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+    }
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (isEditing && id) {
+      fetchTask();
+    }
+  }, [isEditing, id]);
+
+  const fetchTask = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+
+      setSubjectName(data.subject_name);
+      setDescription(data.description || "");
+      setDueDate(new Date(data.due_date));
+      setIsGroupWork(data.is_group_work);
+      setGroupMembers(data.group_members || "");
+      setGoogleDocsLink(data.google_docs_link || "");
+      setCanvaLink(data.canva_link || "");
+      setStatus(data.status);
+    } catch (error) {
+      console.error("Error fetching task:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar tarefa",
+        description: "Tente novamente mais tarde.",
+      });
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFiles(Array.from(e.target.files));
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(files.filter((_, i) => i !== index));
+  };
+
+  const uploadFiles = async (taskId: string) => {
+    if (files.length === 0) return;
+
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${user!.id}/${taskId}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("task-attachments")
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { error: dbError } = await supabase
+          .from("task_attachments")
+          .insert({
+            task_id: taskId,
+            file_name: file.name,
+            file_path: filePath,
+            file_size: file.size,
+            file_type: file.type,
+          });
+
+        if (dbError) throw dbError;
+      }
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      throw error;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (!dueDate) {
+      toast({
+        variant: "destructive",
+        title: "Campo obrigatório",
+        description: "Por favor, selecione uma data de entrega.",
+      });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const taskData = {
+        subject_name: subjectName,
+        description: description || null,
+        due_date: format(dueDate, "yyyy-MM-dd"),
+        is_group_work: isGroupWork,
+        group_members: isGroupWork ? groupMembers : null,
+        google_docs_link: googleDocsLink || null,
+        canva_link: canvaLink || null,
+        status,
+        user_id: user!.id,
+      };
+
+      if (isEditing) {
+        const { error } = await supabase
+          .from("tasks")
+          .update(taskData)
+          .eq("id", id);
+
+        if (error) throw error;
+
+        if (files.length > 0) {
+          await uploadFiles(id!);
+        }
+
+        toast({
+          title: "Tarefa atualizada",
+          description: "As alterações foram salvas com sucesso.",
+        });
+      } else {
+        const { data, error } = await supabase
+          .from("tasks")
+          .insert(taskData)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (files.length > 0) {
+          await uploadFiles(data.id);
+        }
+
+        toast({
+          title: "Tarefa criada",
+          description: "Sua nova tarefa foi adicionada com sucesso.",
+        });
+      }
+
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error saving task:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar tarefa",
+        description: "Tente novamente mais tarde.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <main className="container mx-auto px-4 py-8 max-w-3xl">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">
+              {isEditing ? "Editar Tarefa" : "Nova Tarefa"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="subject">Nome da Disciplina *</Label>
+                <Input
+                  id="subject"
+                  value={subjectName}
+                  onChange={(e) => setSubjectName(e.target.value)}
+                  placeholder="Ex: Cálculo I"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Descrição da Tarefa</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Descreva os detalhes da tarefa..."
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Data de Entrega *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dueDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dueDate ? format(dueDate, "PPP", { locale: ptBR }) : "Selecione uma data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dueDate}
+                      onSelect={setDueDate}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Status da Tarefa</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="not_started">Não Iniciada</SelectItem>
+                    <SelectItem value="in_progress">Em Andamento</SelectItem>
+                    <SelectItem value="completed">Concluída</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="googleDocs">Link do Google Docs</Label>
+                <Input
+                  id="googleDocs"
+                  type="url"
+                  value={googleDocsLink}
+                  onChange={(e) => setGoogleDocsLink(e.target.value)}
+                  placeholder="https://docs.google.com/..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="canva">Link do Canva</Label>
+                <Input
+                  id="canva"
+                  type="url"
+                  value={canvaLink}
+                  onChange={(e) => setCanvaLink(e.target.value)}
+                  placeholder="https://www.canva.com/..."
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="groupWork"
+                  checked={isGroupWork}
+                  onCheckedChange={(checked) => setIsGroupWork(checked as boolean)}
+                />
+                <Label htmlFor="groupWork" className="cursor-pointer">
+                  É um trabalho em grupo?
+                </Label>
+              </div>
+
+              {isGroupWork && (
+                <div className="space-y-2">
+                  <Label htmlFor="groupMembers">Participantes do Grupo</Label>
+                  <Textarea
+                    id="groupMembers"
+                    value={groupMembers}
+                    onChange={(e) => setGroupMembers(e.target.value)}
+                    placeholder="Nome dos participantes (um por linha)"
+                    rows={3}
+                  />
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="files">Anexar Arquivos</Label>
+                <Input
+                  id="files"
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="cursor-pointer"
+                />
+                {files.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {files.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-secondary rounded-lg"
+                      >
+                        <span className="text-sm truncate">{file.name}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate("/dashboard")}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={loading || uploading} className="flex-1">
+                  {loading || uploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {uploading ? "Enviando arquivos..." : "Salvando..."}
+                    </>
+                  ) : isEditing ? (
+                    "Atualizar Tarefa"
+                  ) : (
+                    "Criar Tarefa"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+};
+
+export default TaskForm;
