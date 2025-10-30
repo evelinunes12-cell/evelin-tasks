@@ -6,8 +6,9 @@ import Navbar from "@/components/Navbar";
 import StatsCards from "@/components/StatsCards";
 import TaskCard from "@/components/TaskCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 
 interface Task {
   id: string;
@@ -32,6 +33,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("due_date");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -88,7 +90,13 @@ const Dashboard = () => {
   };
 
   const filteredTasks = tasks
-    .filter((task) => statusFilter === "all" || task.status === statusFilter)
+    .filter((task) => {
+      const matchesStatus = statusFilter === "all" || task.status === statusFilter;
+      const matchesSearch = searchQuery === "" || 
+        task.subject_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesStatus && matchesSearch;
+    })
     .sort((a, b) => {
       if (sortBy === "due_date") {
         return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
@@ -130,6 +138,17 @@ const Dashboard = () => {
         />
 
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Pesquisar por disciplina ou descrição..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Filtrar por status" />

@@ -13,10 +13,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar as CalendarIcon, Upload, X, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Upload, X, Loader2, ChevronsUpDown, Check } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 const TaskForm = () => {
   const { id } = useParams();
@@ -36,6 +37,8 @@ const TaskForm = () => {
   const [status, setStatus] = useState("not_started");
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [existingSubjects, setExistingSubjects] = useState<string[]>([]);
+  const [openSubjectCombo, setOpenSubjectCombo] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -44,10 +47,32 @@ const TaskForm = () => {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
+    if (user) {
+      fetchExistingSubjects();
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (isEditing && id) {
       fetchTask();
     }
   }, [isEditing, id]);
+
+  const fetchExistingSubjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("subject_name")
+        .eq("user_id", user!.id);
+
+      if (error) throw error;
+
+      const uniqueSubjects = [...new Set(data.map(task => task.subject_name))].sort();
+      setExistingSubjects(uniqueSubjects);
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+    }
+  };
 
   const fetchTask = async () => {
     try {
@@ -220,13 +245,65 @@ const TaskForm = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="subject">Nome da Disciplina *</Label>
-                <Input
-                  id="subject"
-                  value={subjectName}
-                  onChange={(e) => setSubjectName(e.target.value)}
-                  placeholder="Ex: Cálculo I"
-                  required
-                />
+                <Popover open={openSubjectCombo} onOpenChange={setOpenSubjectCombo}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openSubjectCombo}
+                      className="w-full justify-between"
+                    >
+                      {subjectName || "Selecione ou digite uma disciplina..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Pesquisar ou adicionar disciplina..." 
+                        value={subjectName}
+                        onValueChange={setSubjectName}
+                      />
+                      <CommandList>
+                        <CommandEmpty>
+                          <div className="text-sm p-2">
+                            {subjectName ? (
+                              <button
+                                type="button"
+                                onClick={() => setOpenSubjectCombo(false)}
+                                className="w-full text-left hover:bg-accent rounded p-2"
+                              >
+                                Criar "{subjectName}"
+                              </button>
+                            ) : (
+                              "Digite o nome da disciplina"
+                            )}
+                          </div>
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {existingSubjects.map((subject) => (
+                            <CommandItem
+                              key={subject}
+                              value={subject}
+                              onSelect={(value) => {
+                                setSubjectName(value);
+                                setOpenSubjectCombo(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  subjectName === subject ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {subject}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
