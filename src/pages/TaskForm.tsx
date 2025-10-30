@@ -152,21 +152,12 @@ const TaskForm = () => {
     e.preventDefault();
     setLoading(true);
 
-    if (!dueDate) {
-      toast({
-        variant: "destructive",
-        title: "Campo obrigatório",
-        description: "Por favor, selecione uma data de entrega.",
-      });
-      setLoading(false);
-      return;
-    }
 
     try {
       const taskData = {
         subject_name: subjectName,
         description: description || null,
-        due_date: format(dueDate, "yyyy-MM-dd"),
+        due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : null,
         is_group_work: isGroupWork,
         group_members: isGroupWork ? groupMembers : null,
         google_docs_link: googleDocsLink || null,
@@ -318,7 +309,7 @@ const TaskForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Data de Entrega *</Label>
+                <Label>Data de Entrega</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -329,7 +320,7 @@ const TaskForm = () => {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dueDate ? format(dueDate, "PPP", { locale: ptBR }) : "Selecione uma data"}
+                      {dueDate ? format(dueDate, "PPP", { locale: ptBR }) : "Selecione uma data (opcional)"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
