@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 const TaskForm = () => {
   const { id } = useParams();
   const isEditing = Boolean(id);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -38,10 +38,10 @@ const TaskForm = () => {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !user) {
       navigate("/auth");
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (isEditing && id) {
@@ -197,6 +197,14 @@ const TaskForm = () => {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

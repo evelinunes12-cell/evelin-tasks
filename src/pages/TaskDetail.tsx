@@ -47,7 +47,7 @@ const statusConfig = {
 
 const TaskDetail = () => {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [task, setTask] = useState<Task | null>(null);
@@ -55,13 +55,13 @@ const TaskDetail = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !user) {
       navigate("/auth");
-    } else if (id) {
+    } else if (user && id) {
       fetchTask();
       fetchAttachments();
     }
-  }, [user, id, navigate]);
+  }, [user, authLoading, id, navigate]);
 
   const fetchTask = async () => {
     try {
@@ -125,7 +125,7 @@ const TaskDetail = () => {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
