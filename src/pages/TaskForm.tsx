@@ -384,6 +384,13 @@ const TaskForm = () => {
                       onSelect={setDueDate}
                       initialFocus
                       className="pointer-events-auto"
+                      modifiers={{
+                        weekend: (date) => date.getDay() === 0 || date.getDay() === 6,
+                      }}
+                      modifiersClassNames={{
+                        weekend: "text-red-500",
+                      }}
+                      disabled={() => false}
                     />
                   </PopoverContent>
                 </Popover>
