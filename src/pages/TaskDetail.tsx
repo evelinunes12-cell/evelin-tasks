@@ -8,6 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Calendar,
   Users,
   FileText,
@@ -15,6 +26,8 @@ import {
   Edit,
   Download,
   Loader2,
+  Trash2,
+  ExternalLink,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -37,6 +50,7 @@ interface Attachment {
   file_path: string;
   file_size: number | null;
   file_type: string | null;
+  is_link: boolean;
 }
 
 const statusConfig = {
@@ -101,6 +115,11 @@ const TaskDetail = () => {
 
   const downloadAttachment = async (attachment: Attachment) => {
     try {
+      if (attachment.is_link) {
+        window.open(attachment.file_path, "_blank");
+        return;
+      }
+
       const { data, error } = await supabase.storage
         .from("task-attachments")
         .download(attachment.file_path);
@@ -120,6 +139,42 @@ const TaskDetail = () => {
       toast({
         variant: "destructive",
         title: "Erro ao baixar arquivo",
+        description: "Tente novamente mais tarde.",
+      });
+    }
+  };
+
+  const deleteAttachment = async (attachment: Attachment) => {
+    try {
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from("task_attachments")
+        .delete()
+        .eq("id", attachment.id);
+
+      if (dbError) throw dbError;
+
+      // Delete from storage if it's a file (not a link)
+      if (!attachment.is_link) {
+        const { error: storageError } = await supabase.storage
+          .from("task-attachments")
+          .remove([attachment.file_path]);
+
+        if (storageError) throw storageError;
+      }
+
+      // Update local state
+      setAttachments(attachments.filter((a) => a.id !== attachment.id));
+
+      toast({
+        title: "Anexo deletado",
+        description: "O anexo foi removido com sucesso.",
+      });
+    } catch (error) {
+      console.error("Error deleting attachment:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao deletar anexo",
         description: "Tente novamente mais tarde.",
       });
     }
@@ -217,7 +272,7 @@ const TaskDetail = () => {
               <CardContent className="space-y-2">
                 {task.google_docs_link && (
                   <div>
-                    <p className="text-sm font-medium mb-1">Google Docs:</p>
+                    <p className="text-sm font-medium mb-1">Link do Trabalho Escrito:</p>
                     <a
                       href={task.google_docs_link}
                       target="_blank"
@@ -230,7 +285,7 @@ const TaskDetail = () => {
                 )}
                 {task.canva_link && (
                   <div>
-                    <p className="text-sm font-medium mb-1">Canva:</p>
+                    <p className="text-sm font-medium mb-1">Link da Apresentação:</p>
                     <a
                       href={task.canva_link}
                       target="_blank"
@@ -261,21 +316,54 @@ const TaskDetail = () => {
                       className="flex items-center justify-between p-3 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{attachment.file_name}</p>
-                        {attachment.file_size && (
+                        <div className="flex items-center gap-2">
+                          {attachment.is_link && <LinkIcon className="w-4 h-4 text-muted-foreground" />}
+                          <p className="text-sm font-medium truncate">{attachment.file_name}</p>
+                        </div>
+                        {attachment.file_size && !attachment.is_link && (
                           <p className="text-xs text-muted-foreground">
                             {(attachment.file_size / 1024 / 1024).toFixed(2)} MB
                           </p>
                         )}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => downloadAttachment(attachment)}
-                        className="ml-2"
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => downloadAttachment(attachment)}
+                          className="ml-2"
+                        >
+                          {attachment.is_link ? (
+                            <ExternalLink className="w-4 h-4" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja deletar este anexo? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteAttachment(attachment)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Deletar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   ))}
                 </div>

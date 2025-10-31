@@ -36,6 +36,9 @@ const TaskForm = () => {
   const [canvaLink, setCanvaLink] = useState("");
   const [status, setStatus] = useState("not_started");
   const [files, setFiles] = useState<File[]>([]);
+  const [links, setLinks] = useState<{ name: string; url: string }[]>([]);
+  const [newLinkName, setNewLinkName] = useState("");
+  const [newLinkUrl, setNewLinkUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [existingSubjects, setExistingSubjects] = useState<string[]>([]);
   const [openSubjectCombo, setOpenSubjectCombo] = useState(false);
@@ -92,6 +95,20 @@ const TaskForm = () => {
       setGoogleDocsLink(data.google_docs_link || "");
       setCanvaLink(data.canva_link || "");
       setStatus(data.status);
+      
+      // Fetch existing links
+      const { data: attachmentsData } = await supabase
+        .from("task_attachments")
+        .select("*")
+        .eq("task_id", id)
+        .eq("is_link", true);
+
+      if (attachmentsData) {
+        setLinks(attachmentsData.map(att => ({
+          name: att.file_name,
+          url: att.file_path
+        })));
+      }
     } catch (error) {
       console.error("Error fetching task:", error);
       toast({
@@ -112,11 +129,24 @@ const TaskForm = () => {
     setFiles(files.filter((_, i) => i !== index));
   };
 
+  const addLink = () => {
+    if (newLinkName && newLinkUrl) {
+      setLinks([...links, { name: newLinkName, url: newLinkUrl }]);
+      setNewLinkName("");
+      setNewLinkUrl("");
+    }
+  };
+
+  const removeLink = (index: number) => {
+    setLinks(links.filter((_, i) => i !== index));
+  };
+
   const uploadFiles = async (taskId: string) => {
-    if (files.length === 0) return;
+    if (files.length === 0 && links.length === 0) return;
 
     setUploading(true);
     try {
+      // Upload files
       for (const file of files) {
         const fileExt = file.name.split(".").pop();
         const fileName = `${Math.random()}.${fileExt}`;
@@ -136,6 +166,23 @@ const TaskForm = () => {
             file_path: filePath,
             file_size: file.size,
             file_type: file.type,
+            is_link: false,
+          });
+
+        if (dbError) throw dbError;
+      }
+
+      // Save links
+      for (const link of links) {
+        const { error: dbError } = await supabase
+          .from("task_attachments")
+          .insert({
+            task_id: taskId,
+            file_name: link.name,
+            file_path: link.url,
+            file_size: null,
+            file_type: null,
+            is_link: true,
           });
 
         if (dbError) throw dbError;
@@ -174,7 +221,14 @@ const TaskForm = () => {
 
         if (error) throw error;
 
-        if (files.length > 0) {
+        // Delete existing links if editing
+        await supabase
+          .from("task_attachments")
+          .delete()
+          .eq("task_id", id)
+          .eq("is_link", true);
+
+        if (files.length > 0 || links.length > 0) {
           await uploadFiles(id!);
         }
 
@@ -191,7 +245,7 @@ const TaskForm = () => {
 
         if (error) throw error;
 
-        if (files.length > 0) {
+        if (files.length > 0 || links.length > 0) {
           await uploadFiles(data.id);
         }
 
@@ -350,7 +404,7 @@ const TaskForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="googleDocs">Link do Google Docs</Label>
+                <Label htmlFor="googleDocs">Link do Trabalho Escrito</Label>
                 <Input
                   id="googleDocs"
                   type="url"
@@ -361,7 +415,7 @@ const TaskForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="canva">Link do Canva</Label>
+                <Label htmlFor="canva">Link da Apresentação</Label>
                 <Input
                   id="canva"
                   type="url"
@@ -417,6 +471,55 @@ const TaskForm = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeFile(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Anexar Links</Label>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Nome do link"
+                    value={newLinkName}
+                    onChange={(e) => setNewLinkName(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="URL do link"
+                      type="url"
+                      value={newLinkUrl}
+                      onChange={(e) => setNewLinkUrl(e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      onClick={addLink}
+                      disabled={!newLinkName || !newLinkUrl}
+                    >
+                      Adicionar
+                    </Button>
+                  </div>
+                </div>
+                {links.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {links.map((link, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-secondary rounded-lg"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{link.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{link.url}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeLink(index)}
                         >
                           <X className="w-4 h-4" />
                         </Button>

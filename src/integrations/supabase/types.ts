@@ -46,6 +46,7 @@ export type Database = {
           file_size: number | null
           file_type: string | null
           id: string
+          is_link: boolean | null
           task_id: string
         }
         Insert: {
@@ -55,6 +56,7 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           id?: string
+          is_link?: boolean | null
           task_id: string
         }
         Update: {
@@ -64,6 +66,7 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           id?: string
+          is_link?: boolean | null
           task_id?: string
         }
         Relationships: [
