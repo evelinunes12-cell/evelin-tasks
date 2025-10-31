@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Eye, Trash2 } from "lucide-react";
+import { Calendar, Users, Eye, Trash2, CheckSquare } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +13,7 @@ interface TaskCardProps {
   dueDate: string;
   isGroupWork: boolean;
   status: string;
+  checklist?: { text: string; completed: boolean }[];
   onDelete: (id: string) => void;
 }
 
@@ -38,10 +39,16 @@ const TaskCard = ({
   dueDate,
   isGroupWork,
   status,
+  checklist = [],
   onDelete,
 }: TaskCardProps) => {
   const navigate = useNavigate();
   const statusInfo = statusConfig[status];
+  
+  const checklistProgress =
+    checklist.length > 0
+      ? Math.round((checklist.filter((item) => item.completed).length / checklist.length) * 100)
+      : 0;
 
   return (
     <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
@@ -66,7 +73,7 @@ const TaskCard = ({
             {statusInfo.label}
           </Badge>
         </div>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
           <div className="flex items-center gap-1">
             <Calendar className="w-4 h-4" />
             <span>{format(new Date(dueDate), "dd 'de' MMMM", { locale: ptBR })}</span>
@@ -75,6 +82,12 @@ const TaskCard = ({
             <div className="flex items-center gap-1">
               <Users className="w-4 h-4" />
               <span>Em grupo</span>
+            </div>
+          )}
+          {checklist.length > 0 && (
+            <div className="flex items-center gap-1">
+              <CheckSquare className="w-4 h-4" />
+              <span>Checklist: {checklistProgress}%</span>
             </div>
           )}
         </div>

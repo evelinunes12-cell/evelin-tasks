@@ -39,6 +39,8 @@ const TaskForm = () => {
   const [links, setLinks] = useState<{ name: string; url: string }[]>([]);
   const [newLinkName, setNewLinkName] = useState("");
   const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [checklistItems, setChecklistItems] = useState<{ text: string; completed: boolean }[]>([]);
+  const [newChecklistItem, setNewChecklistItem] = useState("");
   const [uploading, setUploading] = useState(false);
   const [existingSubjects, setExistingSubjects] = useState<string[]>([]);
   const [openSubjectCombo, setOpenSubjectCombo] = useState(false);
@@ -91,10 +93,11 @@ const TaskForm = () => {
       setDescription(data.description || "");
       setDueDate(new Date(data.due_date));
       setIsGroupWork(data.is_group_work);
-      setGroupMembers(data.group_members || "");
-      setGoogleDocsLink(data.google_docs_link || "");
-      setCanvaLink(data.canva_link || "");
-      setStatus(data.status);
+        setGroupMembers(data.group_members || "");
+        setGoogleDocsLink(data.google_docs_link || "");
+        setCanvaLink(data.canva_link || "");
+        setStatus(data.status);
+        setChecklistItems((data.checklist as { text: string; completed: boolean }[]) || []);
       
       // Fetch existing links
       const { data: attachmentsData } = await supabase
@@ -139,6 +142,23 @@ const TaskForm = () => {
 
   const removeLink = (index: number) => {
     setLinks(links.filter((_, i) => i !== index));
+  };
+
+  const addChecklistItem = () => {
+    if (newChecklistItem.trim()) {
+      setChecklistItems([...checklistItems, { text: newChecklistItem.trim(), completed: false }]);
+      setNewChecklistItem("");
+    }
+  };
+
+  const removeChecklistItem = (index: number) => {
+    setChecklistItems(checklistItems.filter((_, i) => i !== index));
+  };
+
+  const toggleChecklistItem = (index: number) => {
+    setChecklistItems(
+      checklistItems.map((item, i) => (i === index ? { ...item, completed: !item.completed } : item))
+    );
   };
 
   const uploadFiles = async (taskId: string) => {

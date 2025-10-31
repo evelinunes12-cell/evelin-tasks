@@ -23,6 +23,7 @@ interface Task {
   group_members: string | null;
   updated_at: string;
   user_id: string;
+  checklist: { text: string; completed: boolean }[];
 }
 
 const Dashboard = () => {
@@ -55,7 +56,7 @@ const Dashboard = () => {
         .order("due_date", { ascending: true });
 
       if (error) throw error;
-      setTasks(data || []);
+      setTasks((data as Task[]) || []);
     } catch (error) {
       console.error("Error fetching tasks:", error);
       toast({
@@ -181,16 +182,17 @@ const Dashboard = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                id={task.id}
-                subjectName={task.subject_name}
-                description={task.description}
-                dueDate={task.due_date}
-                isGroupWork={task.is_group_work}
-                status={task.status}
-                onDelete={handleDeleteTask}
-              />
+                  <TaskCard
+                    key={task.id}
+                    id={task.id}
+                    subjectName={task.subject_name}
+                    description={task.description}
+                    dueDate={task.due_date}
+                    isGroupWork={task.is_group_work}
+                    status={task.status}
+                    checklist={task.checklist}
+                    onDelete={handleDeleteTask}
+                  />
             ))}
           </div>
         )}

@@ -82,6 +82,7 @@ export type Database = {
       tasks: {
         Row: {
           canva_link: string | null
+          checklist: Json | null
           created_at: string | null
           description: string | null
           due_date: string
@@ -96,6 +97,7 @@ export type Database = {
         }
         Insert: {
           canva_link?: string | null
+          checklist?: Json | null
           created_at?: string | null
           description?: string | null
           due_date: string
@@ -110,6 +112,7 @@ export type Database = {
         }
         Update: {
           canva_link?: string | null
+          checklist?: Json | null
           created_at?: string | null
           description?: string | null
           due_date?: string

@@ -28,6 +28,7 @@ import {
   Loader2,
   Trash2,
   ExternalLink,
+  CheckSquare,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -42,6 +43,7 @@ interface Task {
   google_docs_link: string | null;
   canva_link: string | null;
   status: string;
+  checklist: { text: string; completed: boolean }[];
 }
 
 interface Attachment {
@@ -67,6 +69,7 @@ const TaskDetail = () => {
   const [task, setTask] = useState<Task | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingChecklist, setUpdatingChecklist] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -86,7 +89,7 @@ const TaskDetail = () => {
         .single();
 
       if (error) throw error;
-      setTask(data);
+      setTask(data as unknown as Task);
     } catch (error) {
       console.error("Error fetching task:", error);
       toast({
@@ -177,6 +180,35 @@ const TaskDetail = () => {
         title: "Erro ao deletar anexo",
         description: "Tente novamente mais tarde.",
       });
+    }
+  };
+
+  const toggleChecklistItem = async (index: number) => {
+    if (!task) return;
+    
+    setUpdatingChecklist(true);
+    try {
+      const updatedChecklist = task.checklist.map((item, i) =>
+        i === index ? { ...item, completed: !item.completed } : item
+      );
+
+      const { error } = await supabase
+        .from("tasks")
+        .update({ checklist: updatedChecklist })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setTask({ ...task, checklist: updatedChecklist });
+    } catch (error) {
+      console.error("Error updating checklist:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar checklist",
+        description: "Tente novamente mais tarde.",
+      });
+    } finally {
+      setUpdatingChecklist(false);
     }
   };
 
@@ -296,6 +328,38 @@ const TaskDetail = () => {
                     </a>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {task.checklist && task.checklist.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckSquare className="w-5 h-5" />
+                  Checklist ({task.checklist.filter((item) => item.completed).length}/{task.checklist.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {task.checklist.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={item.completed}
+                        onChange={() => toggleChecklistItem(index)}
+                        disabled={updatingChecklist}
+                        className="w-5 h-5 cursor-pointer"
+                      />
+                      <span className={`flex-1 text-sm ${item.completed ? "line-through text-muted-foreground" : ""}`}>
+                        {item.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
