@@ -219,18 +219,24 @@ const TaskForm = () => {
     e.preventDefault();
     setLoading(true);
 
-
     try {
+      // Corrige o fuso horário antes de salvar
+      const localDueDate = dueDate ? new Date(dueDate) : null;
+      if (localDueDate) {
+        localDueDate.setMinutes(localDueDate.getMinutes() - localDueDate.getTimezoneOffset());
+      }
+
       const taskData = {
         subject_name: subjectName,
         description: description || null,
-        due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : null,
+        due_date: localDueDate ? format(localDueDate, "yyyy-MM-dd") : null,
         is_group_work: isGroupWork,
         group_members: isGroupWork ? groupMembers : null,
         google_docs_link: googleDocsLink || null,
         canva_link: canvaLink || null,
         status,
         user_id: user!.id,
+        checklist: checklistItems,
       };
 
       if (isEditing) {
