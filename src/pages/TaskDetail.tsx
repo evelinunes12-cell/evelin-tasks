@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import TaskStepDisplay from "@/components/TaskStepDisplay";
 
 interface Task {
   id: string;
@@ -55,6 +56,17 @@ interface Attachment {
   is_link: boolean;
 }
 
+interface TaskStep {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  status: string;
+  google_docs_link: string | null;
+  canva_link: string | null;
+  order_index: number;
+}
+
 const statusConfig = {
   not_started: { label: "Não Iniciada", color: "bg-secondary" },
   in_progress: { label: "Em Andamento", color: "bg-warning" },
@@ -70,6 +82,8 @@ const TaskDetail = () => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingChecklist, setUpdatingChecklist] = useState(false);
+  const [steps, setSteps] = useState<TaskStep[]>([]);
+  const [stepAttachments, setStepAttachments] = useState<Record<string, Attachment[]>>({});
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -77,6 +91,7 @@ const TaskDetail = () => {
     } else if (user && id) {
       fetchTask();
       fetchAttachments();
+      fetchSteps();
     }
   }, [user, authLoading, id, navigate]);
 
@@ -116,6 +131,38 @@ const TaskDetail = () => {
     }
   };
 
+  const fetchSteps = async () => {
+    try {
+      const { data: stepsData, error: stepsError } = await supabase
+        .from("task_steps")
+        .select("*")
+        .eq("task_id", id)
+        .order("order_index");
+
+      if (stepsError) throw stepsError;
+      
+      if (stepsData) {
+        setSteps(stepsData);
+
+        // Fetch attachments for each step
+        const attachmentsMap: Record<string, Attachment[]> = {};
+        for (const step of stepsData) {
+          const { data: attachmentsData, error: attachmentsError } = await supabase
+            .from("task_step_attachments")
+            .select("*")
+            .eq("task_step_id", step.id);
+
+          if (!attachmentsError && attachmentsData) {
+            attachmentsMap[step.id] = attachmentsData;
+          }
+        }
+        setStepAttachments(attachmentsMap);
+      }
+    } catch (error) {
+      console.error("Error fetching steps:", error);
+    }
+  };
+
   const downloadAttachment = async (attachment: Attachment) => {
     try {
       if (attachment.is_link) {
@@ -145,6 +192,10 @@ const TaskDetail = () => {
         description: "Tente novamente mais tarde.",
       });
     }
+  };
+
+  const downloadStepAttachment = async (attachment: Attachment) => {
+    await downloadAttachment(attachment);
   };
 
   const deleteAttachment = async (attachment: Attachment) => {
@@ -363,6 +414,12 @@ const TaskDetail = () => {
               </CardContent>
             </Card>
           )}
+
+          <TaskStepDisplay 
+            steps={steps} 
+            stepAttachments={stepAttachments} 
+            onDownloadAttachment={downloadStepAttachment}
+          />
 
           {attachments.length > 0 && (
             <Card>

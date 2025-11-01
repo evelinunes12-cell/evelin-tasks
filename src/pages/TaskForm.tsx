@@ -18,6 +18,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import TaskStepForm, { TaskStep } from "@/components/TaskStepForm";
+import { Separator } from "@/components/ui/separator";
 
 const TaskForm = () => {
   const { id } = useParams();
@@ -44,6 +46,7 @@ const TaskForm = () => {
   const [uploading, setUploading] = useState(false);
   const [existingSubjects, setExistingSubjects] = useState<string[]>([]);
   const [openSubjectCombo, setOpenSubjectCombo] = useState(false);
+  const [steps, setSteps] = useState<TaskStep[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -111,6 +114,48 @@ const TaskForm = () => {
           name: att.file_name,
           url: att.file_path
         })));
+      }
+
+      // Fetch existing steps
+      const { data: stepsData } = await supabase
+        .from("task_steps")
+        .select("*")
+        .eq("task_id", id)
+        .order("order_index");
+
+      if (stepsData) {
+        const formattedSteps: TaskStep[] = stepsData.map(step => ({
+          id: step.id,
+          title: step.title,
+          description: step.description || "",
+          dueDate: step.due_date ? new Date(step.due_date + "T00:00:00") : undefined,
+          status: step.status,
+          googleDocsLink: step.google_docs_link || "",
+          canvaLink: step.canva_link || "",
+          files: [],
+          links: [],
+          isExpanded: false,
+        }));
+
+        // Fetch attachments for each step
+        for (let i = 0; i < formattedSteps.length; i++) {
+          const stepId = stepsData[i].id;
+          const { data: stepAttachments } = await supabase
+            .from("task_step_attachments")
+            .select("*")
+            .eq("task_step_id", stepId);
+
+          if (stepAttachments) {
+            formattedSteps[i].links = stepAttachments
+              .filter(att => att.is_link)
+              .map(att => ({
+                name: att.file_name,
+                url: att.file_path,
+              }));
+          }
+        }
+
+        setSteps(formattedSteps);
       }
     } catch (error) {
       console.error("Error fetching task:", error);
@@ -215,6 +260,91 @@ const TaskForm = () => {
     }
   };
 
+  const saveSteps = async (taskId: string) => {
+    if (steps.length === 0) return;
+
+    try {
+      // Delete existing steps if editing
+      if (isEditing) {
+        await supabase
+          .from("task_steps")
+          .delete()
+          .eq("task_id", taskId);
+      }
+
+      // Insert new steps
+      for (let i = 0; i < steps.length; i++) {
+        const step = steps[i];
+        
+        const localDueDate = step.dueDate
+          ? new Date(Date.UTC(step.dueDate.getFullYear(), step.dueDate.getMonth(), step.dueDate.getDate()))
+          : null;
+
+        const { data: stepData, error: stepError } = await supabase
+          .from("task_steps")
+          .insert({
+            task_id: taskId,
+            title: step.title,
+            description: step.description || null,
+            due_date: localDueDate ? format(localDueDate, "yyyy-MM-dd") : null,
+            status: step.status,
+            google_docs_link: step.googleDocsLink || null,
+            canva_link: step.canvaLink || null,
+            order_index: i,
+          })
+          .select()
+          .single();
+
+        if (stepError) throw stepError;
+
+        // Upload step files
+        for (const file of step.files) {
+          const fileExt = file.name.split(".").pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `${user!.id}/${taskId}/steps/${stepData.id}/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from("task-attachments")
+            .upload(filePath, file);
+
+          if (uploadError) throw uploadError;
+
+          const { error: dbError } = await supabase
+            .from("task_step_attachments")
+            .insert({
+              task_step_id: stepData.id,
+              file_name: file.name,
+              file_path: filePath,
+              file_size: file.size,
+              file_type: file.type,
+              is_link: false,
+            });
+
+          if (dbError) throw dbError;
+        }
+
+        // Save step links
+        for (const link of step.links) {
+          const { error: dbError } = await supabase
+            .from("task_step_attachments")
+            .insert({
+              task_step_id: stepData.id,
+              file_name: link.name,
+              file_path: link.url,
+              file_size: null,
+              file_type: null,
+              is_link: true,
+            });
+
+          if (dbError) throw dbError;
+        }
+      }
+    } catch (error) {
+      console.error("Error saving steps:", error);
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -257,6 +387,8 @@ const TaskForm = () => {
           await uploadFiles(id!);
         }
 
+        await saveSteps(id!);
+
         toast({
           title: "Tarefa atualizada",
           description: "As alterações foram salvas com sucesso.",
@@ -273,6 +405,8 @@ const TaskForm = () => {
         if (files.length > 0 || links.length > 0) {
           await uploadFiles(data.id);
         }
+
+        await saveSteps(data.id);
 
         toast({
           title: "Tarefa criada",
@@ -560,6 +694,10 @@ const TaskForm = () => {
                   </div>
                 )}
               </div>
+
+              <Separator className="my-6" />
+
+              <TaskStepForm steps={steps} onStepsChange={setSteps} />
 
               <div className="flex gap-3 pt-4">
                 <Button

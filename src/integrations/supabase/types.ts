@@ -79,6 +79,97 @@ export type Database = {
           },
         ]
       }
+      task_step_attachments: {
+        Row: {
+          created_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          is_link: boolean | null
+          task_step_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_link?: boolean | null
+          task_step_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_link?: boolean | null
+          task_step_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_step_attachments_task_step_id_fkey"
+            columns: ["task_step_id"]
+            isOneToOne: false
+            referencedRelation: "task_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_steps: {
+        Row: {
+          canva_link: string | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          google_docs_link: string | null
+          id: string
+          order_index: number
+          status: string
+          task_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          canva_link?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          google_docs_link?: string | null
+          id?: string
+          order_index?: number
+          status?: string
+          task_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          canva_link?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          google_docs_link?: string | null
+          id?: string
+          order_index?: number
+          status?: string
+          task_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_steps_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           canva_link: string | null
