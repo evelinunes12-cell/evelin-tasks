@@ -91,7 +91,7 @@ const TaskForm = () => {
 
       setSubjectName(data.subject_name);
       setDescription(data.description || "");
-      setDueDate(new Date(data.due_date));
+      setDueDate(new Date(data.due_date + "T00:00:00"));
       setIsGroupWork(data.is_group_work);
         setGroupMembers(data.group_members || "");
         setGoogleDocsLink(data.google_docs_link || "");
@@ -220,11 +220,10 @@ const TaskForm = () => {
     setLoading(true);
 
     try {
-      // Corrige o fuso horário antes de salvar
-      const localDueDate = dueDate ? new Date(dueDate) : null;
-      if (localDueDate) {
-        localDueDate.setMinutes(localDueDate.getMinutes() - localDueDate.getTimezoneOffset());
-      }
+      // Salva apenas a parte da data (sem hora) no formato ISO local
+      const localDueDate = dueDate
+        ? new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()))
+        : null;
 
       const taskData = {
         subject_name: subjectName,
