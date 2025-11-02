@@ -3,10 +3,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import TaskForm from "./pages/TaskForm";
 import TaskDetail from "./pages/TaskDetail";
+import Subjects from "./pages/Subjects";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,7 +23,28 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route
+            path="/dashboard"
+            element={
+              <SidebarProvider>
+                <div className="flex min-h-screen w-full">
+                  <AppSidebar />
+                  <Dashboard />
+                </div>
+              </SidebarProvider>
+            }
+          />
+          <Route
+            path="/subjects"
+            element={
+              <SidebarProvider>
+                <div className="flex min-h-screen w-full">
+                  <AppSidebar />
+                  <Subjects />
+                </div>
+              </SidebarProvider>
+            }
+          />
           <Route path="/task/new" element={<TaskForm />} />
           <Route path="/task/edit/:id" element={<TaskForm />} />
           <Route path="/task/:id" element={<TaskDetail />} />

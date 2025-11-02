@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Search } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 interface Task {
   id: string;
   subject_name: string;
@@ -114,8 +115,13 @@ const Dashboard = () => {
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>;
   }
-  return <div className="min-h-screen bg-background">
-      <Navbar />
+  return <div className="min-h-screen bg-background flex-1">
+      <header className="border-b">
+        <div className="flex h-16 items-center gap-4 px-4">
+          <SidebarTrigger />
+          <Navbar />
+        </div>
+      </header>
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-foreground mb-2">Minhas Tarefas</h2>
