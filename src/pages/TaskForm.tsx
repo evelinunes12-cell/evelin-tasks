@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import TaskStepForm, { TaskStep } from "@/components/TaskStepForm";
 import { Separator } from "@/components/ui/separator";
+import ChecklistManager, { ChecklistItem } from "@/components/ChecklistManager";
 
 const TaskForm = () => {
   const { id } = useParams();
@@ -41,8 +42,7 @@ const TaskForm = () => {
   const [links, setLinks] = useState<{ name: string; url: string }[]>([]);
   const [newLinkName, setNewLinkName] = useState("");
   const [newLinkUrl, setNewLinkUrl] = useState("");
-  const [checklistItems, setChecklistItems] = useState<{ text: string; completed: boolean }[]>([]);
-  const [newChecklistItem, setNewChecklistItem] = useState("");
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [existingSubjects, setExistingSubjects] = useState<string[]>([]);
   const [openSubjectCombo, setOpenSubjectCombo] = useState(false);
@@ -97,10 +97,10 @@ const TaskForm = () => {
       setDueDate(new Date(data.due_date + "T00:00:00"));
       setIsGroupWork(data.is_group_work);
         setGroupMembers(data.group_members || "");
-        setGoogleDocsLink(data.google_docs_link || "");
-        setCanvaLink(data.canva_link || "");
-        setStatus(data.status);
-        setChecklistItems((data.checklist as { text: string; completed: boolean }[]) || []);
+      setGoogleDocsLink(data.google_docs_link || "");
+      setCanvaLink(data.canva_link || "");
+      setStatus(data.status);
+      setChecklist((data.checklist as any) || []);
       
       // Fetch existing links
       const { data: attachmentsData } = await supabase
@@ -134,6 +134,7 @@ const TaskForm = () => {
           canvaLink: step.canva_link || "",
           files: [],
           links: [],
+          checklist: (step.checklist as any) || [],
           isExpanded: false,
         }));
 
@@ -187,23 +188,6 @@ const TaskForm = () => {
 
   const removeLink = (index: number) => {
     setLinks(links.filter((_, i) => i !== index));
-  };
-
-  const addChecklistItem = () => {
-    if (newChecklistItem.trim()) {
-      setChecklistItems([...checklistItems, { text: newChecklistItem.trim(), completed: false }]);
-      setNewChecklistItem("");
-    }
-  };
-
-  const removeChecklistItem = (index: number) => {
-    setChecklistItems(checklistItems.filter((_, i) => i !== index));
-  };
-
-  const toggleChecklistItem = (index: number) => {
-    setChecklistItems(
-      checklistItems.map((item, i) => (i === index ? { ...item, completed: !item.completed } : item))
-    );
   };
 
   const uploadFiles = async (taskId: string) => {
@@ -291,6 +275,7 @@ const TaskForm = () => {
             google_docs_link: step.googleDocsLink || null,
             canva_link: step.canvaLink || null,
             order_index: i,
+            checklist: step.checklist as any,
           })
           .select()
           .single();
@@ -365,7 +350,7 @@ const TaskForm = () => {
         canva_link: canvaLink || null,
         status,
         user_id: user!.id,
-        checklist: checklistItems,
+        checklist: checklist as any,
       };
 
       if (isEditing) {
@@ -694,6 +679,14 @@ const TaskForm = () => {
                   </div>
                 )}
               </div>
+
+              <Separator className="my-6" />
+
+              <ChecklistManager
+                items={checklist}
+                onItemsChange={setChecklist}
+                label="Checklist da Tarefa"
+              />
 
               <Separator className="my-6" />
 

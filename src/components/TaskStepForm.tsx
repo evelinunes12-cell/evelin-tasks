@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import ChecklistManager, { ChecklistItem } from "@/components/ChecklistManager";
 
 export interface TaskStep {
   id?: string;
@@ -23,6 +24,7 @@ export interface TaskStep {
   canvaLink: string;
   files: File[];
   links: { name: string; url: string }[];
+  checklist: ChecklistItem[];
   isExpanded?: boolean;
 }
 
@@ -41,6 +43,7 @@ const TaskStepForm = ({ steps, onStepsChange }: TaskStepFormProps) => {
       canvaLink: "",
       files: [],
       links: [],
+      checklist: [],
       isExpanded: true,
     };
     onStepsChange([...steps, newStep]);
@@ -276,6 +279,14 @@ const TaskStepForm = ({ steps, onStepsChange }: TaskStepFormProps) => {
                   onAddLink={addLink}
                   onRemoveLink={removeLink}
                 />
+
+                <div className="pt-4">
+                  <ChecklistManager
+                    items={step.checklist}
+                    onItemsChange={(items) => updateStep(index, "checklist", items)}
+                    label="Checklist da Etapa"
+                  />
+                </div>
               </CardContent>
             </CollapsibleContent>
           </Card>
