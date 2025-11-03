@@ -1,4 +1,4 @@
-import { Home, BookOpen } from "lucide-react";
+import { Home, BookOpen, Settings } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -16,6 +16,7 @@ import {
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: Home },
   { title: "Disciplinas", url: "/subjects", icon: BookOpen },
+  { title: "Configurações", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {

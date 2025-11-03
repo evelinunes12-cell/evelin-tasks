@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import TaskForm from "./pages/TaskForm";
 import TaskDetail from "./pages/TaskDetail";
 import Subjects from "./pages/Subjects";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,17 @@ const App = () => (
                 <div className="flex min-h-screen w-full">
                   <AppSidebar />
                   <Subjects />
+                </div>
+              </SidebarProvider>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <SidebarProvider>
+                <div className="flex min-h-screen w-full">
+                  <AppSidebar />
+                  <Settings />
                 </div>
               </SidebarProvider>
             }
