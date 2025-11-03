@@ -69,16 +69,41 @@ const TaskForm = () => {
   const fetchExistingSubjects = async () => {
     try {
       const { data, error } = await supabase
-        .from("tasks")
-        .select("subject_name")
-        .eq("user_id", user!.id);
+        .from("subjects")
+        .select("name")
+        .order("name");
 
       if (error) throw error;
 
-      const uniqueSubjects = [...new Set(data.map(task => task.subject_name))].sort();
-      setExistingSubjects(uniqueSubjects);
+      const subjectNames = data.map(subject => subject.name);
+      setExistingSubjects(subjectNames);
     } catch (error) {
       console.error("Error fetching subjects:", error);
+    }
+  };
+
+  const ensureSubjectExists = async (subjectName: string) => {
+    try {
+      // Verifica se a disciplina já existe
+      const { data: existingSubject } = await supabase
+        .from("subjects")
+        .select("id")
+        .eq("name", subjectName)
+        .eq("user_id", user!.id)
+        .single();
+
+      // Se não existir, cria
+      if (!existingSubject) {
+        await supabase
+          .from("subjects")
+          .insert({
+            name: subjectName,
+            user_id: user!.id,
+            color: null,
+          });
+      }
+    } catch (error) {
+      console.error("Error ensuring subject exists:", error);
     }
   };
 
@@ -335,6 +360,9 @@ const TaskForm = () => {
     setLoading(true);
 
     try {
+      // Garante que a disciplina existe na tabela subjects
+      await ensureSubjectExists(subjectName);
+
       // Salva apenas a parte da data (sem hora) no formato ISO local
       const localDueDate = dueDate
         ? new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()))
