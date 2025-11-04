@@ -37,7 +37,7 @@ const TaskForm = () => {
   const [groupMembers, setGroupMembers] = useState("");
   const [googleDocsLink, setGoogleDocsLink] = useState("");
   const [canvaLink, setCanvaLink] = useState("");
-  const [status, setStatus] = useState("not_started");
+  const [status, setStatus] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [links, setLinks] = useState<{ name: string; url: string }[]>([]);
   const [newLinkName, setNewLinkName] = useState("");
@@ -47,6 +47,8 @@ const TaskForm = () => {
   const [existingSubjects, setExistingSubjects] = useState<string[]>([]);
   const [openSubjectCombo, setOpenSubjectCombo] = useState(false);
   const [steps, setSteps] = useState<TaskStep[]>([]);
+  const [existingStatuses, setExistingStatuses] = useState<{ name: string; color: string | null }[]>([]);
+  const [openStatusCombo, setOpenStatusCombo] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -57,6 +59,7 @@ const TaskForm = () => {
   useEffect(() => {
     if (user) {
       fetchExistingSubjects();
+      fetchExistingStatuses();
     }
   }, [user]);
 
@@ -82,6 +85,21 @@ const TaskForm = () => {
     }
   };
 
+  const fetchExistingStatuses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("task_statuses")
+        .select("name, color")
+        .order("name");
+
+      if (error) throw error;
+
+      setExistingStatuses(data || []);
+    } catch (error) {
+      console.error("Error fetching statuses:", error);
+    }
+  };
+
   const ensureSubjectExists = async (subjectName: string) => {
     try {
       // Verifica se a disciplina já existe
@@ -104,6 +122,31 @@ const TaskForm = () => {
       }
     } catch (error) {
       console.error("Error ensuring subject exists:", error);
+    }
+  };
+
+  const ensureStatusExists = async (statusName: string) => {
+    try {
+      // Verifica se o status já existe
+      const { data: existingStatus } = await supabase
+        .from("task_statuses")
+        .select("id")
+        .eq("name", statusName)
+        .eq("user_id", user!.id)
+        .single();
+
+      // Se não existir, cria
+      if (!existingStatus) {
+        await supabase
+          .from("task_statuses")
+          .insert({
+            name: statusName,
+            user_id: user!.id,
+            color: null,
+          });
+      }
+    } catch (error) {
+      console.error("Error ensuring status exists:", error);
     }
   };
 
@@ -379,8 +422,32 @@ const TaskForm = () => {
     setLoading(true);
 
     try {
-      // Garante que a disciplina existe na tabela subjects
+      // Validações
+      if (!subjectName.trim()) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Por favor, selecione uma disciplina.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (!status.trim()) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Por favor, selecione um status.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Garanta que a disciplina existe na tabela subjects
       await ensureSubjectExists(subjectName);
+      
+      // Garante que o status existe na tabela task_statuses
+      await ensureStatusExists(status);
 
       // Corrige o fuso horário local antes de salvar no Supabase
       let localDueDate = null;
@@ -592,16 +659,81 @@ const TaskForm = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="status">Status da Tarefa</Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="not_started">Não Iniciada</SelectItem>
-                    <SelectItem value="in_progress">Em Andamento</SelectItem>
-                    <SelectItem value="completed">Concluída</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Popover open={openStatusCombo} onOpenChange={setOpenStatusCombo}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openStatusCombo}
+                      className="w-full justify-between"
+                    >
+                      {status ? (
+                        <div className="flex items-center gap-2">
+                          {existingStatuses.find(s => s.name === status)?.color && (
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: existingStatuses.find(s => s.name === status)?.color || "#3b82f6" }}
+                            />
+                          )}
+                          {status}
+                        </div>
+                      ) : "Selecione um status"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Pesquisar ou adicionar status..." 
+                        value={status}
+                        onValueChange={setStatus}
+                      />
+                      <CommandList>
+                        <CommandEmpty>
+                          <div className="text-sm p-2">
+                            {status ? (
+                              <button
+                                type="button"
+                                onClick={() => setOpenStatusCombo(false)}
+                                className="w-full text-left hover:bg-accent rounded p-2"
+                              >
+                                Criar "{status}"
+                              </button>
+                            ) : (
+                              "Digite o nome do status"
+                            )}
+                          </div>
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {existingStatuses.map((statusItem) => (
+                            <CommandItem
+                              key={statusItem.name}
+                              value={statusItem.name}
+                              onSelect={(value) => {
+                                setStatus(value);
+                                setOpenStatusCombo(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  status === statusItem.name ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {statusItem.color && (
+                                <div
+                                  className="w-3 h-3 rounded-full mr-2"
+                                  style={{ backgroundColor: statusItem.color }}
+                                />
+                              )}
+                              {statusItem.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
