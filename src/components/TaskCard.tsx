@@ -76,7 +76,16 @@ const TaskCard = ({
         <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
           <div className="flex items-center gap-1">
             <Calendar className="w-4 h-4" />
-            <span>{format(new Date(dueDate), "dd 'de' MMMM", { locale: ptBR })}</span>
+            <span>
+              {format(
+                (() => {
+                  const parts = dueDate.split("-");
+                  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                })(),
+                "dd 'de' MMMM",
+                { locale: ptBR }
+              )}
+            </span>
           </div>
           {isGroupWork && (
             <div className="flex items-center gap-1">

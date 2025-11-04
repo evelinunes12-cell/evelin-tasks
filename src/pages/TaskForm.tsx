@@ -119,7 +119,14 @@ const TaskForm = () => {
 
       setSubjectName(data.subject_name);
       setDescription(data.description || "");
-      setDueDate(new Date(data.due_date + "T00:00:00"));
+      
+      // Corrige a leitura da data sem aplicar timezone
+      if (data.due_date) {
+        const parts = data.due_date.split("-");
+        const normalized = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        setDueDate(normalized);
+      }
+      
       setIsGroupWork(data.is_group_work);
         setGroupMembers(data.group_members || "");
       setGoogleDocsLink(data.google_docs_link || "");
@@ -149,19 +156,27 @@ const TaskForm = () => {
         .order("order_index");
 
       if (stepsData) {
-        const formattedSteps: TaskStep[] = stepsData.map(step => ({
-          id: step.id,
-          title: step.title,
-          description: step.description || "",
-          dueDate: step.due_date ? new Date(step.due_date + "T00:00:00") : undefined,
-          status: step.status,
-          googleDocsLink: step.google_docs_link || "",
-          canvaLink: step.canva_link || "",
-          files: [],
-          links: [],
-          checklist: (step.checklist as any) || [],
-          isExpanded: false,
-        }));
+        const formattedSteps: TaskStep[] = stepsData.map(step => {
+          let stepDueDate = undefined;
+          if (step.due_date) {
+            const parts = step.due_date.split("-");
+            stepDueDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          }
+          
+          return {
+            id: step.id,
+            title: step.title,
+            description: step.description || "",
+            dueDate: stepDueDate,
+            status: step.status,
+            googleDocsLink: step.google_docs_link || "",
+            canvaLink: step.canva_link || "",
+            files: [],
+            links: [],
+            checklist: (step.checklist as any) || [],
+            isExpanded: false,
+          };
+        });
 
         // Fetch attachments for each step
         for (let i = 0; i < formattedSteps.length; i++) {
@@ -285,9 +300,13 @@ const TaskForm = () => {
       for (let i = 0; i < steps.length; i++) {
         const step = steps[i];
         
-        const localDueDate = step.dueDate
-          ? new Date(Date.UTC(step.dueDate.getFullYear(), step.dueDate.getMonth(), step.dueDate.getDate()))
-          : null;
+        // Corrige o fuso horário local antes de salvar
+        let stepDueDate = null;
+        if (step.dueDate) {
+          const adjusted = new Date(step.dueDate);
+          adjusted.setMinutes(adjusted.getMinutes() - adjusted.getTimezoneOffset());
+          stepDueDate = adjusted.toISOString().split("T")[0];
+        }
 
         const { data: stepData, error: stepError } = await supabase
           .from("task_steps")
@@ -295,7 +314,7 @@ const TaskForm = () => {
             task_id: taskId,
             title: step.title,
             description: step.description || null,
-            due_date: localDueDate ? format(localDueDate, "yyyy-MM-dd") : null,
+            due_date: stepDueDate,
             status: step.status,
             google_docs_link: step.googleDocsLink || null,
             canva_link: step.canvaLink || null,
@@ -363,15 +382,18 @@ const TaskForm = () => {
       // Garante que a disciplina existe na tabela subjects
       await ensureSubjectExists(subjectName);
 
-      // Salva apenas a parte da data (sem hora) no formato ISO local
-      const localDueDate = dueDate
-        ? new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()))
-        : null;
+      // Corrige o fuso horário local antes de salvar no Supabase
+      let localDueDate = null;
+      if (dueDate) {
+        const adjusted = new Date(dueDate);
+        adjusted.setMinutes(adjusted.getMinutes() - adjusted.getTimezoneOffset());
+        localDueDate = adjusted.toISOString().split("T")[0]; // garante formato yyyy-MM-dd
+      }
 
       const taskData = {
         subject_name: subjectName,
         description: description || null,
-        due_date: localDueDate ? format(localDueDate, "yyyy-MM-dd") : null,
+        due_date: localDueDate,
         is_group_work: isGroupWork,
         group_members: isGroupWork ? groupMembers : null,
         google_docs_link: googleDocsLink || null,
