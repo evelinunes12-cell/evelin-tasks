@@ -443,6 +443,16 @@ const TaskForm = () => {
         return;
       }
 
+      if (!dueDate) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Por favor, selecione uma data de vencimento.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       // Garanta que a disciplina existe na tabela subjects
       await ensureSubjectExists(subjectName);
       
