@@ -10,27 +10,12 @@ interface TaskCardProps {
   id: string;
   subjectName: string;
   description?: string;
-  dueDate: string;
+  dueDate: string | null;
   isGroupWork: boolean;
   status: string;
   checklist?: { text: string; completed: boolean }[];
   onDelete: (id: string) => void;
 }
-
-const statusConfig = {
-  not_started: {
-    label: "Não Iniciada",
-    variant: "secondary" as const,
-  },
-  in_progress: {
-    label: "Em Andamento",
-    variant: "default" as const,
-  },
-  completed: {
-    label: "Concluída",
-    variant: "default" as const,
-  },
-};
 
 const TaskCard = ({
   id,
@@ -43,7 +28,12 @@ const TaskCard = ({
   onDelete,
 }: TaskCardProps) => {
   const navigate = useNavigate();
-  const statusInfo = statusConfig[status];
+  
+  // Usa o status como está, sem mapeamento fixo
+  const statusInfo = {
+    label: status,
+    variant: "secondary" as const,
+  };
   
   const checklistProgress =
     checklist.length > 0
@@ -60,33 +50,26 @@ const TaskCard = ({
               <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
             )}
           </div>
-          <Badge 
-            variant={statusInfo.variant}
-            className={
-              status === "completed" 
-                ? "bg-success text-success-foreground"
-                : status === "in_progress"
-                ? "bg-warning text-warning-foreground"
-                : ""
-            }
-          >
+          <Badge variant="secondary">
             {statusInfo.label}
           </Badge>
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-          <div className="flex items-center gap-1">
-            <Calendar className="w-4 h-4" />
-            <span>
-              {format(
-                (() => {
-                  const parts = dueDate.split("-");
-                  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-                })(),
-                "dd 'de' MMMM",
-                { locale: ptBR }
-              )}
-            </span>
-          </div>
+          {dueDate && (
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              <span>
+                {format(
+                  (() => {
+                    const parts = dueDate.split("-");
+                    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                  })(),
+                  "dd 'de' MMMM",
+                  { locale: ptBR }
+                )}
+              </span>
+            </div>
+          )}
           {isGroupWork && (
             <div className="flex items-center gap-1">
               <Users className="w-4 h-4" />
