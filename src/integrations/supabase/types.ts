@@ -236,7 +236,7 @@ export type Database = {
           checklist: Json | null
           created_at: string | null
           description: string | null
-          due_date: string
+          due_date: string | null
           google_docs_link: string | null
           group_members: string | null
           id: string
@@ -251,7 +251,7 @@ export type Database = {
           checklist?: Json | null
           created_at?: string | null
           description?: string | null
-          due_date: string
+          due_date?: string | null
           google_docs_link?: string | null
           group_members?: string | null
           id?: string
@@ -266,7 +266,7 @@ export type Database = {
           checklist?: Json | null
           created_at?: string | null
           description?: string | null
-          due_date?: string
+          due_date?: string | null
           google_docs_link?: string | null
           group_members?: string | null
           id?: string
