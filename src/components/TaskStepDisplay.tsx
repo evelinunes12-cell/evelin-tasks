@@ -31,16 +31,10 @@ interface TaskStepDisplayProps {
   onDownloadAttachment: (attachment: StepAttachment) => void;
 }
 
-const statusConfig = {
-  not_started: { label: "Não Iniciada", color: "bg-secondary" },
-  in_progress: { label: "Em Andamento", color: "bg-warning" },
-  completed: { label: "Concluída", color: "bg-success" },
-};
-
 const TaskStepDisplay = ({ steps, stepAttachments, onDownloadAttachment }: TaskStepDisplayProps) => {
   if (steps.length === 0) return null;
 
-  const completedSteps = steps.filter(step => step.status === "completed").length;
+  const completedSteps = steps.filter(step => step.status.toLowerCase().includes("conclu")).length;
 
   return (
     <Card>
@@ -53,7 +47,6 @@ const TaskStepDisplay = ({ steps, stepAttachments, onDownloadAttachment }: TaskS
       <CardContent>
         <div className="space-y-4">
           {steps.map((step, index) => {
-            const statusInfo = statusConfig[step.status as keyof typeof statusConfig];
             const attachments = stepAttachments[step.id] || [];
             
             return (
@@ -65,8 +58,8 @@ const TaskStepDisplay = ({ steps, stepAttachments, onDownloadAttachment }: TaskS
                         Etapa {index + 1}: {step.title}
                       </h3>
                     </div>
-                    <Badge className={`${statusInfo.color} text-white`}>
-                      {statusInfo.label}
+                    <Badge variant="secondary">
+                      {step.status}
                     </Badge>
                   </div>
                 </CardHeader>

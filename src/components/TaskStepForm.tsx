@@ -38,7 +38,7 @@ const TaskStepForm = ({ steps, onStepsChange }: TaskStepFormProps) => {
     const newStep: TaskStep = {
       title: "",
       description: "",
-      status: "not_started",
+      status: "Não Iniciado",
       googleDocsLink: "",
       canvaLink: "",
       files: [],
@@ -213,9 +213,9 @@ const TaskStepForm = ({ steps, onStepsChange }: TaskStepFormProps) => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="not_started">Não Iniciada</SelectItem>
-                      <SelectItem value="in_progress">Em Andamento</SelectItem>
-                      <SelectItem value="completed">Concluída</SelectItem>
+                      <SelectItem value="Não Iniciado">Não Iniciado</SelectItem>
+                      <SelectItem value="Em Progresso">Em Progresso</SelectItem>
+                      <SelectItem value="Concluído">Concluído</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

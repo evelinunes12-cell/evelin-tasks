@@ -67,12 +67,6 @@ interface TaskStep {
   order_index: number;
 }
 
-const statusConfig = {
-  not_started: { label: "Não Iniciada", color: "bg-secondary" },
-  in_progress: { label: "Em Andamento", color: "bg-warning" },
-  completed: { label: "Concluída", color: "bg-success" },
-};
-
 const TaskDetail = () => {
   const { id } = useParams();
   const { user, loading: authLoading } = useAuth();
@@ -282,8 +276,6 @@ const TaskDetail = () => {
     );
   }
 
-  const statusInfo = statusConfig[task.status as keyof typeof statusConfig];
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -304,16 +296,18 @@ const TaskDetail = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Status:</span>
-                <Badge className={`${statusInfo.color} text-white`}>
-                  {statusInfo.label}
+                <Badge variant="secondary">
+                  {task.status}
                 </Badge>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">
-                  Data de entrega: {format(new Date(task.due_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                </span>
-              </div>
+              {task.due_date && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    Data de entrega: {format(new Date(task.due_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </span>
+                </div>
+              )}
               {task.is_group_work && (
                 <div className="flex items-start gap-2">
                   <Users className="w-4 h-4 text-muted-foreground mt-1" />

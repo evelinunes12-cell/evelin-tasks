@@ -41,16 +41,34 @@ const Dashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("due_date");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
+  
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
+  
   useEffect(() => {
     if (user) {
       fetchTasks();
+      fetchStatuses();
     }
   }, [user]);
+  
+  const fetchStatuses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("task_statuses")
+        .select("name")
+        .order("name", { ascending: true });
+      
+      if (error) throw error;
+      setAvailableStatuses(data.map(s => s.name));
+    } catch (error) {
+      console.error("Error fetching statuses:", error);
+    }
+  };
   const fetchTasks = async () => {
     try {
       const {
@@ -98,16 +116,19 @@ const Dashboard = () => {
     return matchesStatus && matchesSearch;
   }).sort((a, b) => {
     if (sortBy === "due_date") {
+      if (!a.due_date) return 1;
+      if (!b.due_date) return -1;
       return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
     } else if (sortBy === "subject") {
       return a.subject_name.localeCompare(b.subject_name);
     }
     return 0;
   });
+  
   const stats = {
-    notStarted: tasks.filter(t => t.status === "not_started").length,
-    inProgress: tasks.filter(t => t.status === "in_progress").length,
-    completed: tasks.filter(t => t.status === "completed").length
+    notStarted: tasks.filter(t => t.status.toLowerCase().includes("não") || t.status.toLowerCase().includes("nao")).length,
+    inProgress: tasks.filter(t => t.status.toLowerCase().includes("progresso") || t.status.toLowerCase().includes("andamento")).length,
+    completed: tasks.filter(t => t.status.toLowerCase().includes("conclu")).length
   };
   if (authLoading || loading) {
     return <div className="min-h-screen flex items-center justify-center">
@@ -136,9 +157,9 @@ const Dashboard = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas</SelectItem>
-              <SelectItem value="not_started">Não Iniciadas</SelectItem>
-              <SelectItem value="in_progress">Em Andamento</SelectItem>
-              <SelectItem value="completed">Concluídas</SelectItem>
+              {availableStatuses.map(status => (
+                <SelectItem key={status} value={status}>{status}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
