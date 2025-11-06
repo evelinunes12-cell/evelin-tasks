@@ -84,8 +84,18 @@ export default function Settings() {
       return;
     }
 
-    if (passwords.newPassword.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres");
+    if (passwords.newPassword.length < 8) {
+      toast.error("A senha deve ter pelo menos 8 caracteres");
+      return;
+    }
+
+    const hasUpperCase = /[A-Z]/.test(passwords.newPassword);
+    const hasLowerCase = /[a-z]/.test(passwords.newPassword);
+    const hasNumbers = /\d/.test(passwords.newPassword);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(passwords.newPassword);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+      toast.error("A senha deve conter letras maiúsculas, minúsculas, números e caracteres especiais");
       return;
     }
 
@@ -305,8 +315,11 @@ export default function Settings() {
                     setPasswords({ ...passwords, newPassword: e.target.value })
                   }
                   required
-                  minLength={6}
+                  minLength={8}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Mínimo 8 caracteres com letras maiúsculas, minúsculas, números e caracteres especiais
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -322,7 +335,7 @@ export default function Settings() {
                     })
                   }
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
 
