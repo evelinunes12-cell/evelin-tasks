@@ -22,6 +22,7 @@ interface Task {
   group_members: string | null;
   updated_at: string;
   user_id: string;
+  environment_id: string | null;
   checklist: {
     text: string;
     completed: boolean;
@@ -39,6 +40,8 @@ const Dashboard = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [environmentFilter, setEnvironmentFilter] = useState<string>("all");
+  const [environments, setEnvironments] = useState<{ id: string; environment_name: string }[]>([]);
   const [sortBy, setSortBy] = useState<string>("due_date");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
@@ -53,6 +56,7 @@ const Dashboard = () => {
     if (user) {
       fetchTasks();
       fetchStatuses();
+      fetchEnvironments();
     }
   }, [user]);
   
@@ -67,6 +71,20 @@ const Dashboard = () => {
       setAvailableStatuses(data.map(s => s.name));
     } catch (error) {
       console.error("Error fetching statuses:", error);
+    }
+  };
+
+  const fetchEnvironments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("shared_environments")
+        .select("id, environment_name")
+        .order("environment_name");
+      
+      if (error) throw error;
+      setEnvironments(data || []);
+    } catch (error) {
+      console.error("Error fetching environments:", error);
     }
   };
   const fetchTasks = async () => {
@@ -112,8 +130,12 @@ const Dashboard = () => {
   };
   const filteredTasks = tasks.filter(task => {
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
+    const matchesEnvironment = 
+      environmentFilter === "all" || 
+      (environmentFilter === "personal" && !task.environment_id) ||
+      (environmentFilter !== "personal" && task.environment_id === environmentFilter);
     const matchesSearch = searchQuery === "" || task.subject_name.toLowerCase().includes(searchQuery.toLowerCase()) || task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesEnvironment && matchesSearch;
   }).sort((a, b) => {
     if (sortBy === "due_date") {
       if (!a.due_date) return 1;
@@ -150,6 +172,19 @@ const Dashboard = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input type="text" placeholder="Pesquisar por disciplina ou descrição..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
           </div>
+          
+          <Select value={environmentFilter} onValueChange={setEnvironmentFilter}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Filtrar por ambiente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os ambientes</SelectItem>
+              <SelectItem value="personal">Pessoal</SelectItem>
+              {environments.map(env => (
+                <SelectItem key={env.id} value={env.id}>{env.environment_name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[200px]">

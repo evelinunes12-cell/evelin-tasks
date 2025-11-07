@@ -1,4 +1,4 @@
-import { Home, BookOpen, Settings, ListChecks } from "lucide-react";
+import { Home, BookOpen, Settings, ListChecks, Users } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -15,6 +15,7 @@ import {
 
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: Home },
+  { title: "Ambientes Compartilhados", url: "/shared-environments", icon: Users },
   { title: "Disciplinas", url: "/subjects", icon: BookOpen },
   { title: "Status", url: "/task-statuses", icon: ListChecks },
   { title: "Configurações", url: "/settings", icon: Settings },

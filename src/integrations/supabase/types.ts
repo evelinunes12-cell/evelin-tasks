@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      environment_members: {
+        Row: {
+          created_at: string
+          email: string
+          environment_id: string
+          id: string
+          permissions: Database["public"]["Enums"]["environment_permission"][]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          environment_id: string
+          id?: string
+          permissions?: Database["public"]["Enums"]["environment_permission"][]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          environment_id?: string
+          id?: string
+          permissions?: Database["public"]["Enums"]["environment_permission"][]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environment_members_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "shared_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -38,6 +73,33 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      shared_environments: {
+        Row: {
+          created_at: string
+          description: string | null
+          environment_name: string
+          id: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          environment_name: string
+          id?: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          environment_name?: string
+          id?: string
+          owner_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -237,6 +299,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           due_date: string | null
+          environment_id: string | null
           google_docs_link: string | null
           group_members: string | null
           id: string
@@ -252,6 +315,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           due_date?: string | null
+          environment_id?: string | null
           google_docs_link?: string | null
           group_members?: string | null
           id?: string
@@ -267,6 +331,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           due_date?: string | null
+          environment_id?: string | null
           google_docs_link?: string | null
           group_members?: string | null
           id?: string
@@ -277,6 +342,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "shared_environments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_user_id_fkey"
             columns: ["user_id"]
@@ -291,10 +363,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_environment_permission: {
+        Args: {
+          _environment_id: string
+          _permission: Database["public"]["Enums"]["environment_permission"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      environment_permission: "view" | "create" | "edit" | "delete"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -421,6 +500,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      environment_permission: ["view", "create", "edit", "delete"],
+    },
   },
 } as const

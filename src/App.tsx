@@ -12,6 +12,9 @@ import TaskDetail from "./pages/TaskDetail";
 import Subjects from "./pages/Subjects";
 import TaskStatuses from "./pages/TaskStatuses";
 import Settings from "./pages/Settings";
+import SharedEnvironments from "./pages/SharedEnvironments";
+import EnvironmentForm from "./pages/EnvironmentForm";
+import EnvironmentDetail from "./pages/EnvironmentDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +72,20 @@ const App = () => (
               </SidebarProvider>
             }
           />
+          <Route
+            path="/shared-environments"
+            element={
+              <SidebarProvider>
+                <div className="flex min-h-screen w-full">
+                  <AppSidebar />
+                  <SharedEnvironments />
+                </div>
+              </SidebarProvider>
+            }
+          />
+          <Route path="/environment/new" element={<EnvironmentForm />} />
+          <Route path="/environment/:id/edit" element={<EnvironmentForm />} />
+          <Route path="/environment/:id" element={<EnvironmentDetail />} />
           <Route path="/task/new" element={<TaskForm />} />
           <Route path="/task/edit/:id" element={<TaskForm />} />
           <Route path="/task/:id" element={<TaskDetail />} />

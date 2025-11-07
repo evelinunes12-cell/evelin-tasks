@@ -38,6 +38,8 @@ const TaskForm = () => {
   const [googleDocsLink, setGoogleDocsLink] = useState("");
   const [canvaLink, setCanvaLink] = useState("");
   const [status, setStatus] = useState("");
+  const [environmentId, setEnvironmentId] = useState<string | null>(null);
+  const [environments, setEnvironments] = useState<{ id: string; environment_name: string }[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [links, setLinks] = useState<{ name: string; url: string }[]>([]);
   const [newLinkName, setNewLinkName] = useState("");
@@ -60,6 +62,14 @@ const TaskForm = () => {
     if (user) {
       fetchExistingSubjects();
       fetchExistingStatuses();
+      fetchEnvironments();
+      
+      // Check if there's an environment parameter in the URL
+      const searchParams = new URLSearchParams(window.location.search);
+      const envParam = searchParams.get('environment');
+      if (envParam) {
+        setEnvironmentId(envParam);
+      }
     }
   }, [user]);
 
@@ -97,6 +107,21 @@ const TaskForm = () => {
       setExistingStatuses(data || []);
     } catch (error) {
       console.error("Error fetching statuses:", error);
+    }
+  };
+
+  const fetchEnvironments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("shared_environments")
+        .select("id, environment_name")
+        .order("environment_name");
+
+      if (error) throw error;
+
+      setEnvironments(data || []);
+    } catch (error) {
+      console.error("Error fetching environments:", error);
     }
   };
 
@@ -468,6 +493,7 @@ const TaskForm = () => {
         status,
         user_id: user!.id,
         checklist: checklist as any,
+        environment_id: environmentId,
       };
 
       if (isEditing) {
@@ -734,6 +760,29 @@ const TaskForm = () => {
                     </Command>
                   </PopoverContent>
                 </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="environment">Ambiente</Label>
+                <Select
+                  value={environmentId || "personal"}
+                  onValueChange={(value) => setEnvironmentId(value === "personal" ? null : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o ambiente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="personal">Pessoal</SelectItem>
+                    {environments.map((env) => (
+                      <SelectItem key={env.id} value={env.id}>
+                        {env.environment_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Tarefas pessoais são visíveis apenas para você. Tarefas em ambientes compartilhados são visíveis para todos os membros.
+                </p>
               </div>
 
               <div className="space-y-2">
