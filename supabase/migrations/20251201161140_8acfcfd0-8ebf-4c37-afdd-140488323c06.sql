@@ -1,0 +1,1 @@
+ALTER TABLE environment_members ENABLE ROW LEVEL SECURITY
