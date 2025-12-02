@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -89,10 +88,9 @@ const SharedEnvironments = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="container mx-auto px-6 py-8">
-        <div className="flex justify-between items-center mb-8">
+    <div className="min-h-screen bg-background flex-1">
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Ambientes Compartilhados</h1>
             <p className="text-muted-foreground mt-2">
@@ -107,31 +105,27 @@ const SharedEnvironments = () => {
 
         {environments.length === 0 ? (
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
+            <CardContent className="flex flex-col items-center justify-center py-16">
               <Users className="w-16 h-16 text-muted-foreground mb-4" />
               <h3 className="text-xl font-semibold mb-2">Nenhum ambiente encontrado</h3>
-              <p className="text-muted-foreground mb-6 text-center">
-                Crie seu primeiro ambiente compartilhado para começar a colaborar
+              <p className="text-muted-foreground text-center max-w-md">
+                Crie seu primeiro ambiente compartilhado para começar a colaborar com sua equipe
               </p>
-              <Button onClick={() => navigate("/environment/new")}>
-                <Plus className="w-4 h-4 mr-2" />
-                Criar Ambiente
-              </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {environments.map((env) => (
               <Card
                 key={env.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
+                className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02]"
                 onClick={() => navigate(`/environment/${env.id}`)}
               >
                 <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-xl">{env.environment_name}</CardTitle>
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-xl line-clamp-1">{env.environment_name}</CardTitle>
                     {env.is_owner && (
-                      <Badge variant="secondary" className="gap-1">
+                      <Badge variant="secondary" className="gap-1 shrink-0">
                         <Crown className="w-3 h-3" />
                         Proprietário
                       </Badge>
@@ -153,7 +147,7 @@ const SharedEnvironments = () => {
             ))}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };
