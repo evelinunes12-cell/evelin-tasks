@@ -76,13 +76,39 @@ const Dashboard = () => {
 
   const fetchEnvironments = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch owned environments
+      const { data: ownedEnvs, error: ownedError } = await supabase
         .from("shared_environments")
         .select("id, environment_name")
+        .eq("owner_id", user?.id)
         .order("environment_name");
       
-      if (error) throw error;
-      setEnvironments(data || []);
+      if (ownedError) throw ownedError;
+
+      // Fetch member environments
+      const { data: memberData } = await supabase
+        .from("environment_members")
+        .select("environment_id")
+        .eq("user_id", user?.id);
+
+      let memberEnvs: typeof ownedEnvs = [];
+      if (memberData && memberData.length > 0) {
+        const memberEnvIds = memberData.map(m => m.environment_id);
+        const { data } = await supabase
+          .from("shared_environments")
+          .select("id, environment_name")
+          .in("id", memberEnvIds)
+          .order("environment_name");
+        memberEnvs = data || [];
+      }
+
+      // Combine and dedupe
+      const allEnvs = [...(ownedEnvs || []), ...memberEnvs];
+      const uniqueEnvs = allEnvs.filter((env, index, self) => 
+        index === self.findIndex(e => e.id === env.id)
+      );
+
+      setEnvironments(uniqueEnvs);
     } catch (error) {
       console.error("Error fetching environments:", error);
     }
