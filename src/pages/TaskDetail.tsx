@@ -268,7 +268,7 @@ const TaskDetail = () => {
   if (!task) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <Navbar minimal />
         <main className="container mx-auto px-4 py-8">
           <p className="text-center text-muted-foreground">Tarefa não encontrada.</p>
         </main>
@@ -278,7 +278,7 @@ const TaskDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navbar minimal />
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-foreground">{task.subject_name}</h1>

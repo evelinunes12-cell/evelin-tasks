@@ -188,7 +188,7 @@ const EnvironmentForm = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navbar minimal />
       <div className="container mx-auto px-6 py-8 max-w-4xl">
         <h1 className="text-3xl font-bold text-foreground mb-8">
           {id === "new" ? "Novo Ambiente" : "Editar Ambiente"}
