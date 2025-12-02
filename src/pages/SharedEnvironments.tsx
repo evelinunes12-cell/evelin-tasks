@@ -40,23 +40,46 @@ const SharedEnvironments = () => {
     try {
       setLoading(true);
       
-      // Fetch environments where user is owner or member
-      const { data: envData, error } = await supabase
+      // 1. Fetch environments where user is owner
+      const { data: ownedEnvs, error: ownedError } = await supabase
         .from("shared_environments")
-        .select(`
-          id,
-          environment_name,
-          description,
-          owner_id,
-          created_at
-        `)
+        .select("id, environment_name, description, owner_id, created_at")
+        .eq("owner_id", user?.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (ownedError) throw ownedError;
 
-      // Get member counts for each environment
+      // 2. Fetch environment IDs where user is a member
+      const { data: memberData, error: memberError } = await supabase
+        .from("environment_members")
+        .select("environment_id")
+        .eq("user_id", user?.id);
+
+      if (memberError) throw memberError;
+
+      // 3. Fetch member environments by ID (if any)
+      let memberEnvs: typeof ownedEnvs = [];
+      if (memberData && memberData.length > 0) {
+        const memberEnvIds = memberData.map(m => m.environment_id);
+        const { data, error } = await supabase
+          .from("shared_environments")
+          .select("id, environment_name, description, owner_id, created_at")
+          .in("id", memberEnvIds)
+          .order("created_at", { ascending: false });
+        
+        if (error) throw error;
+        memberEnvs = data || [];
+      }
+
+      // 4. Combine and dedupe
+      const allEnvs = [...(ownedEnvs || []), ...memberEnvs];
+      const uniqueEnvs = allEnvs.filter((env, index, self) => 
+        index === self.findIndex(e => e.id === env.id)
+      );
+
+      // 5. Get member counts for each environment
       const environmentsWithCounts = await Promise.all(
-        (envData || []).map(async (env) => {
+        uniqueEnvs.map(async (env) => {
           const { count } = await supabase
             .from("environment_members")
             .select("*", { count: "exact", head: true })
@@ -65,7 +88,7 @@ const SharedEnvironments = () => {
           return {
             ...env,
             is_owner: env.owner_id === user?.id,
-            member_count: (count || 0) + 1, // +1 for owner
+            member_count: (count || 0) + 1,
           };
         })
       );
