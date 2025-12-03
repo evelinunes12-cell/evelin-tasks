@@ -183,10 +183,18 @@ const EnvironmentForm = () => {
     }
   };
 
-  if (authLoading || (id !== "new" && loading)) {
+  if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (id !== "new" && loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando ambiente...</p>
       </div>
     );
   }
