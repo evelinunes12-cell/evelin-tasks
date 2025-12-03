@@ -371,6 +371,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_environment_member: {
+        Args: { _environment_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       environment_permission: "view" | "create" | "edit" | "delete"
