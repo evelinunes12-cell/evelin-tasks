@@ -20,6 +20,7 @@ interface Member {
 
 const EnvironmentForm = () => {
   const { id } = useParams();
+  const isNewEnvironment = !id || id === "new";
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -43,10 +44,10 @@ const EnvironmentForm = () => {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    if (id && id !== "new") {
+    if (id && !isNewEnvironment) {
       fetchEnvironment();
     }
-  }, [id]);
+  }, [id, isNewEnvironment]);
 
   const fetchEnvironment = async () => {
     try {
@@ -128,7 +129,7 @@ const EnvironmentForm = () => {
     try {
       setLoading(true);
 
-      if (id === "new") {
+      if (isNewEnvironment) {
         // Create new environment
         const { data: envData, error: envError } = await supabase
           .from("shared_environments")
@@ -191,7 +192,7 @@ const EnvironmentForm = () => {
     );
   }
 
-  if (id !== "new" && loading) {
+  if (!isNewEnvironment && loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Carregando ambiente...</p>
@@ -204,7 +205,7 @@ const EnvironmentForm = () => {
       <Navbar minimal />
       <div className="container mx-auto px-6 py-8 max-w-4xl">
         <h1 className="text-3xl font-bold text-foreground mb-8">
-          {id === "new" ? "Novo Ambiente" : "Editar Ambiente"}
+          {isNewEnvironment ? "Novo Ambiente" : "Editar Ambiente"}
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -325,7 +326,7 @@ const EnvironmentForm = () => {
               Cancelar
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Salvando..." : id === "new" ? "Criar Ambiente" : "Salvar Alterações"}
+              {loading ? "Salvando..." : isNewEnvironment ? "Criar Ambiente" : "Salvar Alterações"}
             </Button>
           </div>
         </form>
