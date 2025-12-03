@@ -115,6 +115,11 @@ const EnvironmentForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user?.id) {
+      toast.error("Você precisa estar logado para criar um ambiente");
+      return;
+    }
+    
     if (!environmentName.trim()) {
       toast.error("Digite um nome para o ambiente");
       return;
@@ -130,7 +135,7 @@ const EnvironmentForm = () => {
           .insert({
             environment_name: environmentName,
             description: description || null,
-            owner_id: user?.id,
+            owner_id: user.id,
           })
           .select()
           .single();
