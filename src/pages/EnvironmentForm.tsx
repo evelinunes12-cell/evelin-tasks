@@ -173,6 +173,44 @@ const EnvironmentForm = () => {
 
         if (envError) throw envError;
 
+        // Get current members from database
+        const { data: existingMembers } = await supabase
+          .from("environment_members")
+          .select("email")
+          .eq("environment_id", id);
+
+        const existingEmails = existingMembers?.map(m => m.email) || [];
+        const newEmails = members.map(m => m.email);
+
+        // Delete removed members
+        const emailsToDelete = existingEmails.filter(email => !newEmails.includes(email));
+        if (emailsToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from("environment_members")
+            .delete()
+            .eq("environment_id", id)
+            .in("email", emailsToDelete);
+
+          if (deleteError) throw deleteError;
+        }
+
+        // Add new members (those not already in the database)
+        const membersToAdd = members.filter(m => !existingEmails.includes(m.email));
+        if (membersToAdd.length > 0) {
+          const { error: insertError } = await supabase
+            .from("environment_members")
+            .insert(
+              membersToAdd.map(m => ({
+                environment_id: id,
+                email: m.email,
+                user_id: null,
+                permissions: m.permissions as ("view" | "create" | "edit" | "delete")[],
+              }))
+            );
+
+          if (insertError) throw insertError;
+        }
+
         toast.success("Ambiente atualizado com sucesso!");
         navigate(`/environment/${id}`);
       }
