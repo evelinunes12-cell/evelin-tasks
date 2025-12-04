@@ -1,10 +1,11 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Eye, Trash2, CheckSquare } from "lucide-react";
-import { format } from "date-fns";
+import { Calendar, Users, Eye, Trash2, CheckSquare, AlertTriangle } from "lucide-react";
+import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
   id: string;
@@ -29,7 +30,6 @@ const TaskCard = ({
 }: TaskCardProps) => {
   const navigate = useNavigate();
   
-  // Usa o status como está, sem mapeamento fixo
   const statusInfo = {
     label: status,
     variant: "secondary" as const,
@@ -40,12 +40,46 @@ const TaskCard = ({
       ? Math.round((checklist.filter((item) => item.completed).length / checklist.length) * 100)
       : 0;
 
+  // Check if task is overdue
+  const parseDueDate = (dateStr: string) => {
+    const parts = dateStr.split("-");
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  };
+
+  const dueDateObj = dueDate ? parseDueDate(dueDate) : null;
+  const isOverdue = dueDateObj && isPast(dueDateObj) && !isToday(dueDateObj) && !status.toLowerCase().includes("conclu");
+  const isDueToday = dueDateObj && isToday(dueDateObj);
+  const isDueTomorrow = dueDateObj && isTomorrow(dueDateObj);
+
+  const getDateBadgeStyle = () => {
+    if (isOverdue) return "bg-destructive/10 text-destructive border-destructive/30";
+    if (isDueToday) return "bg-warning/10 text-warning border-warning/30";
+    if (isDueTomorrow) return "bg-primary/10 text-primary border-primary/30";
+    return "";
+  };
+
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+    <Card 
+      className={cn(
+        "hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative overflow-hidden",
+        isOverdue && "border-destructive/50 shadow-destructive/10"
+      )}
+    >
+      {isOverdue && (
+        <div className="absolute top-0 left-0 right-0 h-1 bg-destructive animate-pulse" />
+      )}
       <CardContent className="pt-6">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <h3 className="font-semibold text-lg text-foreground mb-1">{subjectName}</h3>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-lg text-foreground">{subjectName}</h3>
+              {isOverdue && (
+                <Badge variant="destructive" className="text-xs flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Atrasada
+                </Badge>
+              )}
+            </div>
             {description && (
               <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
             )}
@@ -55,18 +89,14 @@ const TaskCard = ({
           </Badge>
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-          {dueDate && (
-            <div className="flex items-center gap-1">
+          {dueDate && dueDateObj && (
+            <div className={cn(
+              "flex items-center gap-1 px-2 py-0.5 rounded-full border",
+              getDateBadgeStyle()
+            )}>
               <Calendar className="w-4 h-4" />
               <span>
-                {format(
-                  (() => {
-                    const parts = dueDate.split("-");
-                    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-                  })(),
-                  "dd 'de' MMMM",
-                  { locale: ptBR }
-                )}
+                {isDueToday ? "Hoje" : isDueTomorrow ? "Amanhã" : format(dueDateObj, "dd 'de' MMMM", { locale: ptBR })}
               </span>
             </div>
           )}
