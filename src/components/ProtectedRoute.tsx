@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { LoadingOverlay } from "./LoadingOverlay";
+import LoadingOverlay from "./LoadingOverlay";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -18,7 +18,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }, [user, loading, navigate]);
 
   if (loading) {
-    return <LoadingOverlay message="Verificando autenticação..." />;
+    return <LoadingOverlay isLoading={true} message="Verificando autenticação..." />;
   }
 
   if (!user) {
