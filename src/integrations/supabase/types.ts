@@ -49,6 +49,76 @@ export type Database = {
           },
         ]
       }
+      environment_statuses: {
+        Row: {
+          color: string | null
+          created_at: string
+          environment_id: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          environment_id: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          environment_id?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environment_statuses_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "shared_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      environment_subjects: {
+        Row: {
+          color: string | null
+          created_at: string
+          environment_id: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          environment_id: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          environment_id?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environment_subjects_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "shared_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
