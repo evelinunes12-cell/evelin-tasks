@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,13 +21,19 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import TaskStepForm, { TaskStep } from "@/components/TaskStepForm";
 import { Separator } from "@/components/ui/separator";
 import ChecklistManager, { ChecklistItem } from "@/components/ChecklistManager";
+import { fetchEnvironmentSubjects, fetchEnvironmentStatuses } from "@/services/environmentData";
 
 const TaskForm = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const isEditing = Boolean(id);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Check if we're creating a task within an environment
+  const urlEnvironmentId = searchParams.get('environment');
+  const isFromEnvironment = Boolean(urlEnvironmentId);
 
   const [loading, setLoading] = useState(false);
   const [subjectName, setSubjectName] = useState("");
@@ -38,7 +44,7 @@ const TaskForm = () => {
   const [googleDocsLink, setGoogleDocsLink] = useState("");
   const [canvaLink, setCanvaLink] = useState("");
   const [status, setStatus] = useState("");
-  const [environmentId, setEnvironmentId] = useState<string | null>(null);
+  const [environmentId, setEnvironmentId] = useState<string | null>(urlEnvironmentId);
   const [environments, setEnvironments] = useState<{ id: string; environment_name: string }[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [links, setLinks] = useState<{ name: string; url: string }[]>([]);
@@ -51,6 +57,7 @@ const TaskForm = () => {
   const [steps, setSteps] = useState<TaskStep[]>([]);
   const [existingStatuses, setExistingStatuses] = useState<{ name: string; color: string | null }[]>([]);
   const [openStatusCombo, setOpenStatusCombo] = useState(false);
+  const [environmentName, setEnvironmentName] = useState<string>("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -60,24 +67,71 @@ const TaskForm = () => {
 
   useEffect(() => {
     if (user) {
-      fetchExistingSubjects();
-      fetchExistingStatuses();
-      fetchEnvironments();
+      if (!isFromEnvironment) {
+        fetchEnvironments();
+      }
       
-      // Check if there's an environment parameter in the URL
-      const searchParams = new URLSearchParams(window.location.search);
-      const envParam = searchParams.get('environment');
-      if (envParam) {
-        setEnvironmentId(envParam);
+      // If we're in an environment context, fetch environment-specific data
+      if (urlEnvironmentId) {
+        fetchEnvironmentData();
+      } else {
+        fetchExistingSubjects();
+        fetchExistingStatuses();
       }
     }
-  }, [user]);
+  }, [user, urlEnvironmentId]);
 
   useEffect(() => {
     if (isEditing && id) {
       fetchTask();
     }
   }, [isEditing, id]);
+
+  // When environmentId changes (only when not from URL), reload subjects/statuses
+  useEffect(() => {
+    if (user && !isEditing && !isFromEnvironment) {
+      if (environmentId) {
+        fetchEnvironmentData();
+      } else {
+        fetchExistingSubjects();
+        fetchExistingStatuses();
+      }
+      // Reset subject and status when switching environments
+      setSubjectName("");
+      setStatus("");
+    }
+  }, [environmentId]);
+
+  const fetchEnvironmentData = async () => {
+    const envId = urlEnvironmentId || environmentId;
+    if (!envId) return;
+
+    try {
+      // Fetch environment name
+      const { data: envData } = await supabase
+        .from("shared_environments")
+        .select("environment_name")
+        .eq("id", envId)
+        .single();
+
+      if (envData) {
+        setEnvironmentName(envData.environment_name);
+      }
+
+      // Fetch environment subjects
+      const subjects = await fetchEnvironmentSubjects(envId);
+      setExistingSubjects(subjects.map(s => s.name));
+
+      // Fetch environment statuses
+      const statuses = await fetchEnvironmentStatuses(envId);
+      setExistingStatuses(statuses.map(s => ({ name: s.name, color: s.color })));
+    } catch (error) {
+      console.error("Error fetching environment data:", error);
+      // Fallback to user's personal subjects/statuses
+      fetchExistingSubjects();
+      fetchExistingStatuses();
+    }
+  };
 
   const fetchExistingSubjects = async () => {
     try {
@@ -126,6 +180,9 @@ const TaskForm = () => {
   };
 
   const ensureSubjectExists = async (subjectName: string) => {
+    // If we're in an environment context, don't create personal subjects
+    if (environmentId) return;
+
     try {
       // Verifica se a disciplina já existe
       const { data: existingSubject } = await supabase
@@ -151,6 +208,9 @@ const TaskForm = () => {
   };
 
   const ensureStatusExists = async (statusName: string) => {
+    // If we're in an environment context, don't create personal statuses
+    if (environmentId) return;
+
     try {
       // Verifica se o status já existe
       const { data: existingStatus } = await supabase
@@ -196,11 +256,20 @@ const TaskForm = () => {
       }
       
       setIsGroupWork(data.is_group_work);
-        setGroupMembers(data.group_members || "");
+      setGroupMembers(data.group_members || "");
       setGoogleDocsLink(data.google_docs_link || "");
       setCanvaLink(data.canva_link || "");
       setStatus(data.status);
       setChecklist((data.checklist as any) || []);
+      setEnvironmentId(data.environment_id);
+      
+      // If editing a task with environment, load environment data
+      if (data.environment_id) {
+        const subjects = await fetchEnvironmentSubjects(data.environment_id);
+        setExistingSubjects(subjects.map(s => s.name));
+        const statuses = await fetchEnvironmentStatuses(data.environment_id);
+        setExistingStatuses(statuses.map(s => ({ name: s.name, color: s.color })));
+      }
       
       // Fetch existing links
       const { data: attachmentsData } = await supabase
@@ -468,10 +537,10 @@ const TaskForm = () => {
         return;
       }
 
-      // Garanta que a disciplina existe na tabela subjects
+      // Garanta que a disciplina existe na tabela subjects (only for personal tasks)
       await ensureSubjectExists(subjectName);
       
-      // Garante que o status existe na tabela task_statuses
+      // Garante que o status existe na tabela task_statuses (only for personal tasks)
       await ensureStatusExists(status);
 
       // Corrige o fuso horário local antes de salvar no Supabase
@@ -542,7 +611,12 @@ const TaskForm = () => {
         });
       }
 
-      navigate("/dashboard");
+      // Navigate back to the appropriate page
+      if (environmentId) {
+        navigate(`/environment/${environmentId}`);
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error) {
       console.error("Error saving task:", error);
       toast({
@@ -572,6 +646,11 @@ const TaskForm = () => {
             <CardTitle className="text-2xl">
               {isEditing ? "Editar Tarefa" : "Nova Tarefa"}
             </CardTitle>
+            {isFromEnvironment && environmentName && (
+              <CardDescription>
+                Criando tarefa no ambiente: <strong>{environmentName}</strong>
+              </CardDescription>
+            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -600,13 +679,19 @@ const TaskForm = () => {
                         <CommandEmpty>
                           <div className="text-sm p-2">
                             {subjectName ? (
-                              <button
-                                type="button"
-                                onClick={() => setOpenSubjectCombo(false)}
-                                className="w-full text-left hover:bg-accent rounded p-2"
-                              >
-                                Criar "{subjectName}"
-                              </button>
+                              environmentId ? (
+                                <span className="text-muted-foreground">
+                                  Disciplina "{subjectName}" não encontrada. Peça ao proprietário do ambiente para adicionar.
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenSubjectCombo(false)}
+                                  className="w-full text-left hover:bg-accent rounded p-2"
+                                >
+                                  Criar "{subjectName}"
+                                </button>
+                              )
                             ) : (
                               "Digite o nome da disciplina"
                             )}
@@ -636,6 +721,11 @@ const TaskForm = () => {
                     </Command>
                   </PopoverContent>
                 </Popover>
+                {existingSubjects.length === 0 && environmentId && (
+                  <p className="text-xs text-muted-foreground">
+                    Nenhuma disciplina configurada para este ambiente. O proprietário precisa adicionar disciplinas nas configurações.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -684,7 +774,7 @@ const TaskForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status">Status da Tarefa</Label>
+                <Label htmlFor="status">Status da Tarefa *</Label>
                 <Popover open={openStatusCombo} onOpenChange={setOpenStatusCombo}>
                   <PopoverTrigger asChild>
                     <Button
@@ -718,13 +808,19 @@ const TaskForm = () => {
                         <CommandEmpty>
                           <div className="text-sm p-2">
                             {status ? (
-                              <button
-                                type="button"
-                                onClick={() => setOpenStatusCombo(false)}
-                                className="w-full text-left hover:bg-accent rounded p-2"
-                              >
-                                Criar "{status}"
-                              </button>
+                              environmentId ? (
+                                <span className="text-muted-foreground">
+                                  Status "{status}" não encontrado. Peça ao proprietário do ambiente para adicionar.
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenStatusCombo(false)}
+                                  className="w-full text-left hover:bg-accent rounded p-2"
+                                >
+                                  Criar "{status}"
+                                </button>
+                              )
                             ) : (
                               "Digite o nome do status"
                             )}
@@ -760,30 +856,38 @@ const TaskForm = () => {
                     </Command>
                   </PopoverContent>
                 </Popover>
+                {existingStatuses.length === 0 && environmentId && (
+                  <p className="text-xs text-muted-foreground">
+                    Nenhum status configurado para este ambiente. O proprietário precisa adicionar status nas configurações.
+                  </p>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="environment">Ambiente</Label>
-                <Select
-                  value={environmentId || "personal"}
-                  onValueChange={(value) => setEnvironmentId(value === "personal" ? null : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o ambiente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="personal">Pessoal</SelectItem>
-                    {environments.map((env) => (
-                      <SelectItem key={env.id} value={env.id}>
-                        {env.environment_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Tarefas pessoais são visíveis apenas para você. Tarefas em ambientes compartilhados são visíveis para todos os membros.
-                </p>
-              </div>
+              {/* Only show environment selector when NOT coming from an environment */}
+              {!isFromEnvironment && !isEditing && (
+                <div className="space-y-2">
+                  <Label htmlFor="environment">Ambiente</Label>
+                  <Select
+                    value={environmentId || "personal"}
+                    onValueChange={(value) => setEnvironmentId(value === "personal" ? null : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o ambiente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">Pessoal</SelectItem>
+                      {environments.map((env) => (
+                        <SelectItem key={env.id} value={env.id}>
+                          {env.environment_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Tarefas pessoais são visíveis apenas para você. Tarefas em ambientes compartilhados são visíveis para todos os membros.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="googleDocs">Link do Trabalho Escrito</Label>
@@ -927,7 +1031,7 @@ const TaskForm = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/dashboard")}
+                  onClick={() => environmentId ? navigate(`/environment/${environmentId}`) : navigate("/dashboard")}
                   className="flex-1"
                 >
                   Cancelar
