@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { Task } from "@/services/tasks";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,19 +35,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import TaskStepDisplay from "@/components/TaskStepDisplay";
 
-interface Task {
-  id: string;
-  subject_name: string;
-  description: string | null;
-  due_date: string;
-  is_group_work: boolean;
-  group_members: string | null;
-  google_docs_link: string | null;
-  canva_link: string | null;
-  status: string;
-  checklist: { text: string; completed: boolean }[];
-}
-
 interface Attachment {
   id: string;
   file_name: string;
@@ -54,6 +42,17 @@ interface Attachment {
   file_size: number | null;
   file_type: string | null;
   is_link: boolean;
+}
+
+interface TaskStep {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  status: string;
+  google_docs_link: string | null;
+  canva_link: string | null;
+  order_index: number;
 }
 
 interface TaskStep {
@@ -239,7 +238,7 @@ const TaskDetail = () => {
 
       const { error } = await supabase
         .from("tasks")
-        .update({ checklist: updatedChecklist })
+        .update({ checklist: updatedChecklist as unknown as any })
         .eq("id", id);
 
       if (error) throw error;
