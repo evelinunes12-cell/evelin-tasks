@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Task, isTaskOverdue as checkTaskOverdue, parseDueDate } from "@/services/tasks";
 import Navbar from "@/components/Navbar";
 import StatsCards from "@/components/StatsCards";
 import TaskCard from "@/components/TaskCard";
@@ -14,29 +15,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Filter, X } from "lucide-react";
+import { Search, Filter, X, LayoutGrid, Columns } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { isPast, isToday } from "date-fns";
-
-interface Task {
-  id: string;
-  subject_name: string;
-  description: string | null;
-  due_date: string;
-  is_group_work: boolean;
-  status: string;
-  canva_link: string | null;
-  created_at: string;
-  google_docs_link: string | null;
-  group_members: string | null;
-  updated_at: string;
-  user_id: string;
-  environment_id: string | null;
-  checklist: {
-    text: string;
-    completed: boolean;
-  }[];
-}
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -54,6 +35,7 @@ const Dashboard = () => {
   // Sort
   const [sortBy, setSortBy] = useState<string>("due_date");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [viewMode, setViewMode] = useState<"list" | "board">("list");
   
   // Data
   const [environments, setEnvironments] = useState<{ id: string; environment_name: string }[]>([]);
@@ -77,7 +59,10 @@ const Dashboard = () => {
         });
         throw error;
       }
-      return (data as Task[]) || [];
+      return (data || []).map(task => ({
+        ...task,
+        checklist: (task.checklist as unknown as Task['checklist']) || [],
+      })) as Task[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutos
     enabled: !!user,
@@ -167,16 +152,7 @@ const Dashboard = () => {
 
   const loading = tasksLoading || metadataLoading;
 
-  const parseDueDate = (dateStr: string) => {
-    const parts = dateStr.split("-");
-    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-  };
-
-  const isTaskOverdue = (task: Task) => {
-    if (!task.due_date) return false;
-    const dueDate = parseDueDate(task.due_date);
-    return isPast(dueDate) && !isToday(dueDate) && !task.status.toLowerCase().includes("conclu");
-  };
+  const isTaskOverdue = (task: Task) => checkTaskOverdue(task);
 
   const filteredTasks = tasks.filter(task => {
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
@@ -381,6 +357,26 @@ const Dashboard = () => {
               </PopoverContent>
             </Popover>
 
+            {/* View Mode Toggle */}
+            <div className="flex border rounded-md">
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className="rounded-r-none"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === "board" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("board")}
+                className="rounded-l-none"
+              >
+                <Columns className="w-4 h-4" />
+              </Button>
+            </div>
+
             {/* Sort */}
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-full sm:w-[200px]">
@@ -445,7 +441,7 @@ const Dashboard = () => {
               </Button>
             )}
           </div>
-        ) : (
+        ) : viewMode === "list" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTasks.map(task => (
               <TaskCard 
@@ -460,6 +456,113 @@ const Dashboard = () => {
                 onDelete={handleDeleteTask} 
               />
             ))}
+          </div>
+        ) : (
+          /* Kanban Board View */
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Coluna A Fazer */}
+            <div className="bg-muted/50 rounded-lg p-4">
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-yellow-500" />
+                A Fazer
+                <Badge variant="secondary" className="ml-auto">
+                  {filteredTasks.filter(t => 
+                    t.status.toLowerCase().includes("não") || 
+                    t.status.toLowerCase().includes("nao") ||
+                    t.status.toLowerCase().includes("fazer")
+                  ).length}
+                </Badge>
+              </h3>
+              <ScrollArea className="h-[600px] pr-4">
+                <div className="space-y-4">
+                  {filteredTasks
+                    .filter(t => 
+                      t.status.toLowerCase().includes("não") || 
+                      t.status.toLowerCase().includes("nao") ||
+                      t.status.toLowerCase().includes("fazer")
+                    )
+                    .map(task => (
+                      <TaskCard 
+                        key={task.id} 
+                        id={task.id} 
+                        subjectName={task.subject_name} 
+                        description={task.description} 
+                        dueDate={task.due_date} 
+                        isGroupWork={task.is_group_work} 
+                        status={task.status} 
+                        checklist={task.checklist} 
+                        onDelete={handleDeleteTask} 
+                      />
+                    ))}
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Coluna Em Progresso */}
+            <div className="bg-muted/50 rounded-lg p-4">
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-blue-500" />
+                Em Progresso
+                <Badge variant="secondary" className="ml-auto">
+                  {filteredTasks.filter(t => 
+                    t.status.toLowerCase().includes("progresso") || 
+                    t.status.toLowerCase().includes("andamento")
+                  ).length}
+                </Badge>
+              </h3>
+              <ScrollArea className="h-[600px] pr-4">
+                <div className="space-y-4">
+                  {filteredTasks
+                    .filter(t => 
+                      t.status.toLowerCase().includes("progresso") || 
+                      t.status.toLowerCase().includes("andamento")
+                    )
+                    .map(task => (
+                      <TaskCard 
+                        key={task.id} 
+                        id={task.id} 
+                        subjectName={task.subject_name} 
+                        description={task.description} 
+                        dueDate={task.due_date} 
+                        isGroupWork={task.is_group_work} 
+                        status={task.status} 
+                        checklist={task.checklist} 
+                        onDelete={handleDeleteTask} 
+                      />
+                    ))}
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Coluna Concluído */}
+            <div className="bg-muted/50 rounded-lg p-4">
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-green-500" />
+                Concluído
+                <Badge variant="secondary" className="ml-auto">
+                  {filteredTasks.filter(t => t.status.toLowerCase().includes("conclu")).length}
+                </Badge>
+              </h3>
+              <ScrollArea className="h-[600px] pr-4">
+                <div className="space-y-4">
+                  {filteredTasks
+                    .filter(t => t.status.toLowerCase().includes("conclu"))
+                    .map(task => (
+                      <TaskCard 
+                        key={task.id} 
+                        id={task.id} 
+                        subjectName={task.subject_name} 
+                        description={task.description} 
+                        dueDate={task.due_date} 
+                        isGroupWork={task.is_group_work} 
+                        status={task.status} 
+                        checklist={task.checklist} 
+                        onDelete={handleDeleteTask} 
+                      />
+                    ))}
+                </div>
+              </ScrollArea>
+            </div>
           </div>
         )}
       </main>
