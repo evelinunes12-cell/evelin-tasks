@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { BookOpen, LogOut, Plus, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { NotificationBell } from "./NotificationBell";
 
 interface NavbarProps {
   minimal?: boolean;
@@ -31,6 +32,7 @@ const Navbar = ({ minimal = false }: NavbarProps) => {
         </div>
         {!minimal && (
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <Button onClick={() => navigate("/task/new")} size="lg" className="gap-2">
               <Plus className="w-5 h-5" />
               Nova Tarefa
