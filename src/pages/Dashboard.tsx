@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -24,23 +24,76 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   
-  // Filters
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [environmentFilter, setEnvironmentFilter] = useState<string>("all");
-  const [subjectFilter, setSubjectFilter] = useState<string>("all");
-  const [groupWorkFilter, setGroupWorkFilter] = useState<boolean | null>(null);
-  const [overdueFilter, setOverdueFilter] = useState<boolean>(false);
+  // Filtros persistidos na URL
+  const statusFilter = searchParams.get("status") || "all";
+  const environmentFilter = searchParams.get("environment") || "all";
+  const subjectFilter = searchParams.get("subject") || "all";
+  const groupWorkFilter = searchParams.get("groupWork") === null ? null : searchParams.get("groupWork") === "true" ? true : searchParams.get("groupWork") === "false" ? false : null;
+  const overdueFilter = searchParams.get("overdue") === "true";
+  const sortBy = searchParams.get("sortBy") || "due_date";
+  const viewMode = (searchParams.get("view") as "list" | "board") || "list";
   
-  // Sort
-  const [sortBy, setSortBy] = useState<string>("due_date");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [viewMode, setViewMode] = useState<"list" | "board">("list");
-  
-  // Data
-  const [environments, setEnvironments] = useState<{ id: string; environment_name: string }[]>([]);
-  const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
-  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
+  // Estado local apenas para busca (não precisa persistir)
+  const [searchQuery, setSearchQuery] = useState<string>(searchParams.get("q") || "");
+
+  // Funções para atualizar filtros na URL
+  const setStatusFilter = (value: string) => {
+    setSearchParams(prev => {
+      if (value === "all") prev.delete("status");
+      else prev.set("status", value);
+      return prev;
+    });
+  };
+
+  const setEnvironmentFilter = (value: string) => {
+    setSearchParams(prev => {
+      if (value === "all") prev.delete("environment");
+      else prev.set("environment", value);
+      return prev;
+    });
+  };
+
+  const setSubjectFilter = (value: string) => {
+    setSearchParams(prev => {
+      if (value === "all") prev.delete("subject");
+      else prev.set("subject", value);
+      return prev;
+    });
+  };
+
+  const setGroupWorkFilter = (value: boolean | null) => {
+    setSearchParams(prev => {
+      if (value === null) prev.delete("groupWork");
+      else prev.set("groupWork", String(value));
+      return prev;
+    });
+  };
+
+  const setOverdueFilter = (value: boolean) => {
+    setSearchParams(prev => {
+      if (!value) prev.delete("overdue");
+      else prev.set("overdue", "true");
+      return prev;
+    });
+  };
+
+  const setSortBy = (value: string) => {
+    setSearchParams(prev => {
+      if (value === "due_date") prev.delete("sortBy");
+      else prev.set("sortBy", value);
+      return prev;
+    });
+  };
+
+  const setViewMode = (value: "list" | "board") => {
+    setSearchParams(prev => {
+      if (value === "list") prev.delete("view");
+      else prev.set("view", value);
+      return prev;
+    });
+  };
 
   // React Query para tarefas com cache de 5 minutos
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
@@ -64,11 +117,54 @@ const Dashboard = () => {
         checklist: (task.checklist as unknown as Task['checklist']) || [],
       })) as Task[];
     },
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 5,
     enabled: !!user,
   });
 
-  const [metadataLoading, setMetadataLoading] = useState(true);
+  // React Query para subjects com cache de 30 minutos
+  const { data: availableSubjects = [] } = useQuery({
+    queryKey: ['subjects', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("subjects")
+        .select("name")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data?.map(s => s.name) || [];
+    },
+    staleTime: 1000 * 60 * 30,
+    enabled: !!user,
+  });
+
+  // React Query para statuses com cache de 30 minutos
+  const { data: availableStatuses = [] } = useQuery({
+    queryKey: ['statuses', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_statuses")
+        .select("name")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data?.map(s => s.name) || [];
+    },
+    staleTime: 1000 * 60 * 30,
+    enabled: !!user,
+  });
+
+  // React Query para environments com cache de 30 minutos
+  const { data: environments = [] } = useQuery({
+    queryKey: ['environments', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shared_environments")
+        .select("id, environment_name")
+        .order("environment_name");
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 30,
+    enabled: !!user,
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -76,65 +172,10 @@ const Dashboard = () => {
     }
   }, [user, authLoading, navigate]);
 
-  useEffect(() => {
-    if (user) {
-      fetchMetadata();
-    }
-  }, [user]);
-
-  const fetchMetadata = async () => {
-    setMetadataLoading(true);
-    await Promise.all([fetchStatuses(), fetchEnvironments(), fetchSubjects()]);
-    setMetadataLoading(false);
-  };
-
-  const fetchSubjects = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("subjects")
-        .select("name")
-        .order("name", { ascending: true });
-      
-      if (error) throw error;
-      setAvailableSubjects(data.map(s => s.name));
-    } catch (error) {
-      console.error("Error fetching subjects:", error);
-    }
-  };
-
-  const fetchStatuses = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("task_statuses")
-        .select("name")
-        .order("name", { ascending: true });
-      
-      if (error) throw error;
-      setAvailableStatuses(data.map(s => s.name));
-    } catch (error) {
-      console.error("Error fetching statuses:", error);
-    }
-  };
-
-  const fetchEnvironments = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("shared_environments")
-        .select("id, environment_name")
-        .order("environment_name");
-      
-      if (error) throw error;
-      setEnvironments(data || []);
-    } catch (error) {
-      console.error("Error fetching environments:", error);
-    }
-  };
-
   const handleDeleteTask = async (id: string) => {
     try {
       const { error } = await supabase.from("tasks").delete().eq("id", id);
       if (error) throw error;
-      // Invalida o cache para recarregar as tarefas
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
       toast({
         title: "Tarefa excluída",
@@ -150,7 +191,7 @@ const Dashboard = () => {
     }
   };
 
-  const loading = tasksLoading || metadataLoading;
+  const loading = tasksLoading;
 
   const isTaskOverdue = (task: Task) => checkTaskOverdue(task);
 
@@ -201,11 +242,14 @@ const Dashboard = () => {
   ].filter(Boolean).length;
 
   const clearAllFilters = () => {
-    setStatusFilter("all");
-    setEnvironmentFilter("all");
-    setSubjectFilter("all");
-    setGroupWorkFilter(null);
-    setOverdueFilter(false);
+    setSearchParams(prev => {
+      prev.delete("status");
+      prev.delete("environment");
+      prev.delete("subject");
+      prev.delete("groupWork");
+      prev.delete("overdue");
+      return prev;
+    });
     setSearchQuery("");
   };
 
