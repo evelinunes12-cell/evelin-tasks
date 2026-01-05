@@ -40,7 +40,7 @@ const SharedEnvironments = () => {
     try {
       setLoading(true);
       
-      // RLS now handles access control - fetch all environments user can see
+      // 1. Busca todos os ambientes
       const { data: envData, error } = await supabase
         .from("shared_environments")
         .select("id, environment_name, description, owner_id, created_at")
@@ -48,21 +48,29 @@ const SharedEnvironments = () => {
 
       if (error) throw error;
 
-      // Get member counts for each environment
-      const environmentsWithCounts = await Promise.all(
-        (envData || []).map(async (env) => {
-          const { count } = await supabase
-            .from("environment_members")
-            .select("*", { count: "exact", head: true })
-            .eq("environment_id", env.id);
+      if (!envData || envData.length === 0) {
+        setEnvironments([]);
+        return;
+      }
 
-          return {
-            ...env,
-            is_owner: env.owner_id === user?.id,
-            member_count: (count || 0) + 1,
-          };
-        })
-      );
+      // 2. Extrai os IDs dos ambientes encontrados
+      const envIds = envData.map(e => e.id);
+
+      // 3. Busca membros de TODOS esses ambientes em UMA única chamada
+      const { data: allMembers } = await supabase
+        .from("environment_members")
+        .select("environment_id")
+        .in("environment_id", envIds);
+
+      // 4. Faz a contagem na memória (Javascript) sem gastar banco de dados
+      const environmentsWithCounts = envData.map((env) => {
+        const count = allMembers?.filter(m => m.environment_id === env.id).length || 0;
+        return {
+          ...env,
+          is_owner: env.owner_id === user?.id,
+          member_count: count + 1, // +1 para incluir o dono
+        };
+      });
 
       setEnvironments(environmentsWithCounts);
     } catch (error: any) {

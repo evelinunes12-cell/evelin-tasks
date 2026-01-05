@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import StatsCards from "@/components/StatsCards";
 import TaskCard from "@/components/TaskCard";
@@ -41,9 +42,7 @@ const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState("Carregando tarefas...");
+  const queryClient = useQueryClient();
   
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -61,6 +60,31 @@ const Dashboard = () => {
   const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
   const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
 
+  // React Query para tarefas com cache de 5 minutos
+  const { data: tasks = [], isLoading: tasksLoading } = useQuery({
+    queryKey: ['tasks', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("due_date", { ascending: true });
+      
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar tarefas",
+          description: "Tente novamente mais tarde."
+        });
+        throw error;
+      }
+      return (data as Task[]) || [];
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    enabled: !!user,
+  });
+
+  const [metadataLoading, setMetadataLoading] = useState(true);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
@@ -69,15 +93,14 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (user) {
-      fetchAllData();
+      fetchMetadata();
     }
   }, [user]);
 
-  const fetchAllData = async () => {
-    setLoading(true);
-    setLoadingMessage("Sincronizando dados...");
-    await Promise.all([fetchTasks(), fetchStatuses(), fetchEnvironments(), fetchSubjects()]);
-    setLoading(false);
+  const fetchMetadata = async () => {
+    setMetadataLoading(true);
+    await Promise.all([fetchStatuses(), fetchEnvironments(), fetchSubjects()]);
+    setMetadataLoading(false);
   };
 
   const fetchSubjects = async () => {
@@ -122,31 +145,12 @@ const Dashboard = () => {
     }
   };
 
-  const fetchTasks = async () => {
-    try {
-      setLoadingMessage("Carregando tarefas...");
-      const { data, error } = await supabase
-        .from("tasks")
-        .select("*")
-        .order("due_date", { ascending: true });
-      
-      if (error) throw error;
-      setTasks(data as Task[] || []);
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar tarefas",
-        description: "Tente novamente mais tarde."
-      });
-    }
-  };
-
   const handleDeleteTask = async (id: string) => {
     try {
       const { error } = await supabase.from("tasks").delete().eq("id", id);
       if (error) throw error;
-      setTasks(tasks.filter(task => task.id !== id));
+      // Invalida o cache para recarregar as tarefas
+      queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
       toast({
         title: "Tarefa excluída",
         description: "A tarefa foi removida com sucesso."
@@ -160,6 +164,8 @@ const Dashboard = () => {
       });
     }
   };
+
+  const loading = tasksLoading || metadataLoading;
 
   const parseDueDate = (dateStr: string) => {
     const parts = dateStr.split("-");
@@ -241,7 +247,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex-1">
-      <LoadingOverlay isLoading={loading} message={loadingMessage} />
+      <LoadingOverlay isLoading={loading} message="Carregando tarefas..." />
       <Navbar />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
