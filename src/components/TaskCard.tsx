@@ -1,11 +1,17 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Eye, Trash2, CheckSquare, AlertTriangle } from "lucide-react";
+import { Calendar, Users, Eye, Trash2, CheckSquare, AlertTriangle, ChevronDown } from "lucide-react";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface TaskCardProps {
   id: string;
@@ -15,7 +21,9 @@ interface TaskCardProps {
   isGroupWork: boolean;
   status: string;
   checklist?: { text: string; completed: boolean }[];
+  availableStatuses?: string[];
   onDelete: (id: string) => void;
+  onStatusChange?: (id: string, newStatus: string) => void;
 }
 
 const TaskCard = ({
@@ -26,14 +34,11 @@ const TaskCard = ({
   isGroupWork,
   status,
   checklist = [],
+  availableStatuses = [],
   onDelete,
+  onStatusChange,
 }: TaskCardProps) => {
   const navigate = useNavigate();
-  
-  const statusInfo = {
-    label: status,
-    variant: "secondary" as const,
-  };
   
   const checklistProgress =
     checklist.length > 0
@@ -56,6 +61,10 @@ const TaskCard = ({
     if (isDueToday) return "bg-warning/10 text-warning border-warning/30";
     if (isDueTomorrow) return "bg-primary/10 text-primary border-primary/30";
     return "";
+  };
+
+  const handleStatusClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
   };
 
   return (
@@ -84,9 +93,34 @@ const TaskCard = ({
               <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
             )}
           </div>
-          <Badge variant="secondary">
-            {statusInfo.label}
-          </Badge>
+          
+          {/* Quick Status Dropdown */}
+          {onStatusChange && availableStatuses.length > 0 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={handleStatusClick}>
+                <Button variant="secondary" size="sm" className="h-6 gap-1 text-xs px-2">
+                  {status}
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-popover">
+                {availableStatuses.map((s) => (
+                  <DropdownMenuItem
+                    key={s}
+                    onClick={() => onStatusChange(id, s)}
+                    className={cn(
+                      "cursor-pointer",
+                      s === status && "bg-accent font-medium"
+                    )}
+                  >
+                    {s}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Badge variant="secondary">{status}</Badge>
+          )}
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
           {dueDate && dueDateObj && (

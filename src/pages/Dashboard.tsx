@@ -1,31 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Task, isTaskOverdue as checkTaskOverdue, parseDueDate } from "@/services/tasks";
 import Navbar from "@/components/Navbar";
 import StatsCards from "@/components/StatsCards";
 import TaskCard from "@/components/TaskCard";
-import LoadingOverlay from "@/components/LoadingOverlay";
+import DashboardSkeleton from "@/components/DashboardSkeleton";
+import EmptyState from "@/components/EmptyState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Search, Filter, X, LayoutGrid, Columns } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { logError } from "@/lib/logger";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Ref to store deleted task for undo
+  const deletedTaskRef = useRef<Task | null>(null);
   
   // Filtros persistidos na URL
   const statusFilter = searchParams.get("status") || "all";
@@ -36,8 +40,9 @@ const Dashboard = () => {
   const sortBy = searchParams.get("sortBy") || "due_date";
   const viewMode = (searchParams.get("view") as "list" | "board") || "list";
   
-  // Estado local apenas para busca (não precisa persistir)
+  // Estado local para busca com debounce
   const [searchQuery, setSearchQuery] = useState<string>(searchParams.get("q") || "");
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Funções para atualizar filtros na URL
   const setStatusFilter = (value: string) => {
@@ -106,10 +111,9 @@ const Dashboard = () => {
         .order("due_date", { ascending: true });
       
       if (error) {
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar tarefas",
-          description: "Tente novamente mais tarde."
+        toast.error("Erro ao carregar tarefas", {
+          description: "Tente novamente mais tarde.",
+          duration: 5000,
         });
         throw error;
       }
@@ -167,6 +171,79 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
+  // Mutation for quick status change with optimistic update
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ taskId, newStatus }: { taskId: string; newStatus: string }) => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: newStatus })
+        .eq("id", taskId);
+      if (error) throw error;
+    },
+    onMutate: async ({ taskId, newStatus }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['tasks', user?.id] });
+      
+      // Snapshot previous value
+      const previousTasks = queryClient.getQueryData<Task[]>(['tasks', user?.id]);
+      
+      // Optimistically update
+      queryClient.setQueryData<Task[]>(['tasks', user?.id], (old) =>
+        old?.map(task => 
+          task.id === taskId ? { ...task, status: newStatus } : task
+        ) || []
+      );
+      
+      return { previousTasks };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', user?.id], context.previousTasks);
+      }
+      toast.error("Erro ao atualizar status", {
+        description: "Tente novamente mais tarde.",
+        duration: 5000,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Status atualizado", { duration: 2000 });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
+    },
+  });
+
+  // Mutation for restoring deleted task
+  const restoreTaskMutation = useMutation({
+    mutationFn: async (task: Task) => {
+      const { error } = await supabase
+        .from("tasks")
+        .insert({
+          id: task.id,
+          subject_name: task.subject_name,
+          description: task.description,
+          due_date: task.due_date,
+          is_group_work: task.is_group_work,
+          group_members: task.group_members,
+          google_docs_link: task.google_docs_link,
+          canva_link: task.canva_link,
+          status: task.status,
+          user_id: task.user_id,
+          environment_id: task.environment_id,
+          checklist: task.checklist as any,
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
+      toast.success("Tarefa restaurada!", { duration: 2000 });
+    },
+    onError: () => {
+      toast.error("Erro ao restaurar tarefa", { duration: 5000 });
+    },
+  });
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
@@ -174,28 +251,53 @@ const Dashboard = () => {
   }, [user, authLoading, navigate]);
 
   const handleDeleteTask = async (id: string) => {
+    // Store task for potential undo
+    const taskToDelete = tasks.find(t => t.id === id);
+    if (taskToDelete) {
+      deletedTaskRef.current = taskToDelete;
+    }
+
     try {
+      // Optimistic update
+      queryClient.setQueryData<Task[]>(['tasks', user?.id], (old) =>
+        old?.filter(task => task.id !== id) || []
+      );
+
       const { error } = await supabase.from("tasks").delete().eq("id", id);
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
-      toast({
-        title: "Tarefa excluída",
-        description: "A tarefa foi removida com sucesso."
+      
+      toast("Tarefa excluída", {
+        description: "A tarefa foi removida com sucesso.",
+        duration: 5000,
+        action: {
+          label: "Desfazer",
+          onClick: () => {
+            if (deletedTaskRef.current) {
+              restoreTaskMutation.mutate(deletedTaskRef.current);
+            }
+          },
+        },
       });
     } catch (error) {
       logError("Error deleting task", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao excluir tarefa",
-        description: "Tente novamente mais tarde."
+      // Rollback on error
+      queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
+      toast.error("Erro ao excluir tarefa", {
+        description: "Tente novamente mais tarde.",
+        duration: 5000,
       });
     }
+  };
+
+  const handleStatusChange = (taskId: string, newStatus: string) => {
+    updateStatusMutation.mutate({ taskId, newStatus });
   };
 
   const loading = tasksLoading;
 
   const isTaskOverdue = (task: Task) => checkTaskOverdue(task);
 
+  // Use debounced search for filtering
   const filteredTasks = tasks.filter(task => {
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
     const matchesEnvironment = 
@@ -206,9 +308,9 @@ const Dashboard = () => {
     const matchesGroupWork = groupWorkFilter === null || task.is_group_work === groupWorkFilter;
     const matchesOverdue = !overdueFilter || isTaskOverdue(task);
     const matchesSearch = 
-      searchQuery === "" || 
-      task.subject_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      debouncedSearch === "" || 
+      task.subject_name.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
+      (task.description && task.description.toLowerCase().includes(debouncedSearch.toLowerCase()));
     
     return matchesStatus && matchesEnvironment && matchesSubject && matchesGroupWork && matchesOverdue && matchesSearch;
   }).sort((a, b) => {
@@ -263,12 +365,18 @@ const Dashboard = () => {
   const overdueCount = tasks.filter(isTaskOverdue).length;
 
   if (authLoading) {
-    return <LoadingOverlay isLoading={true} message="Verificando autenticação..." />;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-background flex-1">
-      <LoadingOverlay isLoading={loading} message="Carregando tarefas..." />
       <Navbar />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
@@ -305,7 +413,7 @@ const Dashboard = () => {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-4" align="end">
+              <PopoverContent className="w-80 p-4 bg-popover" align="end">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium">Filtros Avançados</h4>
@@ -473,19 +581,13 @@ const Dashboard = () => {
           )}
         </div>
 
-        {filteredTasks.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">
-              {activeFiltersCount > 0 || searchQuery 
-                ? "Nenhuma tarefa encontrada com os filtros aplicados." 
-                : "Nenhuma tarefa encontrada. Crie sua primeira tarefa!"}
-            </p>
-            {(activeFiltersCount > 0 || searchQuery) && (
-              <Button variant="outline" className="mt-4" onClick={clearAllFilters}>
-                Limpar filtros
-              </Button>
-            )}
-          </div>
+        {/* Content */}
+        {loading ? (
+          <DashboardSkeleton viewMode={viewMode} />
+        ) : tasks.length === 0 ? (
+          <EmptyState type="tasks" />
+        ) : filteredTasks.length === 0 ? (
+          <EmptyState type="filtered" onClearFilters={clearAllFilters} />
         ) : viewMode === "list" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTasks.map(task => (
@@ -497,16 +599,18 @@ const Dashboard = () => {
                 dueDate={task.due_date} 
                 isGroupWork={task.is_group_work} 
                 status={task.status} 
-                checklist={task.checklist} 
-                onDelete={handleDeleteTask} 
+                checklist={task.checklist}
+                availableStatuses={availableStatuses}
+                onDelete={handleDeleteTask}
+                onStatusChange={handleStatusChange}
               />
             ))}
           </div>
         ) : (
-          /* Kanban Board View */
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          /* Kanban Board View - Mobile optimized with snap scroll */
+          <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto snap-x snap-mandatory touch-pan-x pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
             {/* Coluna A Fazer */}
-            <div className="bg-muted/50 rounded-lg p-4">
+            <div className="bg-muted/50 rounded-lg p-4 min-w-[85vw] md:min-w-0 snap-center flex-shrink-0">
               <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-yellow-500" />
                 A Fazer
@@ -535,8 +639,10 @@ const Dashboard = () => {
                         dueDate={task.due_date} 
                         isGroupWork={task.is_group_work} 
                         status={task.status} 
-                        checklist={task.checklist} 
-                        onDelete={handleDeleteTask} 
+                        checklist={task.checklist}
+                        availableStatuses={availableStatuses}
+                        onDelete={handleDeleteTask}
+                        onStatusChange={handleStatusChange}
                       />
                     ))}
                 </div>
@@ -544,7 +650,7 @@ const Dashboard = () => {
             </div>
 
             {/* Coluna Em Progresso */}
-            <div className="bg-muted/50 rounded-lg p-4">
+            <div className="bg-muted/50 rounded-lg p-4 min-w-[85vw] md:min-w-0 snap-center flex-shrink-0">
               <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-blue-500" />
                 Em Progresso
@@ -571,8 +677,10 @@ const Dashboard = () => {
                         dueDate={task.due_date} 
                         isGroupWork={task.is_group_work} 
                         status={task.status} 
-                        checklist={task.checklist} 
-                        onDelete={handleDeleteTask} 
+                        checklist={task.checklist}
+                        availableStatuses={availableStatuses}
+                        onDelete={handleDeleteTask}
+                        onStatusChange={handleStatusChange}
                       />
                     ))}
                 </div>
@@ -580,7 +688,7 @@ const Dashboard = () => {
             </div>
 
             {/* Coluna Concluído */}
-            <div className="bg-muted/50 rounded-lg p-4">
+            <div className="bg-muted/50 rounded-lg p-4 min-w-[85vw] md:min-w-0 snap-center flex-shrink-0">
               <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-green-500" />
                 Concluído
@@ -601,8 +709,10 @@ const Dashboard = () => {
                         dueDate={task.due_date} 
                         isGroupWork={task.is_group_work} 
                         status={task.status} 
-                        checklist={task.checklist} 
-                        onDelete={handleDeleteTask} 
+                        checklist={task.checklist}
+                        availableStatuses={availableStatuses}
+                        onDelete={handleDeleteTask}
+                        onStatusChange={handleStatusChange}
                       />
                     ))}
                 </div>
