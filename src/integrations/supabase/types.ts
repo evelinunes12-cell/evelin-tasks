@@ -463,6 +463,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_overdue_tasks: { Args: never; Returns: undefined }
+      check_upcoming_tasks: { Args: never; Returns: undefined }
       has_environment_permission: {
         Args: {
           _environment_id: string
