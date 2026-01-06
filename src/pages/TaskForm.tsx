@@ -347,9 +347,41 @@ const TaskForm = () => {
     }
   };
 
+  // Allowed file types for uploads
+  const ALLOWED_FILE_TYPES = ['image/', 'application/pdf', 'application/vnd.', 'text/', 'application/msword', 'application/zip'];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFiles(Array.from(e.target.files));
+      const selectedFiles = Array.from(e.target.files);
+      const validFiles: File[] = [];
+      
+      for (const file of selectedFiles) {
+        // Validate file type
+        const isAllowedType = ALLOWED_FILE_TYPES.some(type => file.type.startsWith(type));
+        if (!isAllowedType) {
+          toast({
+            variant: "destructive",
+            title: "Tipo de arquivo não permitido",
+            description: `O arquivo "${file.name}" não é um tipo permitido.`,
+          });
+          continue;
+        }
+        
+        // Validate file size
+        if (file.size > MAX_FILE_SIZE) {
+          toast({
+            variant: "destructive",
+            title: "Arquivo muito grande",
+            description: `O arquivo "${file.name}" excede o limite de 10MB.`,
+          });
+          continue;
+        }
+        
+        validFiles.push(file);
+      }
+      
+      setFiles(validFiles);
     }
   };
 
@@ -358,11 +390,18 @@ const TaskForm = () => {
   };
 
   const addLink = () => {
-    if (newLinkName && newLinkUrl) {
-      setLinks([...links, { name: newLinkName, url: newLinkUrl }]);
-      setNewLinkName("");
-      setNewLinkUrl("");
+    const validation = linkSchema.safeParse({ name: newLinkName, url: newLinkUrl });
+    if (!validation.success) {
+      toast({
+        variant: "destructive",
+        title: "Link inválido",
+        description: validation.error.errors[0]?.message || "Verifique os dados do link.",
+      });
+      return;
     }
+    setLinks([...links, { name: validation.data.name, url: validation.data.url }]);
+    setNewLinkName("");
+    setNewLinkUrl("");
   };
 
   const removeLink = (index: number) => {
@@ -518,32 +557,34 @@ const TaskForm = () => {
     setLoading(true);
 
     try {
-      // Validações
-      if (!subjectName.trim()) {
+      // Validate form data using Zod schema
+      const validation = taskFormSchema.safeParse({
+        subject_name: subjectName,
+        description: description || undefined,
+        google_docs_link: googleDocsLink || undefined,
+        canva_link: canvaLink || undefined,
+        group_members: groupMembers || undefined,
+        status,
+      });
+
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
         toast({
-          title: "Campo obrigatório",
-          description: "Por favor, selecione uma disciplina.",
           variant: "destructive",
+          title: "Dados inválidos",
+          description: firstError?.message || "Verifique os campos do formulário.",
         });
         setLoading(false);
         return;
       }
 
-      if (!status.trim()) {
-        toast({
-          title: "Campo obrigatório",
-          description: "Por favor, selecione um status.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
+      const validatedData = validation.data;
 
       // Garanta que a disciplina existe na tabela subjects (only for personal tasks)
-      await ensureSubjectExists(subjectName);
+      await ensureSubjectExists(validatedData.subject_name);
       
       // Garante que o status existe na tabela task_statuses (only for personal tasks)
-      await ensureStatusExists(status);
+      await ensureStatusExists(validatedData.status);
 
       // Corrige o fuso horário local antes de salvar no Supabase
       let localDueDate = null;
@@ -554,14 +595,14 @@ const TaskForm = () => {
       }
 
       const taskData = {
-        subject_name: subjectName,
-        description: description || null,
+        subject_name: validatedData.subject_name,
+        description: validatedData.description || null,
         due_date: localDueDate,
         is_group_work: isGroupWork,
-        group_members: isGroupWork ? groupMembers : null,
-        google_docs_link: googleDocsLink || null,
-        canva_link: canvaLink || null,
-        status,
+        group_members: isGroupWork ? (validatedData.group_members || null) : null,
+        google_docs_link: validatedData.google_docs_link || null,
+        canva_link: validatedData.canva_link || null,
+        status: validatedData.status,
         user_id: user!.id,
         checklist: checklist as any,
         environment_id: environmentId,
