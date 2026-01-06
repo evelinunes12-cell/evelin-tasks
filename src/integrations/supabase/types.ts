@@ -465,6 +465,7 @@ export type Database = {
     Functions: {
       check_overdue_tasks: { Args: never; Returns: undefined }
       check_upcoming_tasks: { Args: never; Returns: undefined }
+      get_user_id_by_email: { Args: { email_input: string }; Returns: string }
       has_environment_permission: {
         Args: {
           _environment_id: string
