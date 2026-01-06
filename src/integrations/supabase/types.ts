@@ -463,6 +463,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_task_attachment: {
+        Args: { file_path: string; requesting_user_id: string }
+        Returns: boolean
+      }
       check_overdue_tasks: { Args: never; Returns: undefined }
       check_upcoming_tasks: { Args: never; Returns: undefined }
       get_user_id_by_email: { Args: { email_input: string }; Returns: string }
