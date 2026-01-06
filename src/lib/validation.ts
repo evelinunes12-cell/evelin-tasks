@@ -12,6 +12,9 @@ const nonEmptyString = (maxLength: number, fieldName: string) =>
     .min(1, { message: `${fieldName} é obrigatório` })
     .max(maxLength, { message: `${fieldName} deve ter no máximo ${maxLength} caracteres` });
 
+// Safe URL protocols to prevent XSS attacks via javascript: or data: URLs
+const SAFE_URL_PROTOCOLS = ['http:', 'https:'];
+
 const optionalUrl = z
   .string()
   .trim()
@@ -19,13 +22,13 @@ const optionalUrl = z
     (val) => {
       if (!val || val === '') return true;
       try {
-        new URL(val);
-        return true;
+        const url = new URL(val);
+        return SAFE_URL_PROTOCOLS.includes(url.protocol);
       } catch {
         return false;
       }
     },
-    { message: 'URL inválida' }
+    { message: 'URL deve começar com http:// ou https://' }
   )
   .optional()
   .or(z.literal(''));
@@ -74,7 +77,17 @@ export const checklistItemSchema = z.object({
 // Link attachment schema
 export const linkSchema = z.object({
   name: nonEmptyString(255, 'Nome do link'),
-  url: z.string().trim().url({ message: 'URL inválida' }),
+  url: z.string().trim().url({ message: 'URL inválida' }).refine(
+    (val) => {
+      try {
+        const url = new URL(val);
+        return SAFE_URL_PROTOCOLS.includes(url.protocol);
+      } catch {
+        return false;
+      }
+    },
+    { message: 'Link deve ser HTTP ou HTTPS' }
+  ),
 });
 
 // Task step schema
