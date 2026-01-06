@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { X, Plus, Mail, Users, BookOpen, ListTodo, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { logError } from "@/lib/logger";
+import { environmentFormSchema, memberSchema, subjectStatusSchema } from "@/lib/validation";
 import {
   fetchEnvironmentSubjects,
   fetchEnvironmentStatuses,
@@ -96,7 +98,7 @@ const EnvironmentForm = () => {
       const statusesData = await fetchEnvironmentStatuses(id!);
       setStatuses(statusesData);
     } catch (error) {
-      console.error("Error fetching environment:", error);
+      logError("Error fetching environment", error);
       toast.error("Erro ao carregar ambiente");
     } finally {
       setLoading(false);
@@ -104,8 +106,14 @@ const EnvironmentForm = () => {
   };
 
   const handleAddMember = () => {
-    if (!newMemberEmail || members.some(m => m.email === newMemberEmail) || newMemberPermissions.length === 0) {
-      toast.error("Verifique o e-mail e permissões");
+    // Validate member input
+    const validation = memberSchema.safeParse({ email: newMemberEmail, permissions: newMemberPermissions });
+    if (!validation.success) {
+      toast.error(validation.error.errors[0]?.message || "Dados inválidos");
+      return;
+    }
+    if (members.some(m => m.email === newMemberEmail)) {
+      toast.error("Este e-mail já foi adicionado");
       return;
     }
     setMembers([...members, { email: newMemberEmail, permissions: newMemberPermissions }]);
@@ -120,7 +128,12 @@ const EnvironmentForm = () => {
   };
 
   const handleAddSubject = async () => {
-    if (!newSubjectName.trim()) return;
+    // Validate subject input
+    const validation = subjectStatusSchema.safeParse({ name: newSubjectName, color: newSubjectColor });
+    if (!validation.success) {
+      toast.error(validation.error.errors[0]?.message || "Dados inválidos");
+      return;
+    }
     if (!isNewEnvironment) {
       try {
         const newSubject = await createEnvironmentSubject(id!, newSubjectName, newSubjectColor);
@@ -142,7 +155,12 @@ const EnvironmentForm = () => {
   };
 
   const handleAddStatus = async () => {
-    if (!newStatusName.trim()) return;
+    // Validate status input
+    const validation = subjectStatusSchema.safeParse({ name: newStatusName, color: newStatusColor });
+    if (!validation.success) {
+      toast.error(validation.error.errors[0]?.message || "Dados inválidos");
+      return;
+    }
     if (!isNewEnvironment) {
       try {
         const newStatus = await createEnvironmentStatus(id!, newStatusName, newStatusColor);
@@ -165,12 +183,20 @@ const EnvironmentForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.id || !environmentName.trim()) { toast.error("Preencha o nome"); return; }
+    
+    // Validate environment form
+    const validation = environmentFormSchema.safeParse({ environment_name: environmentName, description });
+    if (!validation.success) {
+      toast.error(validation.error.errors[0]?.message || "Dados inválidos");
+      return;
+    }
+    
+    if (!user?.id) { toast.error("Usuário não autenticado"); return; }
 
     try {
       setLoading(true);
       if (isNewEnvironment) {
-        const { data: envData, error } = await supabase.from("shared_environments").insert({ environment_name: environmentName, description: description || null, owner_id: user.id }).select().single();
+        const { data: envData, error } = await supabase.from("shared_environments").insert({ environment_name: validation.data.environment_name, description: validation.data.description || null, owner_id: user.id }).select().single();
         if (error) throw error;
 
         if (members.length > 0) {
@@ -182,7 +208,7 @@ const EnvironmentForm = () => {
         toast.success("Ambiente criado!");
         navigate(`/environment/${envData.id}`);
       } else {
-        await supabase.from("shared_environments").update({ environment_name: environmentName, description: description || null }).eq("id", id);
+        await supabase.from("shared_environments").update({ environment_name: validation.data.environment_name, description: validation.data.description || null }).eq("id", id);
 
         const { data: existingMembers } = await supabase.from("environment_members").select("email").eq("environment_id", id);
         const existingEmails = existingMembers?.map(m => m.email) || [];
@@ -195,7 +221,7 @@ const EnvironmentForm = () => {
         toast.success("Ambiente atualizado!");
         navigate(`/environment/${id}`);
       }
-    } catch (error) { console.error(error); toast.error("Erro ao salvar"); } finally { setLoading(false); }
+    } catch (error) { logError("Error saving environment", error); toast.error("Erro ao salvar"); } finally { setLoading(false); }
   };
 
   if (authLoading || !user) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Carregando...</p></div>;

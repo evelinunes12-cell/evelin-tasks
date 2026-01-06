@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Plus, Users, Crown } from "lucide-react";
 import { toast } from "sonner";
+import { logError } from "@/lib/logger";
 
 interface Environment {
   id: string;
@@ -73,8 +74,8 @@ const SharedEnvironments = () => {
       });
 
       setEnvironments(environmentsWithCounts);
-    } catch (error: any) {
-      console.error("Error fetching environments:", error);
+    } catch (error) {
+      logError("Error fetching environments", error);
       toast.error("Erro ao carregar ambientes");
     } finally {
       setLoading(false);

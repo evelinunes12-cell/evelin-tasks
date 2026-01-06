@@ -10,6 +10,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Loader2, Upload } from "lucide-react";
+import { logError } from "@/lib/logger";
+import { profileSchema, passwordSchema } from "@/lib/validation";
 
 export default function Settings() {
   const { user, loading: authLoading } = useAuth();
@@ -51,25 +53,33 @@ export default function Settings() {
         setProfile(data);
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      logError("Error fetching profile", error);
       toast.error("Erro ao carregar perfil");
     }
   };
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate input
+    const validation = profileSchema.safeParse({ full_name: profile.full_name });
+    if (!validation.success) {
+      toast.error(validation.error.errors[0]?.message || "Dados inválidos");
+      return;
+    }
+    
     setLoading(true);
 
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: profile.full_name })
+        .update({ full_name: validation.data.full_name })
         .eq("id", user?.id);
 
       if (error) throw error;
       toast.success("Perfil atualizado com sucesso!");
     } catch (error) {
-      console.error("Error updating profile:", error);
+      logError("Error updating profile", error);
       toast.error("Erro ao atualizar perfil");
     } finally {
       setLoading(false);
@@ -84,18 +94,10 @@ export default function Settings() {
       return;
     }
 
-    if (passwords.newPassword.length < 8) {
-      toast.error("A senha deve ter pelo menos 8 caracteres");
-      return;
-    }
-
-    const hasUpperCase = /[A-Z]/.test(passwords.newPassword);
-    const hasLowerCase = /[a-z]/.test(passwords.newPassword);
-    const hasNumbers = /\d/.test(passwords.newPassword);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(passwords.newPassword);
-
-    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
-      toast.error("A senha deve conter letras maiúsculas, minúsculas, números e caracteres especiais");
+    // Validate password with schema
+    const validation = passwordSchema.safeParse(passwords.newPassword);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0]?.message || "Senha inválida");
       return;
     }
 
@@ -110,7 +112,7 @@ export default function Settings() {
       toast.success("Senha atualizada com sucesso!");
       setPasswords({ newPassword: "", confirmPassword: "" });
     } catch (error) {
-      console.error("Error updating password:", error);
+      logError("Error updating password", error);
       toast.error("Erro ao atualizar senha");
     } finally {
       setLoading(false);
@@ -171,7 +173,7 @@ export default function Settings() {
       setProfile({ ...profile, avatar_url: publicUrl });
       toast.success("Foto de perfil atualizada!");
     } catch (error) {
-      console.error("Error uploading avatar:", error);
+      logError("Error uploading avatar", error);
       toast.error("Erro ao fazer upload da foto");
     } finally {
       setUploading(false);

@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Search, Filter, X, LayoutGrid, Columns } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { logError } from "@/lib/logger";
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -182,7 +183,7 @@ const Dashboard = () => {
         description: "A tarefa foi removida com sucesso."
       });
     } catch (error) {
-      console.error("Error deleting task:", error);
+      logError("Error deleting task", error);
       toast({
         variant: "destructive",
         title: "Erro ao excluir tarefa",
