@@ -22,6 +22,8 @@ import TaskStepForm, { TaskStep } from "@/components/TaskStepForm";
 import { Separator } from "@/components/ui/separator";
 import ChecklistManager, { ChecklistItem } from "@/components/ChecklistManager";
 import { fetchEnvironmentSubjects, fetchEnvironmentStatuses } from "@/services/environmentData";
+import { logError } from "@/lib/logger";
+import { taskFormSchema, linkSchema } from "@/lib/validation";
 
 const TaskForm = () => {
   const { id } = useParams();
@@ -126,7 +128,7 @@ const TaskForm = () => {
       const statuses = await fetchEnvironmentStatuses(envId);
       setExistingStatuses(statuses.map(s => ({ name: s.name, color: s.color })));
     } catch (error) {
-      console.error("Error fetching environment data:", error);
+      logError("Error fetching environment data", error);
       // Fallback to user's personal subjects/statuses
       fetchExistingSubjects();
       fetchExistingStatuses();
@@ -145,7 +147,7 @@ const TaskForm = () => {
       const subjectNames = data.map(subject => subject.name);
       setExistingSubjects(subjectNames);
     } catch (error) {
-      console.error("Error fetching subjects:", error);
+      logError("Error fetching subjects", error);
     }
   };
 
@@ -160,7 +162,7 @@ const TaskForm = () => {
 
       setExistingStatuses(data || []);
     } catch (error) {
-      console.error("Error fetching statuses:", error);
+      logError("Error fetching statuses", error);
     }
   };
 
@@ -175,7 +177,7 @@ const TaskForm = () => {
 
       setEnvironments(data || []);
     } catch (error) {
-      console.error("Error fetching environments:", error);
+      logError("Error fetching environments", error);
     }
   };
 
@@ -203,7 +205,7 @@ const TaskForm = () => {
           });
       }
     } catch (error) {
-      console.error("Error ensuring subject exists:", error);
+      logError("Error ensuring subject exists", error);
     }
   };
 
@@ -231,7 +233,7 @@ const TaskForm = () => {
           });
       }
     } catch (error) {
-      console.error("Error ensuring status exists:", error);
+      logError("Error ensuring status exists", error);
     }
   };
 
@@ -336,7 +338,7 @@ const TaskForm = () => {
         setSteps(formattedSteps);
       }
     } catch (error) {
-      console.error("Error fetching task:", error);
+      logError("Error fetching task", error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar tarefa",
@@ -414,7 +416,7 @@ const TaskForm = () => {
         if (dbError) throw dbError;
       }
     } catch (error) {
-      console.error("Error uploading files:", error);
+      logError("Error uploading files", error);
       throw error;
     } finally {
       setUploading(false);
@@ -506,7 +508,7 @@ const TaskForm = () => {
         }
       }
     } catch (error) {
-      console.error("Error saving steps:", error);
+      logError("Error saving steps", error);
       throw error;
     }
   };
@@ -618,7 +620,7 @@ const TaskForm = () => {
         navigate("/dashboard");
       }
     } catch (error) {
-      console.error("Error saving task:", error);
+      logError("Error saving task", error);
       toast({
         variant: "destructive",
         title: "Erro ao salvar tarefa",

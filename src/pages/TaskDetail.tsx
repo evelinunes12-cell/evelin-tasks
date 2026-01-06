@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { logError } from "@/lib/logger";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -99,7 +100,7 @@ const TaskDetail = () => {
       if (error) throw error;
       setTask(data as unknown as Task);
     } catch (error) {
-      console.error("Error fetching task:", error);
+      logError("Error fetching task", error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar tarefa",
@@ -120,7 +121,7 @@ const TaskDetail = () => {
       if (error) throw error;
       setAttachments(data || []);
     } catch (error) {
-      console.error("Error fetching attachments:", error);
+      logError("Error fetching attachments", error);
     }
   };
 
@@ -152,7 +153,7 @@ const TaskDetail = () => {
         setStepAttachments(attachmentsMap);
       }
     } catch (error) {
-      console.error("Error fetching steps:", error);
+      logError("Error fetching steps", error);
     }
   };
 
@@ -178,7 +179,7 @@ const TaskDetail = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading file:", error);
+      logError("Error downloading file", error);
       toast({
         variant: "destructive",
         title: "Erro ao baixar arquivo",
@@ -218,7 +219,7 @@ const TaskDetail = () => {
         description: "O anexo foi removido com sucesso.",
       });
     } catch (error) {
-      console.error("Error deleting attachment:", error);
+      logError("Error deleting attachment", error);
       toast({
         variant: "destructive",
         title: "Erro ao deletar anexo",
@@ -245,7 +246,7 @@ const TaskDetail = () => {
 
       setTask({ ...task, checklist: updatedChecklist });
     } catch (error) {
-      console.error("Error updating checklist:", error);
+      logError("Error updating checklist", error);
       toast({
         variant: "destructive",
         title: "Erro ao atualizar checklist",

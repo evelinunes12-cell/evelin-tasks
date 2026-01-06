@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Plus, Users, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { logError } from "@/lib/logger";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -102,8 +103,8 @@ const EnvironmentDetail = () => {
 
       if (membersError) throw membersError;
       setMembers(membersData || []);
-    } catch (error: any) {
-      console.error("Error fetching environment data:", error);
+    } catch (error) {
+      logError("Error fetching environment data", error);
       toast.error("Erro ao carregar dados do ambiente");
     } finally {
       setLoading(false);
@@ -118,8 +119,8 @@ const EnvironmentDetail = () => {
 
       setTasks(tasks.filter((t) => t.id !== taskId));
       toast.success("Tarefa excluída com sucesso!");
-    } catch (error: any) {
-      console.error("Error deleting task:", error);
+    } catch (error) {
+      logError("Error deleting task", error);
       toast.error("Erro ao excluir tarefa");
     }
   };
@@ -135,8 +136,8 @@ const EnvironmentDetail = () => {
 
       toast.success("Ambiente excluído com sucesso!");
       navigate("/shared-environments");
-    } catch (error: any) {
-      console.error("Error deleting environment:", error);
+    } catch (error) {
+      logError("Error deleting environment", error);
       toast.error("Erro ao excluir ambiente");
     }
   };
@@ -152,8 +153,8 @@ const EnvironmentDetail = () => {
 
       setMembers(members.filter((m) => m.id !== memberId));
       toast.success("Membro removido com sucesso!");
-    } catch (error: any) {
-      console.error("Error removing member:", error);
+    } catch (error) {
+      logError("Error removing member", error);
       toast.error("Erro ao remover membro");
     }
   };
