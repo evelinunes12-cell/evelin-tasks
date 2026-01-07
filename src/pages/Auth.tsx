@@ -4,9 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, ArrowLeft } from "lucide-react";
+import { Mountain, Zap, Target, ArrowLeft } from "lucide-react";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
@@ -23,7 +22,6 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is coming from password reset email
     const resetMode = searchParams.get("mode");
     if (resetMode === "reset") {
       setMode("reset");
@@ -54,7 +52,7 @@ const Auth = () => {
         } else {
           toast({
             title: "Login realizado com sucesso!",
-            description: "Bem-vindo de volta.",
+            description: "Bem-vindo de volta ao Zenit.",
           });
           navigate("/dashboard");
         }
@@ -81,7 +79,7 @@ const Auth = () => {
         } else {
           toast({
             title: "Conta criada com sucesso!",
-            description: "Você já pode fazer login.",
+            description: "Bem-vindo ao Zenit!",
           });
           navigate("/dashboard");
         }
@@ -148,10 +146,10 @@ const Auth = () => {
 
   const getDescription = () => {
     switch (mode) {
-      case "login": return "Entre com suas credenciais para acessar suas tarefas";
-      case "signup": return "Preencha os dados para criar sua conta";
-      case "forgot": return "Digite seu email para receber o link de recuperação";
-      case "reset": return "Digite sua nova senha";
+      case "login": return "Entre para gerenciar seus projetos e tarefas.";
+      case "signup": return "Crie sua conta e eleve sua produtividade.";
+      case "forgot": return "Digite seu email para receber o link de recuperação.";
+      case "reset": return "Digite sua nova senha.";
     }
   };
 
@@ -166,23 +164,67 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary to-background p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 rounded-full bg-primary/10">
-              <BookOpen className="w-8 h-8 text-primary" />
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Lado Esquerdo: Marca e Benefícios */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary to-primary-foreground/10 p-12 flex-col justify-between text-primary-foreground">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary-foreground/20 rounded-xl">
+            <Mountain className="w-8 h-8" />
+          </div>
+          <span className="text-2xl font-bold tracking-tight">Zenit</span>
+        </div>
+
+        <div className="space-y-8">
+          <div className="space-y-4">
+            <h1 className="text-4xl xl:text-5xl font-bold leading-tight">
+              Eleve seu foco.
+              <br />
+              Alcance o Zenit.
+            </h1>
+            
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center gap-4">
+                <div className="p-2 bg-primary-foreground/20 rounded-lg">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <p className="text-lg opacity-90">Fluxo de trabalho otimizado e veloz</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="p-2 bg-primary-foreground/20 rounded-lg">
+                  <Target className="w-5 h-5" />
+                </div>
+                <p className="text-lg opacity-90">Organize tarefas e atinja objetivos</p>
+              </div>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">
-            {getTitle()}
-          </CardTitle>
-          <CardDescription>
-            {getDescription()}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        </div>
+
+        <p className="text-sm opacity-70">
+          © {new Date().getFullYear()} Zenit Tasks. O ponto máximo da sua produtividade.
+        </p>
+      </div>
+
+      {/* Lado Direito: Formulário */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-background">
+        <div className="w-full max-w-md space-y-8">
+          {/* Logo mobile */}
+          <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <Mountain className="w-8 h-8 text-primary" />
+            </div>
+            <span className="text-2xl font-bold text-foreground">Zenit</span>
+          </div>
+
+          <div className="space-y-2 text-center lg:text-left">
+            <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
+              {getTitle()}
+            </h2>
+            <p className="text-muted-foreground">
+              {getDescription()}
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             {mode === "signup" && (
               <div className="space-y-2">
                 <Label htmlFor="fullName">Nome Completo</Label>
@@ -193,6 +235,7 @@ const Auth = () => {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
+                  className="h-12 rounded-xl"
                 />
               </div>
             )}
@@ -207,6 +250,7 @@ const Auth = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  className="h-12 rounded-xl"
                 />
               </div>
             )}
@@ -224,6 +268,7 @@ const Auth = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
+                  className="h-12 rounded-xl"
                 />
               </div>
             )}
@@ -239,16 +284,21 @@ const Auth = () => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   minLength={6}
+                  className="h-12 rounded-xl"
                 />
               </div>
             )}
             
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="w-full h-12 rounded-xl text-base font-semibold" 
+              disabled={loading}
+            >
               {getButtonText()}
             </Button>
           </form>
           
-          <div className="mt-4 text-center text-sm space-y-2">
+          <div className="text-center text-sm space-y-3">
             {mode === "login" && (
               <>
                 <button
@@ -261,7 +311,7 @@ const Auth = () => {
                 <button
                   type="button"
                   onClick={() => setMode("signup")}
-                  className="text-primary hover:underline block w-full"
+                  className="text-primary hover:underline block w-full font-medium"
                 >
                   Não tem uma conta? Cadastre-se
                 </button>
@@ -272,7 +322,7 @@ const Auth = () => {
               <button
                 type="button"
                 onClick={() => setMode("login")}
-                className="text-primary hover:underline"
+                className="text-primary hover:underline font-medium"
               >
                 Já tem uma conta? Entre
               </button>
@@ -282,15 +332,15 @@ const Auth = () => {
               <button
                 type="button"
                 onClick={() => setMode("login")}
-                className="text-primary hover:underline inline-flex items-center gap-1"
+                className="text-primary hover:underline inline-flex items-center gap-1 font-medium"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Voltar para login
               </button>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LogOut, Plus, ArrowLeft } from "lucide-react";
+import { Mountain, LogOut, Plus, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "./NotificationBell";
 
@@ -23,21 +23,21 @@ const Navbar = ({ minimal = false }: NavbarProps) => {
             </Button>
           ) : (
             <>
-              <div className="p-2 rounded-lg bg-primary/10">
-                <BookOpen className="w-6 h-6 text-primary" />
+              <div className="p-2 rounded-xl bg-primary/10">
+                <Mountain className="w-6 h-6 text-primary" />
               </div>
-              <h1 className="text-xl font-bold text-foreground">Gerenciador de Tarefas</h1>
+              <h1 className="text-xl font-bold text-foreground">Zenit</h1>
             </>
           )}
         </div>
         {!minimal && (
           <div className="flex items-center gap-3">
             <NotificationBell />
-            <Button onClick={() => navigate("/task/new")} size="lg" className="gap-2">
+            <Button onClick={() => navigate("/task/new")} size="lg" className="gap-2 rounded-xl">
               <Plus className="w-5 h-5" />
               Nova Tarefa
             </Button>
-            <Button variant="outline" size="lg" onClick={signOut} className="gap-2">
+            <Button variant="outline" size="lg" onClick={signOut} className="gap-2 rounded-xl">
               <LogOut className="w-5 h-5" />
               Sair
             </Button>
