@@ -16,6 +16,7 @@ import SharedEnvironments from "./pages/SharedEnvironments";
 import EnvironmentForm from "./pages/EnvironmentForm";
 import EnvironmentDetail from "./pages/EnvironmentDetail";
 import NotFound from "./pages/NotFound";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route
             path="/dashboard"
             element={
