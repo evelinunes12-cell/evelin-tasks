@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { linkSchema } from "@/lib/validation";
 
 export interface Attachment {
   id: string;
@@ -17,6 +18,50 @@ export interface LinkData {
   url: string;
 }
 
+// File upload validation constants
+const ALLOWED_FILE_TYPES = [
+  // Documents
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'text/plain',
+  'text/csv',
+  // Images
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+  // Archives
+  'application/zip',
+  'application/x-rar-compressed',
+];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_NAME_LENGTH = 255;
+
+const validateFile = (file: File): void => {
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error('Arquivo muito grande. Tamanho máximo: 10MB');
+  }
+  if (file.name.length > MAX_FILE_NAME_LENGTH) {
+    throw new Error('Nome do arquivo muito longo. Máximo: 255 caracteres');
+  }
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    throw new Error('Tipo de arquivo não permitido');
+  }
+};
+
+const validateLink = (link: LinkData): void => {
+  const validation = linkSchema.safeParse(link);
+  if (!validation.success) {
+    throw new Error(validation.error.errors.map(e => e.message).join(', '));
+  }
+};
+
 // Task Attachments
 export const fetchTaskAttachments = async (taskId: string) => {
   const { data, error } = await supabase
@@ -33,6 +78,9 @@ export const uploadTaskFile = async (
   userId: string,
   file: File
 ) => {
+  // Validate file before upload
+  validateFile(file);
+
   const fileExt = file.name.split(".").pop();
   const fileName = `${Math.random()}.${fileExt}`;
   const filePath = `${userId}/${taskId}/${fileName}`;
@@ -61,6 +109,9 @@ export const saveTaskLink = async (
   taskId: string,
   link: LinkData
 ) => {
+  // Validate link data before saving
+  validateLink(link);
+
   const { error } = await supabase
     .from("task_attachments")
     .insert({
@@ -129,6 +180,9 @@ export const uploadStepFile = async (
   userId: string,
   file: File
 ) => {
+  // Validate file before upload
+  validateFile(file);
+
   const fileExt = file.name.split(".").pop();
   const fileName = `${Math.random()}.${fileExt}`;
   const filePath = `${userId}/${taskId}/steps/${stepId}/${fileName}`;
@@ -157,6 +211,9 @@ export const saveStepLink = async (
   stepId: string,
   link: LinkData
 ) => {
+  // Validate link data before saving
+  validateLink(link);
+
   const { error } = await supabase
     .from("task_step_attachments")
     .insert({

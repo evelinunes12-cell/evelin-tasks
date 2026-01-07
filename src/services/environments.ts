@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { memberSchema } from "@/lib/validation";
 
 export interface Environment {
   id: string;
@@ -17,6 +18,14 @@ export interface EnvironmentMember {
   permissions: ("view" | "create" | "edit" | "delete")[];
   created_at: string;
 }
+
+// Validate member data before database operations
+const validateMember = (email: string, permissions: ("view" | "create" | "edit" | "delete")[]): void => {
+  const validation = memberSchema.safeParse({ email, permissions });
+  if (!validation.success) {
+    throw new Error(validation.error.errors.map(e => e.message).join(', '));
+  }
+};
 
 export const fetchEnvironments = async () => {
   const { data, error } = await supabase
@@ -94,6 +103,9 @@ export const addEnvironmentMember = async (
   email: string,
   permissions: ("view" | "create" | "edit" | "delete")[]
 ) => {
+  // Validate member data before insert
+  validateMember(email, permissions);
+
   const { data, error } = await supabase
     .from("environment_members")
     .insert({
@@ -134,6 +146,11 @@ export const syncEnvironmentMembers = async (
   environmentId: string,
   members: { email: string; permissions: ("view" | "create" | "edit" | "delete")[] }[]
 ) => {
+  // Validate all members before processing
+  for (const member of members) {
+    validateMember(member.email, member.permissions);
+  }
+
   // Get existing members
   const { data: existingMembers } = await supabase
     .from("environment_members")
