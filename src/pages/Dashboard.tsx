@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Task, isTaskOverdue as checkTaskOverdue, parseDueDate } from "@/services/tasks";
@@ -26,6 +27,9 @@ const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  // Check if user needs onboarding
+  useOnboarding();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Ref to store deleted task for undo
