@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, RotateCcw } from "lucide-react";
 import { logError } from "@/lib/logger";
 import { profileSchema, passwordSchema } from "@/lib/validation";
 
@@ -348,7 +349,53 @@ export default function Settings() {
             </form>
           </CardContent>
         </Card>
+
+        {/* Onboarding Section */}
+        <OnboardingResetCard />
       </div>
     </div>
+  );
+}
+
+function OnboardingResetCard() {
+  const navigate = useNavigate();
+  const { isOnboardingCompleted, resetOnboarding } = useOnboarding();
+
+  const handleResetOnboarding = () => {
+    resetOnboarding();
+    toast.success("Onboarding resetado! Redirecionando...");
+    setTimeout(() => {
+      navigate("/onboarding");
+    }, 500);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Tour do Zenit</CardTitle>
+        <CardDescription>
+          Veja novamente a apresentação dos recursos do Zenit
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">
+              {isOnboardingCompleted 
+                ? "Você já completou o tour de boas-vindas." 
+                : "Você ainda não completou o tour."}
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={handleResetOnboarding}
+            className="gap-2"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Ver novamente
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
