@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { subjectStatusSchema } from "@/lib/validation";
 
 export interface Subject {
   id: string;
@@ -8,6 +9,14 @@ export interface Subject {
   created_at: string;
   updated_at: string;
 }
+
+// Validate subject data before database operations
+const validateSubject = (name: string, color?: string | null): void => {
+  const validation = subjectStatusSchema.safeParse({ name, color: color || undefined });
+  if (!validation.success) {
+    throw new Error(validation.error.errors.map(e => e.message).join(', '));
+  }
+};
 
 export const fetchSubjects = async () => {
   const { data, error } = await supabase
@@ -33,6 +42,9 @@ export const ensureSubjectExists = async (
   subjectName: string,
   userId: string
 ) => {
+  // Validate subject name
+  validateSubject(subjectName);
+
   // Check if subject already exists
   const { data: existingSubject } = await supabase
     .from("subjects")
@@ -60,6 +72,9 @@ export const createSubject = async (
   userId: string,
   color?: string
 ) => {
+  // Validate subject data
+  validateSubject(name, color);
+
   const { data, error } = await supabase
     .from("subjects")
     .insert({
@@ -78,6 +93,11 @@ export const updateSubject = async (
   id: string,
   updates: { name?: string; color?: string | null }
 ) => {
+  // Validate if name is being updated
+  if (updates.name) {
+    validateSubject(updates.name, updates.color);
+  }
+
   const { error } = await supabase
     .from("subjects")
     .update(updates)

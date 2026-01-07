@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+import { checklistItemSchema } from "@/lib/validation";
 
 export interface Task {
   id: string;
@@ -49,6 +51,19 @@ export interface TaskFormData {
   environmentId: string | null;
 }
 
+// Validation schema for checklist array
+const checklistArraySchema = z.array(checklistItemSchema);
+
+// Validate checklist data before database operations
+const validateChecklist = (checklist: ChecklistItem[]): ChecklistItem[] => {
+  const validation = checklistArraySchema.safeParse(checklist);
+  if (!validation.success) {
+    throw new Error('Formato de checklist inválido');
+  }
+  // Cast to ChecklistItem[] since we know validation succeeded
+  return validation.data as ChecklistItem[];
+};
+
 // Date helpers
 export const parseDueDate = (dateStr: string): Date => {
   const parts = dateStr.split("-");
@@ -93,6 +108,9 @@ export const createTask = async (
   formData: TaskFormData,
   userId: string
 ) => {
+  // Validate checklist data
+  const validatedChecklist = validateChecklist(formData.checklist);
+
   const taskData = {
     subject_name: formData.subjectName,
     description: formData.description || null,
@@ -103,7 +121,7 @@ export const createTask = async (
     canva_link: formData.canvaLink || null,
     status: formData.status,
     user_id: userId,
-    checklist: formData.checklist as any,
+    checklist: validatedChecklist as unknown as any,
     environment_id: formData.environmentId,
   };
 
@@ -121,6 +139,9 @@ export const updateTask = async (
   id: string,
   formData: TaskFormData
 ) => {
+  // Validate checklist data
+  const validatedChecklist = validateChecklist(formData.checklist);
+
   const taskData = {
     subject_name: formData.subjectName,
     description: formData.description || null,
@@ -130,7 +151,7 @@ export const updateTask = async (
     google_docs_link: formData.googleDocsLink || null,
     canva_link: formData.canvaLink || null,
     status: formData.status,
-    checklist: formData.checklist as any,
+    checklist: validatedChecklist as unknown as any,
     environment_id: formData.environmentId,
   };
 
@@ -155,9 +176,12 @@ export const updateTaskChecklist = async (
   taskId: string,
   checklist: ChecklistItem[]
 ) => {
+  // Validate checklist data before update
+  const validatedChecklist = validateChecklist(checklist);
+
   const { error } = await supabase
     .from("tasks")
-    .update({ checklist: checklist as unknown as any })
+    .update({ checklist: validatedChecklist as unknown as any })
     .eq("id", taskId);
   
   if (error) throw error;
