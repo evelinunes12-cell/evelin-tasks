@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "next-themes";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { 
   Loader2, 
@@ -20,16 +22,21 @@ import {
   Copy, 
   Check, 
   Coffee, 
-  QrCode,
   Rocket,
-  KeyRound
+  KeyRound,
+  Sun,
+  Moon,
+  Monitor
 } from "lucide-react";
 import { logError } from "@/lib/logger";
 import { profileSchema, passwordSchema } from "@/lib/validation";
+import qrCodePix from "@/assets/qrcode-pix.jpeg";
 
 export default function Settings() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profile, setProfile] = useState<{
@@ -45,9 +52,14 @@ export default function Settings() {
   });
   const [copied, setCopied] = useState(false);
 
-  // Dados do Pix
-  const pixKey = "00020126700014br.gov.bcb.pix0123evelin.unes12@gmail.com0221Apoie o Projeto Zenit5204000053039865802BR5925Evelin Cristine De Olivei6009Sao Paulo62290525REC695E7AA18F1543934824326304B1FB";
+  // Dados do Pix - Valor fixo de R$ 5,00
+  const pixKey = "00020126500014br.gov.bcb.pix0111031539872890213Ajude o Zenit52040000530398654045.005802BR5925EVELIN CRISTINE DE OLIVEI6006MACAPA62580520SAN2026010812431328150300017br.gov.bcb.brcode01051.0.063045C5E";
   const beneficiaryName = "Evelin Cristine de Oliveira Nunes";
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (authLoading) return;
@@ -209,7 +221,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
+    <div className="min-h-screen bg-background p-4 md:p-6 flex-1">
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Configurações</h1>
@@ -393,25 +405,60 @@ export default function Settings() {
           <TabsContent value="appearance" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Tema e Visual</CardTitle>
+                <CardTitle>Tema</CardTitle>
                 <CardDescription>
-                  Personalize a experiência do Zenit (Em breve).
+                  Escolha como o Zenit deve aparecer para você.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between p-4 rounded-xl border bg-muted/30">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-full bg-primary/10">
-                      <Palette className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Modo Escuro / Claro</p>
-                      <p className="text-sm text-muted-foreground">
-                        O sistema adapta-se automaticamente ao seu dispositivo.
-                      </p>
-                    </div>
+              <CardContent className="space-y-4">
+                {mounted && (
+                  <div className="grid grid-cols-3 gap-4">
+                    <button
+                      onClick={() => setTheme("light")}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                        theme === "light" 
+                          ? "border-primary bg-primary/5" 
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="p-3 rounded-full bg-amber-100">
+                        <Sun className="h-6 w-6 text-amber-600" />
+                      </div>
+                      <span className="text-sm font-medium">Claro</span>
+                    </button>
+
+                    <button
+                      onClick={() => setTheme("dark")}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                        theme === "dark" 
+                          ? "border-primary bg-primary/5" 
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="p-3 rounded-full bg-slate-800">
+                        <Moon className="h-6 w-6 text-slate-200" />
+                      </div>
+                      <span className="text-sm font-medium">Escuro</span>
+                    </button>
+
+                    <button
+                      onClick={() => setTheme("system")}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                        theme === "system" 
+                          ? "border-primary bg-primary/5" 
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="p-3 rounded-full bg-gradient-to-br from-amber-100 to-slate-800">
+                        <Monitor className="h-6 w-6 text-primary" />
+                      </div>
+                      <span className="text-sm font-medium">Sistema</span>
+                    </button>
                   </div>
-                </div>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  O tema "Sistema" segue automaticamente as preferências do seu dispositivo.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -460,15 +507,19 @@ export default function Settings() {
                   {/* Lado Direito: Pix Card */}
                   <div className="p-4 rounded-xl border bg-card space-y-4">
                     <div className="text-center">
-                      <p className="font-semibold">Pix Copia e Cola</p>
+                      <p className="font-semibold">Pix - Valor Fixo de R$ 5,00</p>
                       <p className="text-xs text-muted-foreground">
-                        Qualquer valor ajuda muito! ❤️
+                        Cada contribuição faz a diferença! ❤️
                       </p>
                     </div>
 
-                    {/* QR Code Placeholder */}
-                    <div className="flex items-center justify-center p-6 bg-muted/50 rounded-lg">
-                      <QrCode className="h-24 w-24 text-muted-foreground/50" />
+                    {/* QR Code */}
+                    <div className="flex items-center justify-center p-4 bg-white rounded-lg">
+                      <img 
+                        src={qrCodePix} 
+                        alt="QR Code Pix para doação de R$ 5,00" 
+                        className="w-40 h-40 object-contain"
+                      />
                     </div>
 
                     <div className="space-y-2">

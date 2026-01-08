@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { ThemeProvider } from "next-themes";
 import { AppSidebar } from "@/components/AppSidebar";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -21,82 +22,84 @@ import Onboarding from "./pages/Onboarding";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route
-            path="/dashboard"
-            element={
-              <SidebarProvider>
-                <div className="flex min-h-screen w-full">
-                  <AppSidebar />
-                  <Dashboard />
-                </div>
-              </SidebarProvider>
-            }
-          />
-          <Route
-            path="/subjects"
-            element={
-              <SidebarProvider>
-                <div className="flex min-h-screen w-full">
-                  <AppSidebar />
-                  <Subjects />
-                </div>
-              </SidebarProvider>
-            }
-          />
-          <Route
-            path="/task-statuses"
-            element={
-              <SidebarProvider>
-                <div className="flex min-h-screen w-full">
-                  <AppSidebar />
-                  <TaskStatuses />
-                </div>
-              </SidebarProvider>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <SidebarProvider>
-                <div className="flex min-h-screen w-full">
-                  <AppSidebar />
-                  <Settings />
-                </div>
-              </SidebarProvider>
-            }
-          />
-          <Route
-            path="/shared-environments"
-            element={
-              <SidebarProvider>
-                <div className="flex min-h-screen w-full">
-                  <AppSidebar />
-                  <SharedEnvironments />
-                </div>
-              </SidebarProvider>
-            }
-          />
-          <Route path="/environment/new" element={<EnvironmentForm />} />
-          <Route path="/environment/:id/edit" element={<EnvironmentForm />} />
-          <Route path="/environment/:id" element={<EnvironmentDetail />} />
-          <Route path="/task/new" element={<TaskForm />} />
-          <Route path="/task/edit/:id" element={<TaskForm />} />
-          <Route path="/task/:id" element={<TaskDetail />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route
+              path="/dashboard"
+              element={
+                <SidebarProvider>
+                  <div className="flex min-h-screen w-full">
+                    <AppSidebar />
+                    <Dashboard />
+                  </div>
+                </SidebarProvider>
+              }
+            />
+            <Route
+              path="/subjects"
+              element={
+                <SidebarProvider>
+                  <div className="flex min-h-screen w-full">
+                    <AppSidebar />
+                    <Subjects />
+                  </div>
+                </SidebarProvider>
+              }
+            />
+            <Route
+              path="/task-statuses"
+              element={
+                <SidebarProvider>
+                  <div className="flex min-h-screen w-full">
+                    <AppSidebar />
+                    <TaskStatuses />
+                  </div>
+                </SidebarProvider>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <SidebarProvider>
+                  <div className="flex min-h-screen w-full">
+                    <AppSidebar />
+                    <Settings />
+                  </div>
+                </SidebarProvider>
+              }
+            />
+            <Route
+              path="/shared-environments"
+              element={
+                <SidebarProvider>
+                  <div className="flex min-h-screen w-full">
+                    <AppSidebar />
+                    <SharedEnvironments />
+                  </div>
+                </SidebarProvider>
+              }
+            />
+            <Route path="/environment/new" element={<EnvironmentForm />} />
+            <Route path="/environment/:id/edit" element={<EnvironmentForm />} />
+            <Route path="/environment/:id" element={<EnvironmentDetail />} />
+            <Route path="/task/new" element={<TaskForm />} />
+            <Route path="/task/edit/:id" element={<TaskForm />} />
+            <Route path="/task/:id" element={<TaskDetail />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;
