@@ -249,47 +249,78 @@ const Dashboard = () => {
     },
   });
 
-  // Verificação de tarefas atrasadas no frontend (mais confiável que pg_cron)
+  // Verificação de tarefas e etapas atrasadas no frontend (mais confiável que pg_cron)
   const checkOverdueTasks = useCallback(async () => {
     if (!user?.id || tasks.length === 0) return;
     
     const today = new Date();
     const lastCheckDate = localStorage.getItem(`zenit_last_overdue_check_${user.id}`);
     
-    // Se já verificou hoje, não faz nada (evita spam)
+    // Evita spam: só roda se ainda não rodou hoje
     if (lastCheckDate && isSameDay(parseISO(lastCheckDate), today)) {
       return;
     }
 
-    const overdueTasks = tasks.filter(t => {
+    // 1. Verifica Tarefas Principais Atrasadas
+    const overdueTasksCount = tasks.filter(t => {
       if (!t.due_date || t.status.toLowerCase().includes("conclu")) return false;
       const dueDate = parseDueDate(t.due_date);
-      // Verifica se venceu ontem ou antes e NÃO é hoje
       return isPast(dueDate) && !isToday(dueDate);
+    }).length;
+
+    // 2. Verifica Etapas (Steps) Atrasadas via checklist
+    let overdueStepsCount = 0;
+    
+    tasks.forEach(task => {
+      // Se a tarefa principal já está concluída, ignoramos as etapas dela
+      if (task.status.toLowerCase().includes("conclu")) return;
+
+      const steps = (task.checklist as any[]) || [];
+      
+      steps.forEach(step => {
+        // Verifica se tem data, se não está completa e se já passou
+        if (step.due_date && !step.completed) {
+          try {
+            const stepDate = parseISO(step.due_date);
+            if (isPast(stepDate) && !isToday(stepDate)) {
+              overdueStepsCount++;
+            }
+          } catch {
+            // Ignora datas inválidas
+          }
+        }
+      });
     });
 
-    if (overdueTasks.length > 0) {
-      const count = overdueTasks.length;
+    // 3. Gera a Notificação (Se houver algo atrasado)
+    if (overdueTasksCount > 0 || overdueStepsCount > 0) {
+      let message = "";
       
-      // Cria a notificação no banco usando service role via edge function não é necessário
-      // pois a RLS bloqueia INSERT direto, mas podemos usar toast local
+      if (overdueTasksCount > 0 && overdueStepsCount > 0) {
+        message = `Você tem ${overdueTasksCount} tarefa(s) e ${overdueStepsCount} etapa(s) atrasada(s).`;
+      } else if (overdueTasksCount > 0) {
+        message = `Você tem ${overdueTasksCount} tarefa(s) atrasada(s).`;
+      } else {
+        message = `Você tem ${overdueStepsCount} etapa(s) pendente(s) que já venceu(ram).`;
+      }
+
+      // Tenta inserir no Banco (pode falhar por RLS, mas o toast local avisa)
       try {
-        // Tenta inserir - pode falhar devido RLS, mas tentamos
         await supabase.from("notifications").insert({
           user_id: user.id,
-          title: "Tarefas Atrasadas ⚠️",
-          message: `Você tem ${count} tarefa(s) pendente(s) que já venceu(ram). Dê uma olhada!`,
+          title: "Atenção aos Prazos ⏰",
+          message: message,
           link: "/dashboard?overdue=true"
         });
       } catch {
-        // Ignora erro de RLS - o toast local já avisa
+        // Ignora erro de RLS
       }
 
       // Salva que já verificou hoje
       localStorage.setItem(`zenit_last_overdue_check_${user.id}`, today.toISOString());
       
-      toast.warning("Atenção aos prazos!", {
-        description: `Você tem ${count} tarefa(s) atrasada(s).`,
+      toast.warning("Prazos Vencidos", {
+        description: message,
         duration: 6000,
         action: {
           label: "Ver",
