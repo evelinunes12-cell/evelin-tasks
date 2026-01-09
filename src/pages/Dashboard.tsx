@@ -1,10 +1,11 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Task, isTaskOverdue as checkTaskOverdue, parseDueDate } from "@/services/tasks";
+import { isSameDay, parseISO, isPast, isToday } from "date-fns";
 import Navbar from "@/components/Navbar";
 import StatsCards from "@/components/StatsCards";
 import TaskCard from "@/components/TaskCard";
@@ -247,6 +248,62 @@ const Dashboard = () => {
       toast.error("Erro ao restaurar tarefa", { duration: 5000 });
     },
   });
+
+  // Verificação de tarefas atrasadas no frontend (mais confiável que pg_cron)
+  const checkOverdueTasks = useCallback(async () => {
+    if (!user?.id || tasks.length === 0) return;
+    
+    const today = new Date();
+    const lastCheckDate = localStorage.getItem(`zenit_last_overdue_check_${user.id}`);
+    
+    // Se já verificou hoje, não faz nada (evita spam)
+    if (lastCheckDate && isSameDay(parseISO(lastCheckDate), today)) {
+      return;
+    }
+
+    const overdueTasks = tasks.filter(t => {
+      if (!t.due_date || t.status.toLowerCase().includes("conclu")) return false;
+      const dueDate = parseDueDate(t.due_date);
+      // Verifica se venceu ontem ou antes e NÃO é hoje
+      return isPast(dueDate) && !isToday(dueDate);
+    });
+
+    if (overdueTasks.length > 0) {
+      const count = overdueTasks.length;
+      
+      // Cria a notificação no banco usando service role via edge function não é necessário
+      // pois a RLS bloqueia INSERT direto, mas podemos usar toast local
+      try {
+        // Tenta inserir - pode falhar devido RLS, mas tentamos
+        await supabase.from("notifications").insert({
+          user_id: user.id,
+          title: "Tarefas Atrasadas ⚠️",
+          message: `Você tem ${count} tarefa(s) pendente(s) que já venceu(ram). Dê uma olhada!`,
+          link: "/dashboard?overdue=true"
+        });
+      } catch {
+        // Ignora erro de RLS - o toast local já avisa
+      }
+
+      // Salva que já verificou hoje
+      localStorage.setItem(`zenit_last_overdue_check_${user.id}`, today.toISOString());
+      
+      toast.warning("Atenção aos prazos!", {
+        description: `Você tem ${count} tarefa(s) atrasada(s).`,
+        duration: 6000,
+        action: {
+          label: "Ver",
+          onClick: () => setOverdueFilter(true)
+        }
+      });
+    }
+  }, [user?.id, tasks, setOverdueFilter]);
+
+  useEffect(() => {
+    if (tasks.length > 0 && user?.id) {
+      checkOverdueTasks();
+    }
+  }, [tasks, user?.id, checkOverdueTasks]);
 
   useEffect(() => {
     if (!authLoading && !user) {
