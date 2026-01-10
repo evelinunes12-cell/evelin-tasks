@@ -34,6 +34,22 @@ interface TaskStepDisplayProps {
 const TaskStepDisplay = ({ steps, stepAttachments, onDownloadAttachment }: TaskStepDisplayProps) => {
   if (steps.length === 0) return null;
 
+  // Função auxiliar para corrigir a visualização da data (compensa fuso horário)
+  const formatDate = (dateString: string) => {
+    if (!dateString) return null;
+    
+    // Cria o objeto data a partir da string salva
+    const date = new Date(dateString);
+    
+    // Pega a diferença de fuso horário do usuário em milissegundos
+    const timeZoneOffset = date.getTimezoneOffset() * 60000;
+    
+    // Adiciona essa diferença para "anular" a conversão do navegador
+    const adjustedDate = new Date(date.getTime() + timeZoneOffset);
+
+    return format(adjustedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+  };
+
   const completedSteps = steps.filter(step => step.status.toLowerCase().includes("conclu")).length;
 
   return (
@@ -76,7 +92,7 @@ const TaskStepDisplay = ({ steps, stepAttachments, onDownloadAttachment }: TaskS
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm">
-                        Data de entrega: {format(new Date(step.due_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                        Data de entrega: {formatDate(step.due_date)}
                       </span>
                     </div>
                   )}
