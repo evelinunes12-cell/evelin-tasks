@@ -42,6 +42,7 @@ const Dashboard = () => {
   const subjectFilter = searchParams.get("subject") || "all";
   const groupWorkFilter = searchParams.get("groupWork") === null ? null : searchParams.get("groupWork") === "true" ? true : searchParams.get("groupWork") === "false" ? false : null;
   const overdueFilter = searchParams.get("overdue") === "true";
+  const dueTodayFilter = searchParams.get("due") === "today";
   const sortBy = searchParams.get("sortBy") || "due_date";
   const viewMode = (searchParams.get("view") as "list" | "board") || "list";
   
@@ -330,11 +331,87 @@ const Dashboard = () => {
     }
   }, [user?.id, tasks, setOverdueFilter]);
 
+  // Verificação de tarefas e etapas que vencem HOJE
+  const checkDueTodayTasks = useCallback(async () => {
+    if (!user?.id || tasks.length === 0) return;
+    
+    const today = new Date();
+    // Chave diferente no localStorage para não misturar com atrasados
+    const lastCheckToday = localStorage.getItem(`zenit_last_today_check_${user.id}`);
+    
+    if (lastCheckToday && isSameDay(parseISO(lastCheckToday), today)) {
+      return;
+    }
+
+    // 1. Conta tarefas que vencem HOJE e não estão concluídas
+    const tasksDueTodayCount = tasks.filter(t => {
+      if (!t.due_date || t.status.toLowerCase().includes("conclu")) return false;
+      const dueDate = parseDueDate(t.due_date);
+      return isToday(dueDate);
+    }).length;
+
+    // 2. Conta etapas que vencem HOJE
+    let stepsDueTodayCount = 0;
+    tasks.forEach(task => {
+      if (task.status.toLowerCase().includes("conclu")) return;
+      const steps = (task.checklist as any[]) || [];
+      steps.forEach(step => {
+        if (step.due_date && !step.completed) {
+          try {
+            const stepDate = parseISO(step.due_date);
+            if (isToday(stepDate)) {
+              stepsDueTodayCount++;
+            }
+          } catch {
+            // Ignora datas inválidas
+          }
+        }
+      });
+    });
+
+    if (tasksDueTodayCount > 0 || stepsDueTodayCount > 0) {
+      let message = "";
+      
+      if (tasksDueTodayCount > 0 && stepsDueTodayCount > 0) {
+        message = `Você tem ${tasksDueTodayCount} tarefa(s) e ${stepsDueTodayCount} etapa(s) para entregar hoje. Força!`;
+      } else if (tasksDueTodayCount > 0) {
+        message = `Você tem ${tasksDueTodayCount} tarefa(s) para entregar hoje. Força!`;
+      } else {
+        message = `Você tem ${stepsDueTodayCount} etapa(s) para concluir hoje. Força!`;
+      }
+
+      // Tenta inserir no Banco
+      try {
+        await supabase.from("notifications").insert({
+          user_id: user.id,
+          title: "Foco no Hoje! 📅",
+          message: message,
+          link: "/dashboard?due=today"
+        });
+      } catch {
+        // Ignora erro de RLS
+      }
+
+      // Salva que já avisou hoje
+      localStorage.setItem(`zenit_last_today_check_${user.id}`, today.toISOString());
+      
+      toast.info("Planejamento do Dia", {
+        description: message,
+        duration: 6000,
+        action: {
+          label: "Ver",
+          onClick: () => setSearchParams(prev => { prev.set("due", "today"); return prev; })
+        }
+      });
+    }
+  }, [user?.id, tasks, setSearchParams]);
+
   useEffect(() => {
     if (tasks.length > 0 && user?.id) {
       checkOverdueTasks();
+      checkDueTodayTasks();
     }
-  }, [tasks, user?.id, checkOverdueTasks]);
+  }, [tasks, user?.id, checkOverdueTasks, checkDueTodayTasks]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -413,6 +490,32 @@ const Dashboard = () => {
     return mainTaskOverdue || hasOverdueStep;
   };
 
+  // Verifica se a tarefa ou alguma etapa vence HOJE
+  const isTaskDueToday = (task: Task) => {
+    // 1. Verifica se a Tarefa Principal vence hoje
+    let mainTaskDueToday = false;
+    if (task.due_date && !task.status.toLowerCase().includes("conclu")) {
+      const dueDate = parseDueDate(task.due_date);
+      mainTaskDueToday = isToday(dueDate);
+    }
+
+    // 2. Verifica se alguma Etapa vence hoje
+    let hasStepDueToday = false;
+    if (task.checklist && Array.isArray(task.checklist)) {
+      hasStepDueToday = task.checklist.some((step: any) => {
+        if (!step.due_date || step.completed) return false;
+        try {
+          const stepDate = parseISO(step.due_date);
+          return isToday(stepDate);
+        } catch {
+          return false;
+        }
+      });
+    }
+
+    return mainTaskDueToday || hasStepDueToday;
+  };
+
   // Use debounced search for filtering
   const filteredTasks = tasks.filter(task => {
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
@@ -423,12 +526,13 @@ const Dashboard = () => {
     const matchesSubject = subjectFilter === "all" || task.subject_name === subjectFilter;
     const matchesGroupWork = groupWorkFilter === null || task.is_group_work === groupWorkFilter;
     const matchesOverdue = !overdueFilter || isTaskOverdue(task);
+    const matchesDueToday = !dueTodayFilter || isTaskDueToday(task);
     const matchesSearch = 
       debouncedSearch === "" || 
       task.subject_name.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
       (task.description && task.description.toLowerCase().includes(debouncedSearch.toLowerCase()));
     
-    return matchesStatus && matchesEnvironment && matchesSubject && matchesGroupWork && matchesOverdue && matchesSearch;
+    return matchesStatus && matchesEnvironment && matchesSubject && matchesGroupWork && matchesOverdue && matchesDueToday && matchesSearch;
   }).sort((a, b) => {
     switch (sortBy) {
       case "due_date":
@@ -457,7 +561,8 @@ const Dashboard = () => {
     environmentFilter !== "all",
     subjectFilter !== "all",
     groupWorkFilter !== null,
-    overdueFilter
+    overdueFilter,
+    dueTodayFilter
   ].filter(Boolean).length;
 
   const clearAllFilters = () => {
@@ -467,6 +572,7 @@ const Dashboard = () => {
       prev.delete("subject");
       prev.delete("groupWork");
       prev.delete("overdue");
+      prev.delete("due");
       return prev;
     });
     setSearchQuery("");
