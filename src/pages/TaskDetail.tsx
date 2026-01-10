@@ -79,6 +79,24 @@ const TaskDetail = () => {
   const [steps, setSteps] = useState<TaskStep[]>([]);
   const [stepAttachments, setStepAttachments] = useState<Record<string, Attachment[]>>({});
 
+  // Função auxiliar para corrigir a visualização da data (compensa fuso horário)
+  const formatDateDisplay = (dateString: string) => {
+    if (!dateString) return null;
+    
+    // Para datas no formato YYYY-MM-DD, parse sem conversão de fuso
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const parts = dateString.split("-");
+      const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+    }
+    
+    // Para datas ISO, compensa o fuso horário
+    const date = new Date(dateString);
+    const timeZoneOffset = date.getTimezoneOffset() * 60000;
+    const adjustedDate = new Date(date.getTime() + timeZoneOffset);
+    return format(adjustedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+  };
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
@@ -304,7 +322,7 @@ const TaskDetail = () => {
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm">
-                    Data de entrega: {format(new Date(task.due_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                    Data de entrega: {formatDateDisplay(task.due_date)}
                   </span>
                 </div>
               )}
