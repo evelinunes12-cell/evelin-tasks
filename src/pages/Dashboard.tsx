@@ -387,7 +387,31 @@ const Dashboard = () => {
 
   const loading = tasksLoading;
 
-  const isTaskOverdue = (task: Task) => checkTaskOverdue(task);
+  const isTaskOverdue = (task: Task) => {
+    // 1. Verifica se a Tarefa Principal está atrasada
+    let mainTaskOverdue = false;
+    if (task.due_date && !task.status.toLowerCase().includes("conclu")) {
+      const dueDate = parseDueDate(task.due_date);
+      mainTaskOverdue = isPast(dueDate) && !isToday(dueDate);
+    }
+
+    // 2. Verifica se alguma Etapa (Checklist) está atrasada
+    let hasOverdueStep = false;
+    if (task.checklist && Array.isArray(task.checklist)) {
+      hasOverdueStep = task.checklist.some((step: any) => {
+        if (!step.due_date || step.completed) return false;
+        try {
+          const stepDate = parseISO(step.due_date);
+          return isPast(stepDate) && !isToday(stepDate);
+        } catch {
+          return false;
+        }
+      });
+    }
+
+    // Retorna true se QUALQUER UM dos dois for verdadeiro
+    return mainTaskOverdue || hasOverdueStep;
+  };
 
   // Use debounced search for filtering
   const filteredTasks = tasks.filter(task => {
