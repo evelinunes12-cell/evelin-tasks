@@ -45,10 +45,15 @@ const TaskCard = ({
       ? Math.round((checklist.filter((item) => item.completed).length / checklist.length) * 100)
       : 0;
 
-  // Check if task is overdue
+  // Parse date compensating for timezone (dates are stored as YYYY-MM-DD)
   const parseDueDate = (dateStr: string) => {
     const parts = dateStr.split("-");
     return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  };
+
+  // Format date with timezone compensation for display
+  const formatDateDisplay = (date: Date) => {
+    return format(date, "dd 'de' MMMM", { locale: ptBR });
   };
 
   const dueDateObj = dueDate ? parseDueDate(dueDate) : null;
@@ -130,7 +135,7 @@ const TaskCard = ({
             )}>
               <Calendar className="w-4 h-4" />
               <span>
-                {isDueToday ? "Hoje" : isDueTomorrow ? "Amanhã" : format(dueDateObj, "dd 'de' MMMM", { locale: ptBR })}
+                {isDueToday ? "Hoje" : isDueTomorrow ? "Amanhã" : formatDateDisplay(dueDateObj)}
               </span>
             </div>
           )}
