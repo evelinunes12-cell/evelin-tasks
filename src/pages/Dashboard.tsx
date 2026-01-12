@@ -2,6 +2,8 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { useConfetti } from "@/hooks/useConfetti";
+import { useStreak } from "@/hooks/useStreak";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Task, isTaskOverdue as checkTaskOverdue, parseDueDate } from "@/services/tasks";
@@ -11,6 +13,7 @@ import StatsCards from "@/components/StatsCards";
 import TaskCard from "@/components/TaskCard";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import EmptyState from "@/components/EmptyState";
+import StreakCard from "@/components/StreakCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,6 +31,7 @@ const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { triggerConfetti } = useConfetti();
   
   // Check if user needs onboarding
   useOnboarding();
@@ -185,6 +189,7 @@ const Dashboard = () => {
         .update({ status: newStatus })
         .eq("id", taskId);
       if (error) throw error;
+      return { newStatus };
     },
     onMutate: async ({ taskId, newStatus }) => {
       // Cancel outgoing refetches
@@ -212,8 +217,12 @@ const Dashboard = () => {
         duration: 5000,
       });
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       toast.success("Status atualizado", { duration: 2000 });
+      // Dispara confetes se o status for "Concluído"
+      if (variables.newStatus.toLowerCase().includes("conclu")) {
+        triggerConfetti();
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
@@ -586,6 +595,9 @@ const Dashboard = () => {
 
   const overdueCount = tasks.filter(isTaskOverdue).length;
 
+  // Calcula a sequência de dias produtivos
+  const { currentStreak, completedToday } = useStreak(tasks);
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -601,9 +613,12 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background flex-1">
       <Navbar />
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Minhas Tarefas</h2>
-          <p className="text-muted-foreground">Gerencie seus trabalhos e projetos de forma organizada</p>
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-foreground mb-2">Minhas Tarefas</h2>
+            <p className="text-muted-foreground">Gerencie seus trabalhos e projetos de forma organizada</p>
+          </div>
+          <StreakCard streak={currentStreak} completedToday={completedToday} />
         </div>
 
         <StatsCards notStarted={stats.notStarted} inProgress={stats.inProgress} completed={stats.completed} />
