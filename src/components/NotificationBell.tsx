@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Bell } from "lucide-react";
+import { Bell, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Popover,
@@ -14,6 +14,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface Notification {
   id: string;
@@ -56,6 +68,39 @@ export const NotificationBell = () => {
     },
   });
 
+  const deleteNotificationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("notifications").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success("Notificação removida");
+    },
+    onError: () => {
+      toast.error("Erro ao remover notificação");
+    },
+  });
+
+  const deleteAllNotificationsMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success("Todas as notificações foram removidas");
+      setIsOpen(false);
+    },
+    onError: () => {
+      toast.error("Erro ao remover notificações");
+    },
+  });
+
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
       markAsReadMutation.mutate(notification.id);
@@ -64,6 +109,11 @@ export const NotificationBell = () => {
     if (notification.link) {
       navigate(notification.link);
     }
+  };
+
+  const handleDeleteNotification = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    deleteNotificationMutation.mutate(id);
   };
 
   const markAllRead = async () => {
@@ -95,11 +145,39 @@ export const NotificationBell = () => {
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between p-4 border-b">
           <h4 className="font-semibold">Notificações</h4>
-          {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={markAllRead}>
-              Marcar todas como lidas
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={markAllRead}>
+                Marcar lidas
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Limpar notificações</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja remover todas as notificações? Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deleteAllNotificationsMutation.mutate()}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Remover todas
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         </div>
         <ScrollArea className="h-80">
           {notifications.length === 0 ? (
@@ -109,33 +187,45 @@ export const NotificationBell = () => {
           ) : (
             <div className="divide-y">
               {notifications.map((notification) => (
-                <button
+                <div
                   key={notification.id}
-                  onClick={() => handleNotificationClick(notification)}
-                  className={`flex flex-col items-start gap-1 p-4 text-left w-full hover:bg-muted/50 transition-colors ${
+                  className={`flex items-start gap-2 p-4 hover:bg-muted/50 transition-colors ${
                     !notification.read ? "bg-muted/20" : ""
                   }`}
                 >
-                  <div className="flex items-center gap-2 w-full">
-                    <span className="font-medium text-sm flex-1">
-                      {notification.title}
-                    </span>
-                    {!notification.read && (
-                      <div className="h-2 w-2 rounded-full bg-primary" />
+                  <button
+                    onClick={() => handleNotificationClick(notification)}
+                    className="flex flex-col items-start gap-1 text-left flex-1 min-w-0"
+                  >
+                    <div className="flex items-center gap-2 w-full">
+                      <span className="font-medium text-sm flex-1 truncate">
+                        {notification.title}
+                      </span>
+                      {!notification.read && (
+                        <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                      )}
+                    </div>
+                    {notification.message && (
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {notification.message}
+                      </p>
                     )}
-                  </div>
-                  {notification.message && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {notification.message}
-                    </p>
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(notification.created_at), {
-                      addSuffix: true,
-                      locale: ptBR,
-                    })}
-                  </span>
-                </button>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(notification.created_at), {
+                        addSuffix: true,
+                        locale: ptBR,
+                      })}
+                    </span>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => handleDeleteNotification(e, notification.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               ))}
             </div>
           )}
