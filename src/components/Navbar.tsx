@@ -17,8 +17,8 @@ const Navbar = ({ minimal = false }: NavbarProps) => {
     <nav className="border-b bg-card shadow-sm w-full">
       <div className="w-full px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {/* Botão do menu mobile - só aparece em telas pequenas */}
-          <SidebarTrigger className="md:hidden" />
+          {/* Botão do menu mobile - só aparece em telas pequenas e quando não está em modo minimal */}
+          {!minimal && <SidebarTrigger className="md:hidden" />}
           
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/dashboard")}>
             {minimal ? (
