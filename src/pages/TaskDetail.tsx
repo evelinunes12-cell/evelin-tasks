@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useConfetti } from "@/hooks/useConfetti";
 import { supabase } from "@/integrations/supabase/client";
 import { Task } from "@/services/tasks";
 import Navbar from "@/components/Navbar";
@@ -72,6 +73,7 @@ const TaskDetail = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { triggerConfetti } = useConfetti();
   const [task, setTask] = useState<Task | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -263,6 +265,12 @@ const TaskDetail = () => {
       if (error) throw error;
 
       setTask({ ...task, checklist: updatedChecklist });
+
+      // Verifica se todas as etapas foram concluídas
+      const allCompleted = updatedChecklist.every(item => item.completed);
+      if (allCompleted && updatedChecklist.length > 0) {
+        triggerConfetti();
+      }
     } catch (error) {
       logError("Error updating checklist", error);
       toast({
