@@ -11,7 +11,9 @@ import {
   Sparkles,
   ArrowRight,
   ArrowLeft,
-  Rocket
+  Rocket,
+  Timer,
+  Flame
 } from "lucide-react";
 
 const features = [
@@ -38,6 +40,12 @@ const features = [
     title: "Notificações Inteligentes",
     description: "Receba lembretes sobre tarefas próximas do prazo e nunca perca uma deadline importante.",
     color: "from-amber-500/20 to-amber-500/5"
+  },
+  {
+    icon: Timer,
+    title: "Modo Foco & Ofensiva 🔥",
+    description: "Use o Timer Pomodoro na barra superior para manter o foco. Completar ciclos de 25 minutos ou etapas de tarefas aumenta seu 'Foguinho' (Ofensiva diária).",
+    color: "from-orange-500/20 to-orange-500/5"
   }
 ];
 

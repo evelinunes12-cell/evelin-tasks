@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useConfetti } from "@/hooks/useConfetti";
-import { useStreak } from "@/hooks/useStreak";
+import { useUserStreak } from "@/hooks/useUserStreak";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Task, isTaskOverdue as checkTaskOverdue, parseDueDate } from "@/services/tasks";
@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { logError } from "@/lib/logger";
 import { useDebounce } from "@/hooks/useDebounce";
+import { registerActivity } from "@/services/activity";
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -217,11 +218,16 @@ const Dashboard = () => {
         duration: 5000,
       });
     },
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       toast.success("Status atualizado", { duration: 2000 });
-      // Dispara confetes se o status for "Concluído"
+      // Dispara confetes e registra atividade se o status for "Concluído"
       if (variables.newStatus.toLowerCase().includes("conclu")) {
         triggerConfetti();
+        if (user?.id) {
+          await registerActivity(user.id);
+          // Invalida o cache do streak para atualizar a UI
+          queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
+        }
       }
     },
     onSettled: () => {
@@ -595,8 +601,8 @@ const Dashboard = () => {
 
   const overdueCount = tasks.filter(isTaskOverdue).length;
 
-  // Calcula a sequência de dias produtivos
-  const { currentStreak, completedToday } = useStreak(tasks);
+  // Busca a ofensiva do banco de dados
+  const { currentStreak, completedToday } = useUserStreak(user?.id);
 
   if (authLoading) {
     return (
