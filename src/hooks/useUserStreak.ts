@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isSameDay, parseISO } from "date-fns";
+import { logError } from "@/lib/logger";
 
 interface UserStreakResult {
   currentStreak: number;
@@ -21,7 +22,7 @@ export const useUserStreak = (userId: string | undefined): UserStreakResult => {
         .single();
 
       if (error) {
-        console.error("Erro ao buscar ofensiva:", error);
+        logError("Erro ao buscar ofensiva", error);
         return { streak: 0, lastActivityDate: null };
       }
 

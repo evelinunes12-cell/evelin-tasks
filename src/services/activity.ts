@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { isSameDay, subDays, parseISO } from "date-fns";
-
+import { logError } from "@/lib/logger";
 export const registerActivity = async (userId: string) => {
   if (!userId) return;
 
@@ -50,7 +50,7 @@ export const registerActivity = async (userId: string) => {
     if (updateError) throw updateError;
 
   } catch (error) {
-    console.error("Erro ao atualizar ofensiva:", error);
+    logError("Erro ao atualizar ofensiva", error);
   }
 };
 
@@ -72,7 +72,7 @@ export const fetchUserStreak = async (userId: string): Promise<{ streak: number;
       lastActivityDate: profile.last_activity_date
     };
   } catch (error) {
-    console.error("Erro ao buscar ofensiva:", error);
+    logError("Erro ao buscar ofensiva", error);
     return { streak: 0, lastActivityDate: null };
   }
 };
