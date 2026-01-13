@@ -26,12 +26,12 @@ const queryClient = new QueryClient();
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
     <QueryClientProvider client={queryClient}>
-      <FocusTimerProvider>
-        <ConfettiProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+      <ConfettiProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <FocusTimerProvider>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/auth" element={<Auth />} />
@@ -136,10 +136,10 @@ const App = () => (
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </ConfettiProvider>
-      </FocusTimerProvider>
+            </FocusTimerProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ConfettiProvider>
     </QueryClientProvider>
   </ThemeProvider>
 );
