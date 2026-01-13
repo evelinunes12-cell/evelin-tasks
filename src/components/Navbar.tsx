@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Mountain, LogOut, Plus, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "./NotificationBell";
+import { FocusTimer } from "./FocusTimer";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface NavbarProps {
@@ -10,7 +11,7 @@ interface NavbarProps {
 }
 
 const Navbar = ({ minimal = false }: NavbarProps) => {
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   
   return (
@@ -38,6 +39,7 @@ const Navbar = ({ minimal = false }: NavbarProps) => {
         </div>
         {!minimal && (
           <div className="flex items-center gap-3">
+            <FocusTimer />
             <NotificationBell />
             <Button onClick={() => navigate("/task/new")} size="lg" className="gap-2 rounded-xl">
               <Plus className="w-5 h-5" />
