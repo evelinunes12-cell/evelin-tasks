@@ -91,9 +91,45 @@ const App = () => (
             />
             <Route path="/environment/new" element={<EnvironmentForm />} />
             <Route path="/environment/:id/edit" element={<EnvironmentForm />} />
-            <Route path="/environment/:id" element={<EnvironmentDetail />} />
-            <Route path="/task/new" element={<TaskForm />} />
-            <Route path="/task/edit/:id" element={<TaskForm />} />
+            <Route
+              path="/environment/:id"
+              element={
+                <SidebarProvider>
+                  <div className="flex min-h-screen w-full">
+                    <AppSidebar />
+                    <div className="flex-1">
+                      <EnvironmentDetail />
+                    </div>
+                  </div>
+                </SidebarProvider>
+              }
+            />
+            <Route
+              path="/task/new"
+              element={
+                <SidebarProvider>
+                  <div className="flex min-h-screen w-full">
+                    <AppSidebar />
+                    <div className="flex-1">
+                      <TaskForm />
+                    </div>
+                  </div>
+                </SidebarProvider>
+              }
+            />
+            <Route
+              path="/task/edit/:id"
+              element={
+                <SidebarProvider>
+                  <div className="flex min-h-screen w-full">
+                    <AppSidebar />
+                    <div className="flex-1">
+                      <TaskForm />
+                    </div>
+                  </div>
+                </SidebarProvider>
+              }
+            />
             <Route path="/task/:id" element={<TaskDetail />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
