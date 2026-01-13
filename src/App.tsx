@@ -26,122 +26,122 @@ const queryClient = new QueryClient();
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
     <QueryClientProvider client={queryClient}>
-      <ConfettiProvider>
-        <FocusTimerProvider>
+      <FocusTimerProvider>
+        <ConfettiProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route
-              path="/dashboard"
-              element={
-                <SidebarProvider>
-                  <div className="flex min-h-screen w-full">
-                    <AppSidebar />
-                    <Dashboard />
-                  </div>
-                </SidebarProvider>
-              }
-            />
-            <Route
-              path="/subjects"
-              element={
-                <SidebarProvider>
-                  <div className="flex min-h-screen w-full">
-                    <AppSidebar />
-                    <Subjects />
-                  </div>
-                </SidebarProvider>
-              }
-            />
-            <Route
-              path="/task-statuses"
-              element={
-                <SidebarProvider>
-                  <div className="flex min-h-screen w-full">
-                    <AppSidebar />
-                    <TaskStatuses />
-                  </div>
-                </SidebarProvider>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <SidebarProvider>
-                  <div className="flex min-h-screen w-full">
-                    <AppSidebar />
-                    <Settings />
-                  </div>
-                </SidebarProvider>
-              }
-            />
-            <Route
-              path="/shared-environments"
-              element={
-                <SidebarProvider>
-                  <div className="flex min-h-screen w-full">
-                    <AppSidebar />
-                    <SharedEnvironments />
-                  </div>
-                </SidebarProvider>
-              }
-            />
-            <Route path="/environment/new" element={<EnvironmentForm />} />
-            <Route path="/environment/:id/edit" element={<EnvironmentForm />} />
-            <Route
-              path="/environment/:id"
-              element={
-                <SidebarProvider>
-                  <div className="flex min-h-screen w-full">
-                    <AppSidebar />
-                    <div className="flex-1">
-                      <EnvironmentDetail />
-                    </div>
-                  </div>
-                </SidebarProvider>
-              }
-            />
-            <Route
-              path="/task/new"
-              element={
-                <SidebarProvider>
-                  <div className="flex min-h-screen w-full">
-                    <AppSidebar />
-                    <div className="flex-1">
-                      <TaskForm />
-                    </div>
-                  </div>
-                </SidebarProvider>
-              }
-            />
-            <Route
-              path="/task/edit/:id"
-              element={
-                <SidebarProvider>
-                  <div className="flex min-h-screen w-full">
-                    <AppSidebar />
-                    <div className="flex-1">
-                      <TaskForm />
-                    </div>
-                  </div>
-                </SidebarProvider>
-              }
-            />
-            <Route path="/task/:id" element={<TaskDetail />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <SidebarProvider>
+                      <div className="flex min-h-screen w-full">
+                        <AppSidebar />
+                        <Dashboard />
+                      </div>
+                    </SidebarProvider>
+                  }
+                />
+                <Route
+                  path="/subjects"
+                  element={
+                    <SidebarProvider>
+                      <div className="flex min-h-screen w-full">
+                        <AppSidebar />
+                        <Subjects />
+                      </div>
+                    </SidebarProvider>
+                  }
+                />
+                <Route
+                  path="/task-statuses"
+                  element={
+                    <SidebarProvider>
+                      <div className="flex min-h-screen w-full">
+                        <AppSidebar />
+                        <TaskStatuses />
+                      </div>
+                    </SidebarProvider>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <SidebarProvider>
+                      <div className="flex min-h-screen w-full">
+                        <AppSidebar />
+                        <Settings />
+                      </div>
+                    </SidebarProvider>
+                  }
+                />
+                <Route
+                  path="/shared-environments"
+                  element={
+                    <SidebarProvider>
+                      <div className="flex min-h-screen w-full">
+                        <AppSidebar />
+                        <SharedEnvironments />
+                      </div>
+                    </SidebarProvider>
+                  }
+                />
+                <Route path="/environment/new" element={<EnvironmentForm />} />
+                <Route path="/environment/:id/edit" element={<EnvironmentForm />} />
+                <Route
+                  path="/environment/:id"
+                  element={
+                    <SidebarProvider>
+                      <div className="flex min-h-screen w-full">
+                        <AppSidebar />
+                        <div className="flex-1">
+                          <EnvironmentDetail />
+                        </div>
+                      </div>
+                    </SidebarProvider>
+                  }
+                />
+                <Route
+                  path="/task/new"
+                  element={
+                    <SidebarProvider>
+                      <div className="flex min-h-screen w-full">
+                        <AppSidebar />
+                        <div className="flex-1">
+                          <TaskForm />
+                        </div>
+                      </div>
+                    </SidebarProvider>
+                  }
+                />
+                <Route
+                  path="/task/edit/:id"
+                  element={
+                    <SidebarProvider>
+                      <div className="flex min-h-screen w-full">
+                        <AppSidebar />
+                        <div className="flex-1">
+                          <TaskForm />
+                        </div>
+                      </div>
+                    </SidebarProvider>
+                  }
+                />
+                <Route path="/task/:id" element={<TaskDetail />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ConfettiProvider>
       </FocusTimerProvider>
-    </ConfettiProvider>
-  </QueryClientProvider>
-</ThemeProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;
