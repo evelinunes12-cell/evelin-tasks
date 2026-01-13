@@ -12,6 +12,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: Home },
@@ -22,7 +23,14 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const { open } = useSidebar();
+  const { open, setOpenMobile } = useSidebar();
+  const isMobile = useIsMobile();
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -39,6 +47,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
+                      onClick={handleLinkClick}
                       className={({ isActive }) =>
                         isActive
                           ? "bg-accent text-accent-foreground"
