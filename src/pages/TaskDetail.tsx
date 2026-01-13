@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useConfetti } from "@/hooks/useConfetti";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { Task } from "@/services/tasks";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { logError } from "@/lib/logger";
+import { registerActivity } from "@/services/activity";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,6 +76,7 @@ const TaskDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { triggerConfetti } = useConfetti();
+  const queryClient = useQueryClient();
   const [task, setTask] = useState<Task | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -253,6 +256,7 @@ const TaskDetail = () => {
     
     setUpdatingChecklist(true);
     try {
+      const wasCompleted = task.checklist[index].completed;
       const updatedChecklist = task.checklist.map((item, i) =>
         i === index ? { ...item, completed: !item.completed } : item
       );
@@ -265,6 +269,12 @@ const TaskDetail = () => {
       if (error) throw error;
 
       setTask({ ...task, checklist: updatedChecklist });
+
+      // Se marcou como concluído e não estava antes, registra atividade
+      if (!wasCompleted && user?.id) {
+        await registerActivity(user.id);
+        queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
+      }
 
       // Verifica se todas as etapas foram concluídas
       const allCompleted = updatedChecklist.every(item => item.completed);

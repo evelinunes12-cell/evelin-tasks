@@ -2,19 +2,18 @@ import { useState } from "react";
 import { useFocusTimer } from "@/contexts/FocusTimerContext";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Play, Pause, RotateCcw, Timer } from "lucide-react";
+import { Play, Pause, RotateCcw, Timer, Coffee } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const FocusTimer = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { timeRemaining, isRunning, isPaused, start, pause, resume, reset, totalTime } = useFocusTimer();
+  const { timeRemaining, isRunning, isPaused, isBreak, start, pause, resume, reset, totalTime, isCompleted } = useFocusTimer();
 
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
   const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
   const progress = ((totalTime - timeRemaining) / totalTime) * 100;
-  const isCompleted = timeRemaining === 0 && !isRunning && !isPaused;
   const hasStarted = isRunning || isPaused || timeRemaining < totalTime;
 
   const handlePlayPause = () => {
@@ -35,18 +34,20 @@ export const FocusTimer = () => {
           size="sm"
           className={cn(
             "relative flex items-center gap-2 rounded-full px-3 py-2 transition-all",
-            isRunning && "bg-primary/10 text-primary animate-pulse",
+            isRunning && !isBreak && "bg-primary/10 text-primary animate-pulse",
+            isRunning && isBreak && "bg-green-500/10 text-green-600 animate-pulse",
             isPaused && "bg-yellow-500/10 text-yellow-600",
             isCompleted && "bg-green-500/10 text-green-600"
           )}
         >
           <div className="relative">
-            <Timer className="w-4 h-4" />
+            {isBreak ? <Coffee className="w-4 h-4" /> : <Timer className="w-4 h-4" />}
             {hasStarted && (
               <span
                 className={cn(
                   "absolute -top-1 -right-1 w-2 h-2 rounded-full",
-                  isRunning && "bg-primary",
+                  isRunning && !isBreak && "bg-primary",
+                  isRunning && isBreak && "bg-green-500",
                   isPaused && "bg-yellow-500",
                   isCompleted && "bg-green-500"
                 )}
@@ -64,7 +65,7 @@ export const FocusTimer = () => {
         <div className="space-y-4">
           <div className="text-center">
             <h3 className="font-semibold text-sm text-muted-foreground mb-2">
-              Timer Pomodoro
+              {isBreak ? "☕ Pausa Curta" : "🍅 Modo Foco"}
             </h3>
             <div className="relative">
               {/* Circular Progress */}
@@ -90,7 +91,8 @@ export const FocusTimer = () => {
                   strokeLinecap="round"
                   className={cn(
                     "transition-all duration-1000",
-                    isRunning && "text-primary",
+                    isRunning && !isBreak && "text-primary",
+                    isRunning && isBreak && "text-green-500",
                     isPaused && "text-yellow-500",
                     isCompleted && "text-green-500",
                     !hasStarted && "text-muted-foreground"
@@ -100,7 +102,8 @@ export const FocusTimer = () => {
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className={cn(
                   "text-2xl font-mono font-bold",
-                  isRunning && "text-primary",
+                  isRunning && !isBreak && "text-primary",
+                  isRunning && isBreak && "text-green-600",
                   isPaused && "text-yellow-600",
                   isCompleted && "text-green-600"
                 )}>
@@ -134,16 +137,21 @@ export const FocusTimer = () => {
             </Button>
           </div>
 
-          {isCompleted && (
+          {isCompleted && !isRunning && (
             <p className="text-center text-sm text-green-600 font-medium">
-              🎉 Tempo concluído! Faça uma pausa.
+              🎉 Ciclo concluído! {isBreak ? "Hora de focar!" : "Hora do descanso!"}
             </p>
           )}
 
           <p className="text-center text-xs text-muted-foreground">
-            {isRunning && "Focando..."}
+            {isRunning && !isBreak && "Focando..."}
+            {isRunning && isBreak && "Descansando..."}
             {isPaused && "Pausado"}
             {!hasStarted && "Clique play para iniciar"}
+          </p>
+
+          <p className="text-center text-xs text-muted-foreground border-t pt-3">
+            Concluir um ciclo conta para sua ofensiva 🔥
           </p>
         </div>
       </PopoverContent>
