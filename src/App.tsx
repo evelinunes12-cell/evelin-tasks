@@ -7,6 +7,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "next-themes";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ConfettiProvider } from "@/hooks/useConfetti";
+import { FocusTimerProvider } from "@/contexts/FocusTimerContext";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import TaskForm from "./pages/TaskForm";
@@ -26,10 +27,11 @@ const App = () => (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
     <QueryClientProvider client={queryClient}>
       <ConfettiProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+        <FocusTimerProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/auth" element={<Auth />} />
@@ -133,9 +135,10 @@ const App = () => (
             <Route path="/task/:id" element={<TaskDetail />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </FocusTimerProvider>
     </ConfettiProvider>
   </QueryClientProvider>
 </ThemeProvider>
