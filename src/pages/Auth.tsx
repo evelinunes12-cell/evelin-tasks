@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Mountain, Zap, Target, ArrowLeft } from "lucide-react";
+import { Mountain, Zap, Target, ArrowLeft, Check, X, Eye, EyeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
@@ -17,9 +18,22 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  
   const { signUp, signIn, user, resetPassword, updatePassword } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Regras de Senha
+  const passwordRequirements = [
+    { id: "length", label: "Pelo menos 8 caracteres", test: (p: string) => p.length >= 8 },
+    { id: "uppercase", label: "Letra maiúscula (A-Z)", test: (p: string) => /[A-Z]/.test(p) },
+    { id: "lowercase", label: "Letra minúscula (a-z)", test: (p: string) => /[a-z]/.test(p) },
+    { id: "number", label: "Número (0-9)", test: (p: string) => /\d/.test(p) },
+    { id: "special", label: "Caractere especial (!@#...)", test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+  ];
+
+  const allRequirementsMet = passwordRequirements.every(req => req.test(password));
 
   useEffect(() => {
     const resetMode = searchParams.get("mode");
@@ -67,13 +81,23 @@ const Auth = () => {
           return;
         }
         
+        if (!allRequirementsMet) {
+          toast({
+            variant: "destructive",
+            title: "Senha fraca",
+            description: "Por favor, siga os requisitos de senha listados.",
+          });
+          setLoading(false);
+          return;
+        }
+        
         const { error } = await signUp(email, password, fullName);
         if (error) {
           toast({
             variant: "destructive",
             title: "Erro ao criar conta",
-            description: error.message === "User already registered" 
-              ? "Este email já está cadastrado" 
+            description: error.message.includes("already registered") 
+              ? "Este email já está cadastrado." 
               : error.message,
           });
         } else {
@@ -104,6 +128,16 @@ const Auth = () => {
             variant: "destructive",
             title: "Senhas não conferem",
             description: "As senhas digitadas não são iguais.",
+          });
+          setLoading(false);
+          return;
+        }
+        
+        if (!allRequirementsMet) {
+          toast({
+            variant: "destructive",
+            title: "Senha fraca",
+            description: "Sua nova senha deve cumprir os requisitos.",
           });
           setLoading(false);
           return;
@@ -154,7 +188,7 @@ const Auth = () => {
   };
 
   const getButtonText = () => {
-    if (loading) return "Carregando...";
+    if (loading) return "Processando...";
     switch (mode) {
       case "login": return "Entrar";
       case "signup": return "Criar conta";
@@ -260,16 +294,52 @@ const Auth = () => {
                 <Label htmlFor="password">
                   {mode === "reset" ? "Nova Senha" : "Senha"}
                 </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="h-12 rounded-xl"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-12 rounded-xl pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+
+                {/* FEEDBACK VISUAL DE SENHA */}
+                {(mode === "signup" || mode === "reset") && password.length > 0 && (
+                  <div className="mt-3 p-3 bg-muted/50 rounded-lg border border-border">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Sua senha deve conter:</p>
+                    <ul className="space-y-1.5">
+                      {passwordRequirements.map((req) => {
+                        const isMet = req.test(password);
+                        return (
+                          <li
+                            key={req.id}
+                            className={cn(
+                              "flex items-center gap-2 text-xs transition-colors",
+                              isMet ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+                            )}
+                          >
+                            {isMet ? (
+                              <Check className="w-3.5 h-3.5" />
+                            ) : (
+                              <X className="w-3.5 h-3.5" />
+                            )}
+                            {req.label}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
             
@@ -283,7 +353,6 @@ const Auth = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  minLength={6}
                   className="h-12 rounded-xl"
                 />
               </div>
