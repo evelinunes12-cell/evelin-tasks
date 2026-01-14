@@ -320,18 +320,9 @@ const Dashboard = () => {
         message = `Você tem ${overdueStepsCount} etapa(s) pendente(s) que já venceu(ram).`;
       }
 
-      // Tenta inserir no Banco (pode falhar por RLS, mas o toast local avisa)
-      try {
-        await supabase.from("notifications").insert({
-          user_id: user.id,
-          title: "Atenção aos Prazos ⏰",
-          message: message,
-          link: "/dashboard?overdue=true"
-        });
-      } catch {
-        // Ignora erro de RLS
-      }
-
+      // Note: Persistent notifications are created by database triggers
+      // (check_overdue_tasks). Client only shows immediate toast feedback.
+      
       // Salva que já verificou hoje
       localStorage.setItem(`zenit_last_overdue_check_${user.id}`, today.toISOString());
       
@@ -395,18 +386,9 @@ const Dashboard = () => {
         message = `Você tem ${stepsDueTodayCount} etapa(s) para concluir hoje. Força!`;
       }
 
-      // Tenta inserir no Banco
-      try {
-        await supabase.from("notifications").insert({
-          user_id: user.id,
-          title: "Foco no Hoje! 📅",
-          message: message,
-          link: "/dashboard?due=today"
-        });
-      } catch {
-        // Ignora erro de RLS
-      }
-
+      // Note: Persistent notifications are created by database triggers
+      // (check_upcoming_tasks). Client only shows immediate toast feedback.
+      
       // Salva que já avisou hoje
       localStorage.setItem(`zenit_last_today_check_${user.id}`, today.toISOString());
       
