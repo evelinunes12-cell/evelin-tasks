@@ -1,4 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
+import { subjectStatusSchema } from "@/lib/validation";
+
+// Validate subject/status data before database operations
+const validateSubjectStatus = (name: string, color?: string | null): void => {
+  const validation = subjectStatusSchema.safeParse({ name, color: color || undefined });
+  if (!validation.success) {
+    throw new Error(validation.error.errors.map(e => e.message).join(', '));
+  }
+};
 
 export interface EnvironmentSubject {
   id: string;
@@ -45,6 +54,9 @@ export const createEnvironmentSubject = async (
   name: string,
   color?: string | null
 ) => {
+  // Validate subject data before insert
+  validateSubjectStatus(name, color);
+
   const { data, error } = await supabase
     .from("environment_subjects")
     .insert({
@@ -64,6 +76,9 @@ export const createEnvironmentStatus = async (
   name: string,
   color?: string | null
 ) => {
+  // Validate status data before insert
+  validateSubjectStatus(name, color);
+
   const { data, error } = await supabase
     .from("environment_statuses")
     .insert({
@@ -82,6 +97,11 @@ export const updateEnvironmentSubject = async (
   id: string,
   updates: { name?: string; color?: string | null }
 ) => {
+  // Validate if name is being updated
+  if (updates.name) {
+    validateSubjectStatus(updates.name, updates.color);
+  }
+
   const { error } = await supabase
     .from("environment_subjects")
     .update(updates)
@@ -94,6 +114,11 @@ export const updateEnvironmentStatus = async (
   id: string,
   updates: { name?: string; color?: string | null }
 ) => {
+  // Validate if name is being updated
+  if (updates.name) {
+    validateSubjectStatus(updates.name, updates.color);
+  }
+
   const { error } = await supabase
     .from("environment_statuses")
     .update(updates)
