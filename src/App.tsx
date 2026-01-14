@@ -20,6 +20,7 @@ import EnvironmentForm from "./pages/EnvironmentForm";
 import EnvironmentDetail from "./pages/EnvironmentDetail";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
+import ZenitCommand from "./components/ZenitCommand";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ZenitCommand />
             <FocusTimerProvider>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
