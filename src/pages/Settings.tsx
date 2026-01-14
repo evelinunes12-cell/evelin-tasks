@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +30,8 @@ import {
 } from "lucide-react";
 import { logError } from "@/lib/logger";
 import { profileSchema, passwordSchema } from "@/lib/validation";
+import { readFile } from "@/lib/cropImage";
+import { ImageCropperDialog } from "@/components/ImageCropperDialog";
 import qrCodePix from "@/assets/qrcode-pix.jpeg";
 
 export default function Settings() {
@@ -51,6 +53,10 @@ export default function Settings() {
     confirmPassword: "",
   });
   const [copied, setCopied] = useState(false);
+  
+  // Image cropper state
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Dados do Pix - Valor fixo de R$ 5,00
   const pixKey = "00020126500014br.gov.bcb.pix0111031539872890213Ajude o Zenit52040000530398654045.005802BR5925EVELIN CRISTINE DE OLIVEI6006MACAPA62580520SAN2026010812431328150300017br.gov.bcb.brcode01051.0.063045C5E";
@@ -148,37 +154,58 @@ export default function Settings() {
     }
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file selection - opens cropper instead of immediate upload
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Reset input value to allow selecting the same file again
+    e.target.value = '';
 
     if (!file.type.startsWith("image/")) {
       toast.error("Por favor, selecione uma imagem");
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("A imagem deve ter no máximo 2MB");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 10MB");
       return;
     }
+
+    try {
+      const imageDataUrl = await readFile(file);
+      setSelectedImage(imageDataUrl);
+      setCropperOpen(true);
+    } catch (error) {
+      logError("Error reading file", error);
+      toast.error("Erro ao carregar a imagem");
+    }
+  };
+
+  // Handle cropped image upload
+  const handleCroppedImageUpload = useCallback(async (croppedBlob: Blob) => {
+    if (!user?.id) return;
 
     setUploading(true);
 
     try {
+      // Delete old avatar if exists
       if (profile.avatar_url) {
         const oldPath = profile.avatar_url.split("/").pop();
         if (oldPath) {
-          await supabase.storage.from("avatars").remove([`${user?.id}/${oldPath}`]);
+          await supabase.storage.from("avatars").remove([`${user.id}/${oldPath}`]);
         }
       }
 
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${user?.id}/${fileName}`;
+      // Upload new cropped image
+      const fileName = `${Date.now()}.jpg`;
+      const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file);
+        .upload(filePath, croppedBlob, {
+          contentType: 'image/jpeg',
+        });
 
       if (uploadError) throw uploadError;
 
@@ -189,11 +216,13 @@ export default function Settings() {
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ avatar_url: publicUrl })
-        .eq("id", user?.id);
+        .eq("id", user.id);
 
       if (updateError) throw updateError;
 
       setProfile({ ...profile, avatar_url: publicUrl });
+      setCropperOpen(false);
+      setSelectedImage(null);
       toast.success("Foto de perfil atualizada!");
     } catch (error) {
       logError("Error uploading avatar", error);
@@ -201,7 +230,14 @@ export default function Settings() {
     } finally {
       setUploading(false);
     }
-  };
+  }, [user?.id, profile]);
+
+  const handleCropperClose = useCallback((open: boolean) => {
+    if (!open) {
+      setCropperOpen(false);
+      setSelectedImage(null);
+    }
+  }, []);
 
   const getInitials = () => {
     if (!profile.full_name) return user?.email?.substring(0, 2).toUpperCase() || "U";
@@ -286,16 +322,27 @@ export default function Settings() {
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={handleAvatarUpload}
+                      onChange={handleFileSelect}
                       disabled={uploading}
                     />
                     <p className="text-sm text-muted-foreground mt-2">
-                      JPG, PNG ou WEBP. Máximo 2MB.
+                      JPG, PNG ou WEBP. Máximo 10MB.
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Image Cropper Dialog */}
+            {selectedImage && (
+              <ImageCropperDialog
+                open={cropperOpen}
+                onOpenChange={handleCropperClose}
+                imageSrc={selectedImage}
+                onCropComplete={handleCroppedImageUpload}
+                uploading={uploading}
+              />
+            )}
 
             {/* Profile Information */}
             <Card>
