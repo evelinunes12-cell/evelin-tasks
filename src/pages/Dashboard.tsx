@@ -10,7 +10,7 @@ import { Task, isTaskOverdue as checkTaskOverdue, parseDueDate } from "@/service
 import { isSameDay, parseISO, isPast, isToday } from "date-fns";
 import Navbar from "@/components/Navbar";
 import StatsCards from "@/components/StatsCards";
-import TaskCard from "@/components/TaskCard";
+import SwipeableTaskCard from "@/components/SwipeableTaskCard";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import EmptyState from "@/components/EmptyState";
 import StreakCard from "@/components/StreakCard";
@@ -834,7 +834,7 @@ const Dashboard = () => {
         ) : viewMode === "list" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTasks.map(task => (
-              <TaskCard 
+              <SwipeableTaskCard 
                 key={task.id} 
                 id={task.id} 
                 subjectName={task.subject_name} 
@@ -844,6 +844,7 @@ const Dashboard = () => {
                 status={task.status} 
                 checklist={task.checklist}
                 availableStatuses={availableStatuses}
+                completedStatusName={availableStatuses.find(s => s.toLowerCase().includes("conclu")) || "Concluído"}
                 onDelete={handleDeleteTask}
                 onStatusChange={handleStatusChange}
               />
@@ -874,7 +875,7 @@ const Dashboard = () => {
                       t.status.toLowerCase().includes("fazer")
                     )
                     .map(task => (
-                      <TaskCard 
+                      <SwipeableTaskCard 
                         key={task.id} 
                         id={task.id} 
                         subjectName={task.subject_name} 
@@ -884,6 +885,7 @@ const Dashboard = () => {
                         status={task.status} 
                         checklist={task.checklist}
                         availableStatuses={availableStatuses}
+                        completedStatusName={availableStatuses.find(s => s.toLowerCase().includes("conclu")) || "Concluído"}
                         onDelete={handleDeleteTask}
                         onStatusChange={handleStatusChange}
                       />
@@ -912,7 +914,7 @@ const Dashboard = () => {
                       t.status.toLowerCase().includes("andamento")
                     )
                     .map(task => (
-                      <TaskCard 
+                      <SwipeableTaskCard 
                         key={task.id} 
                         id={task.id} 
                         subjectName={task.subject_name} 
@@ -922,6 +924,7 @@ const Dashboard = () => {
                         status={task.status} 
                         checklist={task.checklist}
                         availableStatuses={availableStatuses}
+                        completedStatusName={availableStatuses.find(s => s.toLowerCase().includes("conclu")) || "Concluído"}
                         onDelete={handleDeleteTask}
                         onStatusChange={handleStatusChange}
                       />
@@ -944,7 +947,7 @@ const Dashboard = () => {
                   {filteredTasks
                     .filter(t => t.status.toLowerCase().includes("conclu"))
                     .map(task => (
-                      <TaskCard 
+                      <SwipeableTaskCard 
                         key={task.id} 
                         id={task.id} 
                         subjectName={task.subject_name} 
@@ -954,6 +957,7 @@ const Dashboard = () => {
                         status={task.status} 
                         checklist={task.checklist}
                         availableStatuses={availableStatuses}
+                        completedStatusName={availableStatuses.find(s => s.toLowerCase().includes("conclu")) || "Concluído"}
                         onDelete={handleDeleteTask}
                         onStatusChange={handleStatusChange}
                       />
