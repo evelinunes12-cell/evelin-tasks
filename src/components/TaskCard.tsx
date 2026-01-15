@@ -12,6 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/useAuth";
+import { registerActivity } from "@/services/activity";
 
 interface TaskCardProps {
   id: string;
@@ -39,6 +41,17 @@ const TaskCard = ({
   onStatusChange,
 }: TaskCardProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleStatusChangeWithActivity = (id: string, newStatus: string) => {
+    if (onStatusChange) {
+      onStatusChange(id, newStatus);
+      // Registra atividade para a ofensiva
+      if (user) {
+        registerActivity(user.id);
+      }
+    }
+  };
   
   const checklistProgress =
     checklist.length > 0
@@ -112,7 +125,7 @@ const TaskCard = ({
                 {availableStatuses.map((s) => (
                   <DropdownMenuItem
                     key={s}
-                    onClick={() => onStatusChange(id, s)}
+                    onClick={() => handleStatusChangeWithActivity(id, s)}
                     className={cn(
                       "cursor-pointer",
                       s === status && "bg-accent font-medium"

@@ -25,6 +25,7 @@ import {
   EnvironmentSubject,
   EnvironmentStatus,
 } from "@/services/environmentData";
+import { registerActivity } from "@/services/activity";
 
 interface Member {
   email: string;
@@ -204,6 +205,11 @@ const EnvironmentForm = () => {
         }
         for (const s of subjects) await createEnvironmentSubject(envData.id, s.name, s.color);
         for (const s of statuses) await createEnvironmentStatus(envData.id, s.name, s.color);
+
+        // Registra atividade para a ofensiva
+        if (user) {
+          registerActivity(user.id);
+        }
 
         toast.success("Ambiente criado!");
         navigate(`/environment/${envData.id}`);

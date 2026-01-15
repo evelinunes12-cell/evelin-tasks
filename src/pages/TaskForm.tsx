@@ -24,6 +24,7 @@ import ChecklistManager, { ChecklistItem } from "@/components/ChecklistManager";
 import { fetchEnvironmentSubjects, fetchEnvironmentStatuses } from "@/services/environmentData";
 import { logError } from "@/lib/logger";
 import { taskFormSchema, linkSchema } from "@/lib/validation";
+import { registerActivity } from "@/services/activity";
 
 const TaskForm = () => {
   const { id } = useParams();
@@ -652,6 +653,11 @@ const TaskForm = () => {
           title: "Tarefa criada",
           description: "Sua nova tarefa foi adicionada com sucesso.",
         });
+      }
+
+      // Registra atividade para a ofensiva
+      if (user) {
+        registerActivity(user.id);
       }
 
       // Navigate back to the appropriate page
