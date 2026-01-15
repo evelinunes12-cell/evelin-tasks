@@ -2,6 +2,8 @@ import { useState } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { Check, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/useAuth";
+import { registerActivity } from "@/services/activity";
 import TaskCard from "./TaskCard";
 import {
   AlertDialog,
@@ -44,6 +46,7 @@ const SwipeableTaskCard = ({
   onStatusChange,
 }: SwipeableTaskCardProps) => {
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const x = useMotionValue(0);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -58,13 +61,17 @@ const SwipeableTaskCard = ({
 
   const isCompleted = status.toLowerCase().includes("conclu");
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = async (_: any, info: PanInfo) => {
     setIsDragging(false);
     const swipeDistance = info.offset.x;
 
     // Swipe right - complete task
     if (swipeDistance > SWIPE_THRESHOLD && !isCompleted && onStatusChange) {
       onStatusChange(id, completedStatusName);
+      // Register activity for mobile swipe completion
+      if (user) {
+        await registerActivity(user.id);
+      }
     }
     // Swipe left - delete task
     else if (swipeDistance < -SWIPE_THRESHOLD) {

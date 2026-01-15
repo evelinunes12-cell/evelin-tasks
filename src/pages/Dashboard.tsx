@@ -14,6 +14,7 @@ import SwipeableTaskCard from "@/components/SwipeableTaskCard";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import EmptyState from "@/components/EmptyState";
 import StreakCard from "@/components/StreakCard";
+import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -608,6 +609,8 @@ const Dashboard = () => {
           </div>
           <StreakCard streak={currentStreak} completedToday={completedToday} />
         </div>
+
+        <OnboardingProgress />
 
         <StatsCards notStarted={stats.notStarted} inProgress={stats.inProgress} completed={stats.completed} />
 
