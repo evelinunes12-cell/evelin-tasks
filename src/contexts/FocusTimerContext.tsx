@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import { registerActivity } from "@/services/activity";
+import { registerActivity, incrementPomodoroCount } from "@/services/activity";
 import { toast } from "sonner";
 
 interface FocusTimerContextType {
@@ -97,8 +97,11 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (!wasBreak && user) {
       // Registra atividade para a ofensiva
       await registerActivity(user.id);
-      // Invalida o cache do streak para atualizar a UI
+      // Incrementa contador de Pomodoros para onboarding
+      await incrementPomodoroCount(user.id);
+      // Invalida os caches para atualizar a UI
       queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['onboarding-status', user.id] });
       toast.success("🍅 Ciclo Pomodoro concluído! +1 para sua ofensiva.");
     }
 

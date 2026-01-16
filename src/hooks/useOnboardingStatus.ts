@@ -39,8 +39,8 @@ export const useOnboardingStatus = () => {
         supabase.from("tasks").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         // 3. Completed a task? (checking for common "done" status patterns)
         supabase.from("tasks").select("id", { count: "exact", head: true }).eq("user_id", user.id).ilike("status", "%conclu%"),
-        // 4. Has avatar and streak?
-        supabase.from("profiles").select("avatar_url, current_streak").eq("id", user.id).maybeSingle(),
+      // 4. Has avatar and pomodoro sessions?
+      supabase.from("profiles").select("avatar_url, pomodoro_sessions").eq("id", user.id).maybeSingle(),
         // 5. Owns an environment?
         supabase.from("shared_environments").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
         // 6. Is member of an environment?
@@ -51,7 +51,7 @@ export const useOnboardingStatus = () => {
       const hasTasks = (tasks.count || 0) > 0;
       const hasCompletedTask = (completedTasks.count || 0) > 0;
       const hasAvatar = !!profile.data?.avatar_url;
-      const hasUsedPomodoro = (profile.data?.current_streak || 0) > 0;
+      const hasUsedPomodoro = ((profile.data?.pomodoro_sessions as number) || 0) > 0;
       const hasEnvironment = ((ownedEnvironments.count || 0) > 0) || ((memberEnvironments.count || 0) > 0);
 
       const steps: OnboardingStep[] = [
@@ -59,7 +59,7 @@ export const useOnboardingStatus = () => {
         { id: 2, label: "Criar primeira tarefa", completed: hasTasks, link: "/task/new" },
         { id: 3, label: "Adicionar foto de perfil", completed: hasAvatar, link: "/settings" },
         { id: 4, label: "Criar ambiente compartilhado", completed: hasEnvironment, link: "/shared-environments" },
-        { id: 5, label: "Usar Pomodoro ou manter ofensiva", completed: hasUsedPomodoro, link: "/dashboard" },
+        { id: 5, label: "Completar um ciclo Pomodoro", completed: hasUsedPomodoro, link: "/dashboard" },
         { id: 6, label: "Concluir uma tarefa", completed: hasCompletedTask, link: "/dashboard" },
       ];
 

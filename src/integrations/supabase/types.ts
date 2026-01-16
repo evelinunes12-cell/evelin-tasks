@@ -158,6 +158,7 @@ export type Database = {
           full_name: string | null
           id: string
           last_activity_date: string | null
+          pomodoro_sessions: number | null
           updated_at: string | null
         }
         Insert: {
@@ -168,6 +169,7 @@ export type Database = {
           full_name?: string | null
           id: string
           last_activity_date?: string | null
+          pomodoro_sessions?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -178,6 +180,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           last_activity_date?: string | null
+          pomodoro_sessions?: number | null
           updated_at?: string | null
         }
         Relationships: []
