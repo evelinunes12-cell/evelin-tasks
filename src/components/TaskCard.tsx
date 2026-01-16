@@ -1,6 +1,7 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Calendar, Users, Eye, Trash2, CheckSquare, AlertTriangle, ChevronDown } from "lucide-react";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -159,9 +160,28 @@ const TaskCard = ({
             </div>
           )}
           {checklist.length > 0 && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <CheckSquare className="w-4 h-4" />
-              <span>Checklist: {checklistProgress}%</span>
+              <div className="flex items-center gap-2 min-w-[100px]">
+                <Progress 
+                  value={checklistProgress} 
+                  className={cn(
+                    "h-2 w-16",
+                    checklistProgress === 100 && "[&>div]:bg-green-500"
+                  )} 
+                />
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    "text-xs px-1.5 py-0",
+                    checklistProgress === 100 
+                      ? "bg-green-500/10 text-green-600 border-green-500/30" 
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {checklistProgress}%
+                </Badge>
+              </div>
             </div>
           )}
         </div>
