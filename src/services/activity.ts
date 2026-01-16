@@ -76,3 +76,29 @@ export const fetchUserStreak = async (userId: string): Promise<{ streak: number;
     return { streak: 0, lastActivityDate: null };
   }
 };
+
+// Incrementa contador de Pomodoros concluídos
+export const incrementPomodoroCount = async (userId: string) => {
+  if (!userId) return;
+
+  try {
+    const { data: profile, error: fetchError } = await supabase
+      .from("profiles")
+      .select("pomodoro_sessions")
+      .eq("id", userId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const currentSessions = (profile?.pomodoro_sessions as number) || 0;
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ pomodoro_sessions: currentSessions + 1 })
+      .eq("id", userId);
+
+    if (updateError) throw updateError;
+  } catch (error) {
+    logError("Erro ao computar Pomodoro", error);
+  }
+};
