@@ -70,6 +70,7 @@ export const subjectStatusSchema = z.object({
 
 // Checklist item schema
 export const checklistItemSchema = z.object({
+  id: z.string(),
   text: nonEmptyString(500, 'Item'),
   completed: z.boolean(),
 });

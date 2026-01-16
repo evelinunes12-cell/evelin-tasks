@@ -263,7 +263,14 @@ const TaskForm = () => {
       setGoogleDocsLink(data.google_docs_link || "");
       setCanvaLink(data.canva_link || "");
       setStatus(data.status);
-      setChecklist((data.checklist as any) || []);
+      // Garante que itens do checklist tenham IDs
+      const rawChecklist = (data.checklist as any) || [];
+      const checklistWithIds = rawChecklist.map((item: any, index: number) => ({
+        id: item.id || `item-${Date.now()}-${index}`,
+        text: item.text || "",
+        completed: Boolean(item.completed),
+      }));
+      setChecklist(checklistWithIds);
       setEnvironmentId(data.environment_id);
       
       // If editing a task with environment, load environment data

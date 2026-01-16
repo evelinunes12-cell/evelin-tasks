@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useConfetti } from "@/hooks/useConfetti";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { Task } from "@/services/tasks";
+import { Task, ChecklistItem } from "@/services/tasks";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { logError } from "@/lib/logger";
 import { registerActivity } from "@/services/activity";
+import ChecklistManager from "@/components/ChecklistManager";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -80,7 +81,6 @@ const TaskDetail = () => {
   const [task, setTask] = useState<Task | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updatingChecklist, setUpdatingChecklist] = useState(false);
   const [steps, setSteps] = useState<TaskStep[]>([]);
   const [stepAttachments, setStepAttachments] = useState<Record<string, Attachment[]>>({});
 
@@ -112,6 +112,16 @@ const TaskDetail = () => {
     }
   }, [user, authLoading, id, navigate]);
 
+  // Função para garantir que itens do checklist tenham IDs
+  const ensureChecklistIds = (checklist: any[]): ChecklistItem[] => {
+    if (!checklist || !Array.isArray(checklist)) return [];
+    return checklist.map((item, index) => ({
+      id: item.id || `item-${Date.now()}-${index}`,
+      text: item.text || "",
+      completed: Boolean(item.completed),
+    }));
+  };
+
   const fetchTask = async () => {
     try {
       const { data, error } = await supabase
@@ -121,7 +131,14 @@ const TaskDetail = () => {
         .single();
 
       if (error) throw error;
-      setTask(data as unknown as Task);
+      
+      // Garante que o checklist tenha IDs válidos
+      const taskData = data as unknown as Task;
+      if (taskData.checklist) {
+        taskData.checklist = ensureChecklistIds(taskData.checklist);
+      }
+      
+      setTask(taskData);
     } catch (error) {
       logError("Error fetching task", error);
       toast({
@@ -251,45 +268,47 @@ const TaskDetail = () => {
     }
   };
 
-  const toggleChecklistItem = async (index: number) => {
-    if (!task) return;
+  const handleChecklistChange = async (newItems: ChecklistItem[]) => {
+    if (!task || !id) return;
     
-    setUpdatingChecklist(true);
+    const previousChecklist = task.checklist || [];
+    const previousCompletedCount = previousChecklist.filter(item => item.completed).length;
+    const newCompletedCount = newItems.filter(item => item.completed).length;
+    
+    // Atualiza o estado local imediatamente para UI responsiva
+    setTask({ ...task, checklist: newItems });
+    
     try {
-      const wasCompleted = task.checklist[index].completed;
-      const updatedChecklist = task.checklist.map((item, i) =>
-        i === index ? { ...item, completed: !item.completed } : item
-      );
-
       const { error } = await supabase
         .from("tasks")
-        .update({ checklist: updatedChecklist as unknown as any })
+        .update({ checklist: newItems as unknown as any })
         .eq("id", id);
 
       if (error) throw error;
 
-      setTask({ ...task, checklist: updatedChecklist });
+      // Invalida queries para sincronizar UI
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
 
-      // Se marcou como concluído e não estava antes, registra atividade
-      if (!wasCompleted && user?.id) {
+      // Se marcou algum item novo como concluído, registra atividade
+      if (newCompletedCount > previousCompletedCount && user?.id) {
         await registerActivity(user.id);
         queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
       }
 
       // Verifica se todas as etapas foram concluídas
-      const allCompleted = updatedChecklist.every(item => item.completed);
-      if (allCompleted && updatedChecklist.length > 0) {
+      const allCompleted = newItems.every(item => item.completed);
+      if (allCompleted && newItems.length > 0 && previousCompletedCount < newItems.length) {
         triggerConfetti();
       }
     } catch (error) {
       logError("Error updating checklist", error);
+      // Reverte o estado local em caso de erro
+      setTask({ ...task, checklist: previousChecklist });
       toast({
         variant: "destructive",
         title: "Erro ao atualizar checklist",
         description: "Tente novamente mais tarde.",
       });
-    } finally {
-      setUpdatingChecklist(false);
     }
   };
 
@@ -413,37 +432,21 @@ const TaskDetail = () => {
             </Card>
           )}
 
-          {task.checklist && task.checklist.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckSquare className="w-5 h-5" />
-                  Checklist ({task.checklist.filter((item) => item.completed).length}/{task.checklist.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {task.checklist.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-3 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={item.completed}
-                        onChange={() => toggleChecklistItem(index)}
-                        disabled={updatingChecklist}
-                        className="w-5 h-5 cursor-pointer"
-                      />
-                      <span className={`flex-1 text-sm ${item.completed ? "line-through text-muted-foreground" : ""}`}>
-                        {item.text}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckSquare className="w-5 h-5" />
+                Checklist
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChecklistManager
+                items={task.checklist || []}
+                onItemsChange={handleChecklistChange}
+                showProgress
+              />
+            </CardContent>
+          </Card>
 
           <TaskStepDisplay 
             steps={steps} 
