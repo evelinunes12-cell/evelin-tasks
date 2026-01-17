@@ -2,12 +2,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckCircle2, PlayCircle } from "lucide-react";
 
 interface StatsCardsProps {
-  notStarted: number;
-  inProgress: number;
-  completed: number;
+  aFazer: number;
+  emProgresso: number;
+  concluido: number;
 }
 
-const StatsCards = ({ notStarted, inProgress, completed }: StatsCardsProps) => {
+const StatsCards = ({ aFazer, emProgresso, concluido }: StatsCardsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <Card className="border-l-4 border-l-muted hover:shadow-md transition-shadow">
@@ -17,8 +17,8 @@ const StatsCards = ({ notStarted, inProgress, completed }: StatsCardsProps) => {
               <Clock className="w-6 h-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground font-medium">Não Iniciadas</p>
-              <p className="text-3xl font-bold text-foreground">{notStarted}</p>
+              <p className="text-sm text-muted-foreground font-medium">A Fazer</p>
+              <p className="text-3xl font-bold text-foreground">{aFazer}</p>
             </div>
           </div>
         </CardContent>
@@ -31,8 +31,8 @@ const StatsCards = ({ notStarted, inProgress, completed }: StatsCardsProps) => {
               <PlayCircle className="w-6 h-6 text-warning" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground font-medium">Em Andamento</p>
-              <p className="text-3xl font-bold text-foreground">{inProgress}</p>
+              <p className="text-sm text-muted-foreground font-medium">Em Progresso</p>
+              <p className="text-3xl font-bold text-foreground">{emProgresso}</p>
             </div>
           </div>
         </CardContent>
@@ -45,8 +45,8 @@ const StatsCards = ({ notStarted, inProgress, completed }: StatsCardsProps) => {
               <CheckCircle2 className="w-6 h-6 text-success" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground font-medium">Concluídas</p>
-              <p className="text-3xl font-bold text-foreground">{completed}</p>
+              <p className="text-sm text-muted-foreground font-medium">Concluído</p>
+              <p className="text-3xl font-bold text-foreground">{concluido}</p>
             </div>
           </div>
         </CardContent>

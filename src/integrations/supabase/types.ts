@@ -285,7 +285,9 @@ export type Database = {
           color: string | null
           created_at: string
           id: string
+          is_default: boolean
           name: string
+          order_index: number
           updated_at: string
           user_id: string
         }
@@ -293,7 +295,9 @@ export type Database = {
           color?: string | null
           created_at?: string
           id?: string
+          is_default?: boolean
           name: string
+          order_index?: number
           updated_at?: string
           user_id: string
         }
@@ -301,7 +305,9 @@ export type Database = {
           color?: string | null
           created_at?: string
           id?: string
+          is_default?: boolean
           name?: string
+          order_index?: number
           updated_at?: string
           user_id?: string
         }
@@ -478,6 +484,10 @@ export type Database = {
       }
       check_overdue_tasks: { Args: never; Returns: undefined }
       check_upcoming_tasks: { Args: never; Returns: undefined }
+      create_default_task_statuses: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       has_environment_permission: {
         Args: {
           _environment_id: string
