@@ -8,6 +8,8 @@ export interface TaskStatus {
   user_id: string;
   created_at: string;
   updated_at: string;
+  is_default: boolean;
+  order_index: number;
 }
 
 // Validate status data before database operations
@@ -22,7 +24,7 @@ export const fetchStatuses = async () => {
   const { data, error } = await supabase
     .from("task_statuses")
     .select("*")
-    .order("name");
+    .order("order_index", { ascending: true });
   
   if (error) throw error;
   return data as TaskStatus[];

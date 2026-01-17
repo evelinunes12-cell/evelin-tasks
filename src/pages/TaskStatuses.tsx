@@ -21,6 +21,8 @@ interface TaskStatus {
   id: string;
   name: string;
   color: string | null;
+  is_default: boolean;
+  order_index: number;
 }
 
 export default function TaskStatuses() {
@@ -44,7 +46,7 @@ export default function TaskStatuses() {
       const { data, error } = await supabase
         .from("task_statuses")
         .select("*")
-        .order("name");
+        .order("order_index", { ascending: true });
 
       if (error) throw error;
       setStatuses(data || []);
@@ -183,13 +185,15 @@ export default function TaskStatuses() {
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteStatus(status.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {!status.is_default && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteStatus(status.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>

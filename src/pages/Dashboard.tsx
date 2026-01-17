@@ -577,9 +577,9 @@ const Dashboard = () => {
   };
 
   const stats = {
-    notStarted: tasks.filter(t => t.status.toLowerCase().includes("não") || t.status.toLowerCase().includes("nao")).length,
-    inProgress: tasks.filter(t => t.status.toLowerCase().includes("progresso") || t.status.toLowerCase().includes("andamento")).length,
-    completed: tasks.filter(t => t.status.toLowerCase().includes("conclu")).length
+    aFazer: tasks.filter(t => t.status === "A Fazer").length,
+    emProgresso: tasks.filter(t => t.status === "Em Progresso").length,
+    concluido: tasks.filter(t => t.status === "Concluído").length
   };
 
   const overdueCount = tasks.filter(isTaskOverdue).length;
@@ -612,7 +612,7 @@ const Dashboard = () => {
 
         <OnboardingProgress />
 
-        <StatsCards notStarted={stats.notStarted} inProgress={stats.inProgress} completed={stats.completed} />
+        <StatsCards aFazer={stats.aFazer} emProgresso={stats.emProgresso} concluido={stats.concluido} />
 
         {/* Search and Filters */}
         <div className="flex flex-col gap-4 mb-6">
