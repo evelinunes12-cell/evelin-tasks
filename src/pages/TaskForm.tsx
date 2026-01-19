@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -33,6 +34,7 @@ const TaskForm = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Check if we're creating a task within an environment
   const urlEnvironmentId = searchParams.get('environment');
@@ -666,6 +668,9 @@ const TaskForm = () => {
       if (user) {
         registerActivity(user.id);
       }
+
+      // Invalida o cache de tarefas para forçar atualização na Dashboard
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
 
       // Navigate back to the appropriate page
       if (environmentId) {
