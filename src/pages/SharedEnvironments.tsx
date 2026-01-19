@@ -95,14 +95,14 @@ const SharedEnvironments = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Ambientes Compartilhados</h1>
+            <h1 className="text-3xl font-bold text-foreground">Grupos de Trabalho</h1>
             <p className="text-muted-foreground mt-2">
-              Colabore com sua equipe em espaços de trabalho compartilhados
+              Gerencie seus grupos de estudo e projetos em equipe
             </p>
           </div>
           <Button onClick={() => navigate("/environment/new")} size="lg" className="gap-2">
             <Plus className="w-5 h-5" />
-            Novo Ambiente
+            Novo Grupo
           </Button>
         </div>
 
@@ -110,9 +110,9 @@ const SharedEnvironments = () => {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <Users className="w-16 h-16 text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Nenhum ambiente encontrado</h3>
+              <h3 className="text-xl font-semibold mb-2">Nenhum grupo encontrado</h3>
               <p className="text-muted-foreground text-center max-w-md">
-                Crie seu primeiro ambiente compartilhado para começar a colaborar com sua equipe
+                Crie seu primeiro grupo de trabalho para começar a colaborar com sua equipe
               </p>
             </CardContent>
           </Card>

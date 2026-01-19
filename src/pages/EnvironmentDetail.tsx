@@ -105,7 +105,7 @@ const EnvironmentDetail = () => {
       setMembers(membersData || []);
     } catch (error) {
       logError("Error fetching environment data", error);
-      toast.error("Erro ao carregar dados do ambiente");
+      toast.error("Erro ao carregar dados do grupo");
     } finally {
       setLoading(false);
     }
@@ -134,11 +134,11 @@ const EnvironmentDetail = () => {
 
       if (error) throw error;
 
-      toast.success("Ambiente excluído com sucesso!");
+      toast.success("Grupo excluído com sucesso!");
       navigate("/shared-environments");
     } catch (error) {
       logError("Error deleting environment", error);
-      toast.error("Erro ao excluir ambiente");
+      toast.error("Erro ao excluir grupo");
     }
   };
 
@@ -170,7 +170,7 @@ const EnvironmentDetail = () => {
   if (!environment) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Ambiente não encontrado</p>
+        <p className="text-muted-foreground">Grupo não encontrado</p>
       </div>
     );
   }
@@ -207,7 +207,7 @@ const EnvironmentDetail = () => {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Tem certeza que deseja excluir este ambiente? Todas as tarefas e membros serão removidos. Esta ação não pode ser desfeita.
+                        Tem certeza que deseja excluir este grupo? Todas as tarefas e membros serão removidos. Esta ação não pode ser desfeita.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -231,7 +231,7 @@ const EnvironmentDetail = () => {
 
           <TabsContent value="tasks" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Tarefas do Ambiente</h2>
+              <h2 className="text-xl font-semibold">Tarefas do Grupo</h2>
               <Button onClick={() => navigate(`/task/new?environment=${id}`)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Nova Tarefa
@@ -243,7 +243,7 @@ const EnvironmentDetail = () => {
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <h3 className="text-xl font-semibold mb-2">Nenhuma tarefa encontrada</h3>
                   <p className="text-muted-foreground mb-6 text-center">
-                    Crie a primeira tarefa neste ambiente
+                    Crie a primeira tarefa neste grupo
                   </p>
                   <Button onClick={() => navigate(`/task/new?environment=${id}`)}>
                     <Plus className="w-4 h-4 mr-2" />
@@ -272,7 +272,7 @@ const EnvironmentDetail = () => {
 
           <TabsContent value="members" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Membros do Ambiente</h2>
+              <h2 className="text-xl font-semibold">Membros do Grupo</h2>
               {isOwner && (
                 <Button onClick={() => navigate(`/environment/${id}/edit`)}>
                   <Plus className="w-4 h-4 mr-2" />

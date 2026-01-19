@@ -58,7 +58,7 @@ export const useOnboardingStatus = () => {
         { id: 1, label: "Criar primeira disciplina", completed: hasSubjects, link: "/subjects" },
         { id: 2, label: "Criar primeira tarefa", completed: hasTasks, link: "/task/new" },
         { id: 3, label: "Adicionar foto de perfil", completed: hasAvatar, link: "/settings" },
-        { id: 4, label: "Criar ambiente compartilhado", completed: hasEnvironment, link: "/shared-environments" },
+        { id: 4, label: "Criar grupo de trabalho", completed: hasEnvironment, link: "/shared-environments" },
         { id: 5, label: "Completar um ciclo Pomodoro", completed: hasUsedPomodoro, link: "/dashboard" },
         { id: 6, label: "Concluir uma tarefa", completed: hasCompletedTask, link: "/dashboard" },
       ];
