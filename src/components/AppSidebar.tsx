@@ -16,7 +16,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: Home },
-  { title: "Ambientes Compartilhados", url: "/shared-environments", icon: Users },
+  { title: "Grupos de Trabalho", url: "/shared-environments", icon: Users },
   { title: "Disciplinas", url: "/subjects", icon: BookOpen },
   { title: "Status", url: "/task-statuses", icon: ListChecks },
   { title: "Configurações", url: "/settings", icon: Settings },

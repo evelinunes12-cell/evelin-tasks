@@ -100,7 +100,7 @@ const EnvironmentForm = () => {
       setStatuses(statusesData);
     } catch (error) {
       logError("Error fetching environment", error);
-      toast.error("Erro ao carregar ambiente");
+      toast.error("Erro ao carregar grupo");
     } finally {
       setLoading(false);
     }
@@ -211,7 +211,7 @@ const EnvironmentForm = () => {
           registerActivity(user.id);
         }
 
-        toast.success("Ambiente criado!");
+        toast.success("Grupo de trabalho criado!");
         navigate(`/environment/${envData.id}`);
       } else {
         await supabase.from("shared_environments").update({ environment_name: validation.data.environment_name, description: validation.data.description || null }).eq("id", id);
@@ -224,25 +224,25 @@ const EnvironmentForm = () => {
         const membersToAdd = members.filter(m => !existingEmails.includes(m.email));
         if (membersToAdd.length > 0) await supabase.from("environment_members").insert(membersToAdd.map(m => ({ environment_id: id, email: m.email, user_id: null, permissions: m.permissions as any })));
 
-        toast.success("Ambiente atualizado!");
+        toast.success("Grupo atualizado!");
         navigate(`/environment/${id}`);
       }
-    } catch (error) { logError("Error saving environment", error); toast.error("Erro ao salvar"); } finally { setLoading(false); }
+    } catch (error) { logError("Error saving environment", error); toast.error("Erro ao salvar grupo"); } finally { setLoading(false); }
   };
 
   if (authLoading || !user) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Carregando...</p></div>;
-  if (!isNewEnvironment && loading) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Carregando ambiente...</p></div>;
+  if (!isNewEnvironment && loading) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Carregando grupo...</p></div>;
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar minimal />
       <div className="container mx-auto px-6 py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold text-foreground mb-8">{isNewEnvironment ? "Novo Ambiente" : "Editar Ambiente"}</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-8">{isNewEnvironment ? "Novo Grupo de Trabalho" : "Editar Grupo"}</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card>
-            <CardHeader><CardTitle>Informações do Ambiente</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Informações do Grupo</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2"><Label>Nome *</Label><Input value={environmentName} onChange={(e) => setEnvironmentName(e.target.value)} placeholder="Ex: Projeto TCC" required /></div>
+              <div className="space-y-2"><Label>Nome do Grupo *</Label><Input value={environmentName} onChange={(e) => setEnvironmentName(e.target.value)} placeholder="Ex: Projeto TCC, Grupo de Estudos..." required /></div>
               <div className="space-y-2"><Label>Descrição</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} /></div>
             </CardContent>
           </Card>
@@ -267,7 +267,7 @@ const EnvironmentForm = () => {
 
             <TabsContent value="subjects">
               <Card>
-                <CardHeader><CardTitle>Disciplinas</CardTitle><CardDescription>Disciplinas disponíveis neste ambiente</CardDescription></CardHeader>
+                <CardHeader><CardTitle>Disciplinas</CardTitle><CardDescription>Disciplinas disponíveis neste grupo</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-2"><Input value={newSubjectName} onChange={(e) => setNewSubjectName(e.target.value)} placeholder="Nome da disciplina" className="flex-1" /><Input type="color" value={newSubjectColor} onChange={(e) => setNewSubjectColor(e.target.value)} className="w-12" /><Button type="button" onClick={handleAddSubject}><Plus className="w-4 h-4" /></Button></div>
                   {subjects.map(s => <div key={s.id} className="flex items-center justify-between p-3 bg-muted rounded-lg"><div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full" style={{ backgroundColor: s.color || "#3b82f6" }} /><span>{s.name}</span></div><Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveSubject(s.id)}><Trash2 className="w-4 h-4" /></Button></div>)}
@@ -277,7 +277,7 @@ const EnvironmentForm = () => {
 
             <TabsContent value="statuses">
               <Card>
-                <CardHeader><CardTitle>Status</CardTitle><CardDescription>Status disponíveis neste ambiente</CardDescription></CardHeader>
+                <CardHeader><CardTitle>Status</CardTitle><CardDescription>Status disponíveis neste grupo</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-2"><Input value={newStatusName} onChange={(e) => setNewStatusName(e.target.value)} placeholder="Nome do status" className="flex-1" /><Input type="color" value={newStatusColor} onChange={(e) => setNewStatusColor(e.target.value)} className="w-12" /><Button type="button" onClick={handleAddStatus}><Plus className="w-4 h-4" /></Button></div>
                   {statuses.map(s => <div key={s.id} className="flex items-center justify-between p-3 bg-muted rounded-lg"><div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full" style={{ backgroundColor: s.color || "#3b82f6" }} /><span>{s.name}</span></div><Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveStatus(s.id)}><Trash2 className="w-4 h-4" /></Button></div>)}
@@ -286,7 +286,7 @@ const EnvironmentForm = () => {
             </TabsContent>
           </Tabs>
 
-          <div className="flex gap-4 justify-end"><Button type="button" variant="outline" onClick={() => navigate("/shared-environments")}>Cancelar</Button><Button type="submit" disabled={loading}>{loading ? "Salvando..." : isNewEnvironment ? "Criar Ambiente" : "Salvar"}</Button></div>
+          <div className="flex gap-4 justify-end"><Button type="button" variant="outline" onClick={() => navigate("/shared-environments")}>Cancelar</Button><Button type="submit" disabled={loading}>{loading ? "Salvando..." : isNewEnvironment ? "Criar Grupo" : "Salvar"}</Button></div>
         </form>
       </div>
     </div>
