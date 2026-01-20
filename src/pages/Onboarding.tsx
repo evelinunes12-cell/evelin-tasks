@@ -31,8 +31,8 @@ const features = [
   },
   {
     icon: Users,
-    title: "Ambientes Colaborativos",
-    description: "Crie ambientes compartilhados para trabalhar em equipe. Convide membros e gerencie permissões de forma granular.",
+    title: "Grupos de Trabalho",
+    description: "Crie grupos para colaborar com colegas, dividir tarefas e acompanhar o progresso da equipe.",
     color: "from-blue-500/20 to-blue-500/5"
   },
   {
