@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart3, CheckCircle2, TrendingUp, Target, BookOpen, ListChecks } from "lucide-react";
+import { BarChart3, CheckCircle2, TrendingUp, Target, BookOpen, ListChecks, Calendar } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -15,9 +15,10 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
+  AreaChart,
+  Area,
 } from "recharts";
-import { format, subDays, startOfDay, isWithinInterval, parseISO } from "date-fns";
+import { format, subDays, startOfDay, isWithinInterval, parseISO, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useMemo } from "react";
 
@@ -73,6 +74,7 @@ const Reports = () => {
         weeklyData: [],
         subjectData: [],
         statusData: [],
+        monthlyData: [],
       };
     }
 
@@ -138,6 +140,33 @@ const Reports = () => {
       };
     });
 
+    // Monthly evolution (last 6 months)
+    const monthlyData = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthDate = subMonths(new Date(), i);
+      const monthStart = startOfMonth(monthDate);
+      const monthEnd = endOfMonth(monthDate);
+
+      const createdCount = tasks.filter((t) => {
+        if (!t.created_at) return false;
+        const createdDate = parseISO(t.created_at);
+        return isWithinInterval(createdDate, { start: monthStart, end: monthEnd });
+      }).length;
+
+      const completedCount = completedTasks.filter((t) => {
+        if (!t.updated_at) return false;
+        const updatedDate = parseISO(t.updated_at);
+        return isWithinInterval(updatedDate, { start: monthStart, end: monthEnd });
+      }).length;
+
+      monthlyData.push({
+        month: format(monthDate, "MMM", { locale: ptBR }),
+        fullMonth: format(monthDate, "MMMM 'de' yyyy", { locale: ptBR }),
+        criadas: createdCount,
+        concluidas: completedCount,
+      });
+    }
+
     return {
       totalTasks,
       completionRate,
@@ -145,6 +174,7 @@ const Reports = () => {
       weeklyData,
       subjectData,
       statusData,
+      monthlyData,
     };
   }, [tasks, statuses]);
 
@@ -441,6 +471,99 @@ const Reports = () => {
                   Sem dados de status
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Monthly Evolution */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Evolução Mensal
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {analytics.monthlyData.some((d) => d.criadas > 0 || d.concluidas > 0) ? (
+                <ResponsiveContainer width="100%" height={280}>
+                  <AreaChart data={analytics.monthlyData}>
+                    <defs>
+                      <linearGradient id="colorCriadas" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorConcluidas" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22C55E" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#22C55E" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-popover border rounded-lg shadow-lg p-3">
+                              <p className="text-sm font-medium capitalize">
+                                {payload[0].payload.fullMonth}
+                              </p>
+                              <p className="text-sm text-primary">
+                                {payload[0].value} tarefa(s) criada(s)
+                              </p>
+                              <p className="text-sm text-green-600">
+                                {payload[1]?.value || 0} tarefa(s) concluída(s)
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="criadas"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorCriadas)"
+                      name="Criadas"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="concluidas"
+                      stroke="#22C55E"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorConcluidas)"
+                      name="Concluídas"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  Sem dados de evolução mensal
+                </div>
+              )}
+              <div className="flex justify-center gap-6 mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-primary" />
+                  <span className="text-sm text-muted-foreground">Criadas</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <span className="text-sm text-muted-foreground">Concluídas</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
