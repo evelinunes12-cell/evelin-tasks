@@ -927,16 +927,16 @@ const TaskForm = () => {
               {/* Only show environment selector when NOT coming from an environment */}
               {!isFromEnvironment && !isEditing && (
                 <div className="space-y-2">
-                  <Label htmlFor="environment">Ambiente</Label>
+                  <Label htmlFor="environment">Grupo de Trabalho</Label>
                   <Select
                     value={environmentId || "personal"}
                     onValueChange={(value) => setEnvironmentId(value === "personal" ? null : value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o ambiente" />
+                      <SelectValue placeholder="Selecione um grupo..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="personal">Pessoal</SelectItem>
+                      <SelectItem value="personal">Sem grupo (Pessoal)</SelectItem>
                       {environments.map((env) => (
                         <SelectItem key={env.id} value={env.id}>
                           {env.environment_name}
@@ -945,7 +945,7 @@ const TaskForm = () => {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Tarefas pessoais são visíveis apenas para você. Tarefas em ambientes compartilhados são visíveis para todos os membros.
+                    Tarefas pessoais são visíveis apenas para você. Tarefas em grupos são visíveis para todos os membros.
                   </p>
                 </div>
               )}
