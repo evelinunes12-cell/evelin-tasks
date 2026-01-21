@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { registerActivity, incrementPomodoroCount } from "@/services/activity";
+import { createFocusSession } from "@/services/focusSessions";
 import { toast } from "sonner";
 
 interface FocusTimerContextType {
@@ -40,6 +41,7 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isBreak, setIsBreak] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [endTime, setEndTime] = useState<number | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasCompletedRef = useRef(false);
 
@@ -99,9 +101,17 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       await registerActivity(user.id);
       // Incrementa contador de Pomodoros para onboarding
       await incrementPomodoroCount(user.id);
+      
+      // Registra a sessão de foco no histórico
+      if (sessionStartTime) {
+        await createFocusSession(user.id, sessionStartTime, DEFAULT_TIME / 60);
+        setSessionStartTime(null);
+      }
+      
       // Invalida os caches para atualizar a UI
       queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
       queryClient.invalidateQueries({ queryKey: ['onboarding-status', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['focus-sessions', user.id] });
       toast.success("🍅 Ciclo Pomodoro concluído! +1 para sua ofensiva.");
     }
 
@@ -117,7 +127,7 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
 
     hasCompletedRef.current = false;
-  }, [user, queryClient]);
+  }, [user, queryClient, sessionStartTime]);
 
   // Timer tick effect
   useEffect(() => {
@@ -152,6 +162,11 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setIsRunning(true);
     setIsPaused(false);
     setIsCompleted(false);
+    
+    // Track session start time for focus sessions (not breaks)
+    if (!isBreak) {
+      setSessionStartTime(new Date());
+    }
   }, [isBreak]);
 
   const pause = useCallback(() => {
@@ -175,6 +190,7 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setIsBreak(false);
     setIsCompleted(false);
     setEndTime(null);
+    setSessionStartTime(null);
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
