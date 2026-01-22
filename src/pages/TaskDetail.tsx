@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useConfetti } from "@/hooks/useConfetti";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { logError } from "@/lib/logger";
 import { registerActivity } from "@/services/activity";
+import { uploadTaskFile } from "@/services/attachments";
 import ChecklistManager from "@/components/ChecklistManager";
 import {
   AlertDialog,
@@ -35,10 +36,12 @@ import {
   Trash2,
   ExternalLink,
   CheckSquare,
+  Upload,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import TaskStepDisplay from "@/components/TaskStepDisplay";
+import { Input } from "@/components/ui/input";
 
 interface Attachment {
   id: string;
@@ -47,17 +50,6 @@ interface Attachment {
   file_size: number | null;
   file_type: string | null;
   is_link: boolean;
-}
-
-interface TaskStep {
-  id: string;
-  title: string;
-  description: string | null;
-  due_date: string | null;
-  status: string;
-  google_docs_link: string | null;
-  canva_link: string | null;
-  order_index: number;
 }
 
 interface TaskStep {
@@ -83,6 +75,8 @@ const TaskDetail = () => {
   const [loading, setLoading] = useState(true);
   const [steps, setSteps] = useState<TaskStep[]>([]);
   const [stepAttachments, setStepAttachments] = useState<Record<string, Attachment[]>>({});
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Função auxiliar para corrigir a visualização da data (compensa fuso horário)
   const formatDateDisplay = (dateString: string) => {
@@ -265,6 +259,61 @@ const TaskDetail = () => {
         title: "Erro ao deletar anexo",
         description: "Tente novamente mais tarde.",
       });
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0 || !user?.id || !id) return;
+
+    setIsUploading(true);
+    const fileArray = Array.from(files);
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      const uploadPromises = fileArray.map(async (file) => {
+        try {
+          await uploadTaskFile(id, user.id, file);
+          successCount++;
+        } catch (error) {
+          logError(`Error uploading file ${file.name}`, error);
+          errorCount++;
+        }
+      });
+
+      await Promise.all(uploadPromises);
+
+      // Refresh attachments list
+      await fetchAttachments();
+
+      if (successCount > 0) {
+        toast({
+          title: "Upload concluído",
+          description: `${successCount} arquivo${successCount > 1 ? 's' : ''} anexado${successCount > 1 ? 's' : ''} com sucesso.`,
+        });
+      }
+
+      if (errorCount > 0) {
+        toast({
+          variant: "destructive",
+          title: "Alguns arquivos falharam",
+          description: `${errorCount} arquivo${errorCount > 1 ? 's' : ''} não ${errorCount > 1 ? 'puderam' : 'pôde'} ser enviado${errorCount > 1 ? 's' : ''}.`,
+        });
+      }
+    } catch (error) {
+      logError("Error uploading files", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao enviar arquivos",
+        description: "Tente novamente mais tarde.",
+      });
+    } finally {
+      setIsUploading(false);
+      // Reset input value to allow uploading same files again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -454,15 +503,51 @@ const TaskDetail = () => {
             onDownloadAttachment={downloadStepAttachment}
           />
 
-          {attachments.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Download className="w-5 h-5" />
-                  Anexos ({attachments.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="w-5 h-5" />
+                Anexos {attachments.length > 0 && `(${attachments.length})`}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Upload section */}
+              <div className="flex items-center gap-2">
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                  className="hidden"
+                  id="file-upload"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.svg,.zip,.rar"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="gap-2"
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Anexar arquivos
+                    </>
+                  )}
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  Máx. 10MB por arquivo
+                </span>
+              </div>
+
+              {/* Attachments list */}
+              {attachments.length > 0 ? (
                 <div className="space-y-2">
                   {attachments.map((attachment) => (
                     <div
@@ -521,9 +606,13 @@ const TaskDetail = () => {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhum anexo ainda. Use o botão acima para anexar arquivos.
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
