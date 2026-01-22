@@ -391,7 +391,11 @@ const TaskForm = () => {
         validFiles.push(file);
       }
       
-      setFiles(validFiles);
+      // Add new files to existing list instead of replacing
+      setFiles(prevFiles => [...prevFiles, ...validFiles]);
+      
+      // Reset input value to allow selecting same files again
+      e.target.value = "";
     }
   };
 
