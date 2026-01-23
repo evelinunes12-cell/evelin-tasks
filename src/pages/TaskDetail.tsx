@@ -37,7 +37,14 @@ import {
   ExternalLink,
   CheckSquare,
   Upload,
+  Eye,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import TaskStepDisplay from "@/components/TaskStepDisplay";
@@ -77,6 +84,24 @@ const TaskDetail = () => {
   const [stepAttachments, setStepAttachments] = useState<Record<string, Attachment[]>>({});
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Helper para verificar se arquivo pode ser visualizado inline
+  const isPreviewable = (fileName: string): boolean => {
+    const extension = fileName.toLowerCase().split('.').pop();
+    return ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(extension || '');
+  };
+
+  // Gera URL pública do Supabase Storage
+  const getPublicUrl = (filePath: string): string => {
+    const { data } = supabase.storage.from("task-attachments").getPublicUrl(filePath);
+    return data.publicUrl;
+  };
+
+  // Abre arquivo em nova aba para visualização
+  const previewAttachment = (attachment: Attachment) => {
+    const publicUrl = getPublicUrl(attachment.file_path);
+    window.open(publicUrl, "_blank");
+  };
 
   // Função auxiliar para corrigir a visualização da data (compensa fuso horário)
   const formatDateDisplay = (dateString: string) => {
@@ -566,42 +591,78 @@ const TaskDetail = () => {
                         )}
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => downloadAttachment(attachment)}
-                          className="ml-2"
-                        >
-                          {attachment.is_link ? (
-                            <ExternalLink className="w-4 h-4" />
-                          ) : (
-                            <Download className="w-4 h-4" />
+                        <TooltipProvider>
+                          {/* Botão de Visualizar - apenas para PDFs e imagens */}
+                          {!attachment.is_link && isPreviewable(attachment.file_name) && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => previewAttachment(attachment)}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Visualizar</p>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja deletar este anexo? Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteAttachment(attachment)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          
+                          {/* Botão de Download/Abrir Link */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => downloadAttachment(attachment)}
                               >
-                                Deletar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                                {attachment.is_link ? (
+                                  <ExternalLink className="w-4 h-4" />
+                                ) : (
+                                  <Download className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{attachment.is_link ? "Abrir link" : "Baixar"}</p>
+                            </TooltipContent>
+                          </Tooltip>
+
+                          {/* Botão de Excluir */}
+                          <AlertDialog>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Excluir</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja deletar este anexo? Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteAttachment(attachment)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Deletar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TooltipProvider>
                       </div>
                     </div>
                   ))}
