@@ -14,6 +14,7 @@ import { logError } from "@/lib/logger";
 import { registerActivity } from "@/services/activity";
 import { uploadTaskFile } from "@/services/attachments";
 import ChecklistManager from "@/components/ChecklistManager";
+import { AttachmentPreviewModal } from "@/components/AttachmentPreviewModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,11 +85,32 @@ const TaskDetail = () => {
   const [stepAttachments, setStepAttachments] = useState<Record<string, Attachment[]>>({});
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Estado do modal de preview
+  const [previewModal, setPreviewModal] = useState<{
+    isOpen: boolean;
+    url: string | null;
+    fileName: string;
+    fileType: "pdf" | "image";
+    attachment: Attachment | null;
+  }>({
+    isOpen: false,
+    url: null,
+    fileName: "",
+    fileType: "pdf",
+    attachment: null,
+  });
 
   // Helper para verificar se arquivo pode ser visualizado inline
   const isPreviewable = (fileName: string): boolean => {
     const extension = fileName.toLowerCase().split('.').pop();
     return ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(extension || '');
+  };
+
+  // Determina tipo do arquivo para o modal
+  const getFileType = (fileName: string): "pdf" | "image" => {
+    const extension = fileName.toLowerCase().split('.').pop();
+    return extension === 'pdf' ? 'pdf' : 'image';
   };
 
   // Gera URL assinada do Supabase Storage (bucket privado)
@@ -104,11 +126,17 @@ const TaskDetail = () => {
     return data.signedUrl;
   };
 
-  // Abre arquivo em nova aba para visualização
+  // Abre o modal de preview
   const previewAttachment = async (attachment: Attachment) => {
     const signedUrl = await getSignedUrl(attachment.file_path);
     if (signedUrl) {
-      window.open(signedUrl, "_blank");
+      setPreviewModal({
+        isOpen: true,
+        url: signedUrl,
+        fileName: attachment.file_name,
+        fileType: getFileType(attachment.file_name),
+        attachment,
+      });
     } else {
       toast({
         title: "Erro",
@@ -116,6 +144,17 @@ const TaskDetail = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Fecha o modal de preview
+  const closePreviewModal = () => {
+    setPreviewModal({
+      isOpen: false,
+      url: null,
+      fileName: "",
+      fileType: "pdf",
+      attachment: null,
+    });
   };
 
   // Função auxiliar para corrigir a visualização da data (compensa fuso horário)
@@ -691,6 +730,16 @@ const TaskDetail = () => {
           </Card>
         </div>
       </main>
+
+      {/* Modal de Preview de Anexos */}
+      <AttachmentPreviewModal
+        isOpen={previewModal.isOpen}
+        onClose={closePreviewModal}
+        url={previewModal.url}
+        fileName={previewModal.fileName}
+        fileType={previewModal.fileType}
+        onDownload={previewModal.attachment ? () => downloadAttachment(previewModal.attachment!) : undefined}
+      />
     </div>
   );
 };
