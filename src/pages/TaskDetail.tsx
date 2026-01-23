@@ -91,16 +91,31 @@ const TaskDetail = () => {
     return ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(extension || '');
   };
 
-  // Gera URL pública do Supabase Storage
-  const getPublicUrl = (filePath: string): string => {
-    const { data } = supabase.storage.from("task-attachments").getPublicUrl(filePath);
-    return data.publicUrl;
+  // Gera URL assinada do Supabase Storage (bucket privado)
+  const getSignedUrl = async (filePath: string): Promise<string | null> => {
+    const { data, error } = await supabase.storage
+      .from("task-attachments")
+      .createSignedUrl(filePath, 3600); // URL válida por 1 hora
+    
+    if (error) {
+      logError(error.message, "Erro ao gerar URL de visualização");
+      return null;
+    }
+    return data.signedUrl;
   };
 
   // Abre arquivo em nova aba para visualização
-  const previewAttachment = (attachment: Attachment) => {
-    const publicUrl = getPublicUrl(attachment.file_path);
-    window.open(publicUrl, "_blank");
+  const previewAttachment = async (attachment: Attachment) => {
+    const signedUrl = await getSignedUrl(attachment.file_path);
+    if (signedUrl) {
+      window.open(signedUrl, "_blank");
+    } else {
+      toast({
+        title: "Erro",
+        description: "Não foi possível gerar o link de visualização.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Função auxiliar para corrigir a visualização da data (compensa fuso horário)
