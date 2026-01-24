@@ -1,4 +1,4 @@
-import { Home, BookOpen, Settings, ListChecks, Users, BarChart3 } from "lucide-react";
+import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -18,6 +18,7 @@ const menuItems = [
   { title: "Início", url: "/dashboard", icon: Home },
   { title: "Grupos de Trabalho", url: "/shared-environments", icon: Users },
   { title: "Relatórios", url: "/reports", icon: BarChart3 },
+  { title: "Arquivadas", url: "/archived", icon: Archive },
   { title: "Disciplinas", url: "/subjects", icon: BookOpen },
   { title: "Status", url: "/task-statuses", icon: ListChecks },
   { title: "Configurações", url: "/settings", icon: Settings },
