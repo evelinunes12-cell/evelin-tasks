@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { logError } from "@/lib/logger";
 import { registerActivity } from "@/services/activity";
 import { uploadTaskFile } from "@/services/attachments";
+import { archiveTask } from "@/services/archive";
 import ChecklistManager from "@/components/ChecklistManager";
 import { AttachmentPreviewModal } from "@/components/AttachmentPreviewModal";
 import {
@@ -39,6 +40,8 @@ import {
   CheckSquare,
   Upload,
   Eye,
+  Archive,
+  MoreVertical,
 } from "lucide-react";
 import {
   Tooltip,
@@ -50,6 +53,14 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import TaskStepDisplay from "@/components/TaskStepDisplay";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast as sonnerToast } from "sonner";
 
 interface Attachment {
   id: string;
@@ -465,10 +476,43 @@ const TaskDetail = () => {
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-foreground">{task.subject_name}</h1>
-          <Button onClick={() => navigate(`/task/edit/${id}`)} className="gap-2">
-            <Edit className="w-4 h-4" />
-            Editar
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => navigate(`/task/edit/${id}`)} className="gap-2">
+              <Edit className="w-4 h-4" />
+              Editar
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-popover">
+                <DropdownMenuItem 
+                  onClick={async () => {
+                    try {
+                      await archiveTask(task.id);
+                      sonnerToast.success("Tarefa arquivada!", {
+                        description: "Você pode encontrá-la em Tarefas Arquivadas.",
+                        action: {
+                          label: "Ver",
+                          onClick: () => navigate("/archived"),
+                        },
+                      });
+                      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+                      navigate("/dashboard");
+                    } catch (error) {
+                      sonnerToast.error("Erro ao arquivar tarefa");
+                    }
+                  }} 
+                  className="gap-2"
+                >
+                  <Archive className="w-4 h-4" />
+                  Arquivar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         <div className="grid gap-6">

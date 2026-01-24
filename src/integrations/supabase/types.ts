@@ -453,6 +453,7 @@ export type Database = {
           google_docs_link: string | null
           group_members: string | null
           id: string
+          is_archived: boolean
           is_group_work: boolean | null
           status: string
           subject_name: string
@@ -469,6 +470,7 @@ export type Database = {
           google_docs_link?: string | null
           group_members?: string | null
           id?: string
+          is_archived?: boolean
           is_group_work?: boolean | null
           status?: string
           subject_name: string
@@ -485,6 +487,7 @@ export type Database = {
           google_docs_link?: string | null
           group_members?: string | null
           id?: string
+          is_archived?: boolean
           is_group_work?: boolean | null
           status?: string
           subject_name?: string
@@ -513,6 +516,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_archive_tasks: { Args: never; Returns: undefined }
       can_access_task_attachment: {
         Args: { file_path: string; requesting_user_id: string }
         Returns: boolean

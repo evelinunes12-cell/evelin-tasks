@@ -19,6 +19,7 @@ import SharedEnvironments from "./pages/SharedEnvironments";
 import EnvironmentForm from "./pages/EnvironmentForm";
 import EnvironmentDetail from "./pages/EnvironmentDetail";
 import Reports from "./pages/Reports";
+import ArchivedTasks from "./pages/ArchivedTasks";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import ZenitCommand from "./components/ZenitCommand";
@@ -101,6 +102,17 @@ const App = () => (
                       <div className="flex min-h-screen w-full">
                         <AppSidebar />
                         <Reports />
+                      </div>
+                    </SidebarProvider>
+                  }
+                />
+                <Route
+                  path="/archived"
+                  element={
+                    <SidebarProvider>
+                      <div className="flex min-h-screen w-full">
+                        <AppSidebar />
+                        <ArchivedTasks />
                       </div>
                     </SidebarProvider>
                   }

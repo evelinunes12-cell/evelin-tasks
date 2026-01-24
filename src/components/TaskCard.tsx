@@ -2,7 +2,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, Users, Eye, Trash2, CheckSquare, AlertTriangle, ChevronDown } from "lucide-react";
+import { Calendar, Users, Eye, Trash2, CheckSquare, AlertTriangle, ChevronDown, Archive, MoreVertical } from "lucide-react";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +11,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +28,7 @@ interface TaskCardProps {
   availableStatuses?: string[];
   onDelete: (id: string) => void;
   onStatusChange?: (id: string, newStatus: string) => void;
+  onArchive?: (id: string) => void;
 }
 
 const TaskCard = ({
@@ -40,6 +42,7 @@ const TaskCard = ({
   availableStatuses = [],
   onDelete,
   onStatusChange,
+  onArchive,
 }: TaskCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -196,14 +199,29 @@ const TaskCard = ({
           <Eye className="w-4 h-4" />
           Ver detalhes
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onDelete(id)}
-          className="gap-2 text-destructive hover:text-destructive"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="px-2">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-popover">
+            {onArchive && (
+              <DropdownMenuItem onClick={() => onArchive(id)} className="gap-2">
+                <Archive className="w-4 h-4" />
+                Arquivar
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={() => onDelete(id)} 
+              className="gap-2 text-destructive focus:text-destructive"
+            >
+              <Trash2 className="w-4 h-4" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </CardFooter>
     </Card>
   );

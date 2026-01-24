@@ -29,6 +29,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { logError } from "@/lib/logger";
 import { useDebounce } from "@/hooks/useDebounce";
 import { registerActivity } from "@/services/activity";
+import { archiveTask } from "@/services/archive";
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -114,13 +115,14 @@ const Dashboard = () => {
     });
   };
 
-  // React Query para tarefas com cache de 5 minutos
+  // React Query para tarefas com cache de 5 minutos (excluindo arquivadas)
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
     queryKey: ['tasks', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
+        .eq("is_archived", false)
         .order("due_date", { ascending: true });
       
       if (error) {
@@ -264,6 +266,40 @@ const Dashboard = () => {
     },
     onError: () => {
       toast.error("Erro ao restaurar tarefa", { duration: 5000 });
+    },
+  });
+
+  // Mutation for archiving task
+  const archiveTaskMutation = useMutation({
+    mutationFn: archiveTask,
+    onMutate: async (taskId) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks', user?.id] });
+      const previousTasks = queryClient.getQueryData<Task[]>(['tasks', user?.id]);
+      
+      queryClient.setQueryData<Task[]>(['tasks', user?.id], (old) =>
+        old?.filter(task => task.id !== taskId) || []
+      );
+      
+      return { previousTasks };
+    },
+    onError: (err, taskId, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', user?.id], context.previousTasks);
+      }
+      toast.error("Erro ao arquivar tarefa");
+    },
+    onSuccess: () => {
+      toast.success("Tarefa arquivada!", {
+        description: "Você pode encontrá-la em Tarefas Arquivadas.",
+        action: {
+          label: "Ver",
+          onClick: () => navigate("/archived"),
+        },
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['archived-tasks', user?.id] });
     },
   });
 
@@ -459,6 +495,10 @@ const Dashboard = () => {
 
   const handleStatusChange = (taskId: string, newStatus: string) => {
     updateStatusMutation.mutate({ taskId, newStatus });
+  };
+
+  const handleArchiveTask = (taskId: string) => {
+    archiveTaskMutation.mutate(taskId);
   };
 
   const loading = tasksLoading;
@@ -838,6 +878,7 @@ const Dashboard = () => {
                 completedStatusName={availableStatuses.find(s => s.toLowerCase().includes("conclu")) || "Concluído"}
                 onDelete={handleDeleteTask}
                 onStatusChange={handleStatusChange}
+                onArchive={handleArchiveTask}
               />
             ))}
           </div>
@@ -879,6 +920,7 @@ const Dashboard = () => {
                         completedStatusName={availableStatuses.find(s => s.toLowerCase().includes("conclu")) || "Concluído"}
                         onDelete={handleDeleteTask}
                         onStatusChange={handleStatusChange}
+                        onArchive={handleArchiveTask}
                       />
                     ))}
                 </div>
@@ -918,6 +960,7 @@ const Dashboard = () => {
                         completedStatusName={availableStatuses.find(s => s.toLowerCase().includes("conclu")) || "Concluído"}
                         onDelete={handleDeleteTask}
                         onStatusChange={handleStatusChange}
+                        onArchive={handleArchiveTask}
                       />
                     ))}
                 </div>
@@ -951,6 +994,7 @@ const Dashboard = () => {
                         completedStatusName={availableStatuses.find(s => s.toLowerCase().includes("conclu")) || "Concluído"}
                         onDelete={handleDeleteTask}
                         onStatusChange={handleStatusChange}
+                        onArchive={handleArchiveTask}
                       />
                     ))}
                 </div>
