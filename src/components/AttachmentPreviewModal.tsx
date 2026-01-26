@@ -7,7 +7,7 @@ interface AttachmentPreviewModalProps {
   onClose: () => void;
   url: string | null;
   fileName: string;
-  fileType: "pdf" | "image";
+  fileType: "pdf" | "image" | "document";
   onDownload?: () => void;
 }
 
@@ -20,6 +20,14 @@ export const AttachmentPreviewModal = ({
   onDownload,
 }: AttachmentPreviewModalProps) => {
   if (!url) return null;
+
+  // Para documentos Word/PowerPoint, usa o Google Docs Viewer
+  const getViewerUrl = () => {
+    if (fileType === "document") {
+      return `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+    }
+    return fileType === "pdf" ? `${url}#toolbar=1&navpanes=0` : url;
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -48,13 +56,7 @@ export const AttachmentPreviewModal = ({
 
         {/* Content */}
         <div className="flex-1 overflow-auto bg-muted/20 h-[calc(90vh-60px)]">
-          {fileType === "pdf" ? (
-            <iframe
-              src={`${url}#toolbar=1&navpanes=0`}
-              className="w-full h-full border-0"
-              title={fileName}
-            />
-          ) : (
+          {fileType === "image" ? (
             <div className="flex items-center justify-center h-full p-4">
               <img
                 src={url}
@@ -62,6 +64,12 @@ export const AttachmentPreviewModal = ({
                 className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
               />
             </div>
+          ) : (
+            <iframe
+              src={getViewerUrl()}
+              className="w-full h-full border-0"
+              title={fileName}
+            />
           )}
         </div>
       </DialogContent>

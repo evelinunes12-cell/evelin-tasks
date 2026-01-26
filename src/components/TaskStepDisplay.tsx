@@ -37,13 +37,19 @@ interface TaskStepDisplayProps {
 
 const PREVIEWABLE_IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"];
 const PREVIEWABLE_PDF_TYPE = "application/pdf";
+const PREVIEWABLE_DOCUMENT_TYPES = [
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+];
 
 const TaskStepDisplay = ({ steps, stepAttachments, onDownloadAttachment }: TaskStepDisplayProps) => {
   const [previewModal, setPreviewModal] = useState<{
     isOpen: boolean;
     url: string | null;
     fileName: string;
-    fileType: "pdf" | "image";
+    fileType: "pdf" | "image" | "document";
     attachment: StepAttachment | null;
   }>({
     isOpen: false,
@@ -56,11 +62,18 @@ const TaskStepDisplay = ({ steps, stepAttachments, onDownloadAttachment }: TaskS
   const isPreviewable = (attachment: StepAttachment): boolean => {
     if (attachment.is_link) return false;
     const fileType = attachment.file_type?.toLowerCase() || "";
-    return PREVIEWABLE_IMAGE_TYPES.includes(fileType) || fileType === PREVIEWABLE_PDF_TYPE;
+    return (
+      PREVIEWABLE_IMAGE_TYPES.includes(fileType) ||
+      fileType === PREVIEWABLE_PDF_TYPE ||
+      PREVIEWABLE_DOCUMENT_TYPES.includes(fileType)
+    );
   };
 
-  const getPreviewFileType = (attachment: StepAttachment): "pdf" | "image" => {
-    return attachment.file_type?.toLowerCase() === PREVIEWABLE_PDF_TYPE ? "pdf" : "image";
+  const getPreviewFileType = (attachment: StepAttachment): "pdf" | "image" | "document" => {
+    const fileType = attachment.file_type?.toLowerCase() || "";
+    if (fileType === PREVIEWABLE_PDF_TYPE) return "pdf";
+    if (PREVIEWABLE_DOCUMENT_TYPES.includes(fileType)) return "document";
+    return "image";
   };
 
   const handlePreviewAttachment = async (attachment: StepAttachment) => {
