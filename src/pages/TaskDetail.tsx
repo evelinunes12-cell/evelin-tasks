@@ -98,8 +98,8 @@ const TaskDetail = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Tipos de arquivo suportados para preview
-  const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx'];
-  const DOCUMENT_EXTENSIONS = ['doc', 'docx', 'ppt', 'pptx'];
+  const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
+  const DOCUMENT_EXTENSIONS = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
 
   // Estado do modal de preview
   const [previewModal, setPreviewModal] = useState<{
