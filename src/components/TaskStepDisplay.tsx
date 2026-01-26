@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, ExternalLink, Download, FileText, LinkIcon as LinkIconLucide, CheckSquare } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Calendar, ExternalLink, Download, Eye, LinkIcon as LinkIconLucide, CheckSquare } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { AttachmentPreviewModal } from "@/components/AttachmentPreviewModal";
 
 interface TaskStep {
   id: string;
@@ -31,7 +35,75 @@ interface TaskStepDisplayProps {
   onDownloadAttachment: (attachment: StepAttachment) => void;
 }
 
+const PREVIEWABLE_IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"];
+const PREVIEWABLE_PDF_TYPE = "application/pdf";
+
 const TaskStepDisplay = ({ steps, stepAttachments, onDownloadAttachment }: TaskStepDisplayProps) => {
+  const [previewModal, setPreviewModal] = useState<{
+    isOpen: boolean;
+    url: string | null;
+    fileName: string;
+    fileType: "pdf" | "image";
+    attachment: StepAttachment | null;
+  }>({
+    isOpen: false,
+    url: null,
+    fileName: "",
+    fileType: "image",
+    attachment: null,
+  });
+
+  const isPreviewable = (attachment: StepAttachment): boolean => {
+    if (attachment.is_link) return false;
+    const fileType = attachment.file_type?.toLowerCase() || "";
+    return PREVIEWABLE_IMAGE_TYPES.includes(fileType) || fileType === PREVIEWABLE_PDF_TYPE;
+  };
+
+  const getPreviewFileType = (attachment: StepAttachment): "pdf" | "image" => {
+    return attachment.file_type?.toLowerCase() === PREVIEWABLE_PDF_TYPE ? "pdf" : "image";
+  };
+
+  const handlePreviewAttachment = async (attachment: StepAttachment) => {
+    if (!isPreviewable(attachment)) {
+      onDownloadAttachment(attachment);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.storage
+        .from("task-attachments")
+        .createSignedUrl(attachment.file_path, 3600);
+
+      if (error) throw error;
+
+      setPreviewModal({
+        isOpen: true,
+        url: data.signedUrl,
+        fileName: attachment.file_name,
+        fileType: getPreviewFileType(attachment),
+        attachment,
+      });
+    } catch (error) {
+      console.error("Erro ao gerar URL de preview:", error);
+      onDownloadAttachment(attachment);
+    }
+  };
+
+  const handleDownloadFromPreview = () => {
+    if (previewModal.attachment) {
+      onDownloadAttachment(previewModal.attachment);
+    }
+  };
+
+  const closePreviewModal = () => {
+    setPreviewModal({
+      isOpen: false,
+      url: null,
+      fileName: "",
+      fileType: "image",
+      attachment: null,
+    });
+  };
   if (steps.length === 0) return null;
 
   // Função auxiliar para corrigir a visualização da data (compensa fuso horário)
@@ -133,35 +205,72 @@ const TaskStepDisplay = ({ steps, stepAttachments, onDownloadAttachment }: TaskS
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Anexos ({attachments.length}):</p>
                       <div className="space-y-1">
-                        {attachments.map((attachment) => (
-                          <div
-                            key={attachment.id}
-                            className="flex items-center justify-between p-2 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                {attachment.is_link && <LinkIconLucide className="w-3 h-3 text-muted-foreground" />}
-                                <p className="text-sm truncate">{attachment.file_name}</p>
-                              </div>
-                              {attachment.file_size && !attachment.is_link && (
-                                <p className="text-xs text-muted-foreground">
-                                  {(attachment.file_size / 1024 / 1024).toFixed(2)} MB
-                                </p>
-                              )}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onDownloadAttachment(attachment)}
+                        {attachments.map((attachment) => {
+                          const canPreview = isPreviewable(attachment);
+                          return (
+                            <div
+                              key={attachment.id}
+                              className={`flex items-center justify-between p-2 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors ${canPreview ? 'cursor-pointer' : ''}`}
+                              onClick={canPreview ? () => handlePreviewAttachment(attachment) : undefined}
                             >
-                              {attachment.is_link ? (
-                                <ExternalLink className="w-3 h-3" />
-                              ) : (
-                                <Download className="w-3 h-3" />
-                              )}
-                            </Button>
-                          </div>
-                        ))}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  {attachment.is_link && <LinkIconLucide className="w-3 h-3 text-muted-foreground" />}
+                                  <p className="text-sm truncate">{attachment.file_name}</p>
+                                </div>
+                                {attachment.file_size && !attachment.is_link && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {(attachment.file_size / 1024 / 1024).toFixed(2)} MB
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {canPreview && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handlePreviewAttachment(attachment);
+                                          }}
+                                        >
+                                          <Eye className="w-3 h-3" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Visualizar</TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onDownloadAttachment(attachment);
+                                        }}
+                                      >
+                                        {attachment.is_link ? (
+                                          <ExternalLink className="w-3 h-3" />
+                                        ) : (
+                                          <Download className="w-3 h-3" />
+                                        )}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      {attachment.is_link ? "Abrir link" : "Baixar"}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -171,6 +280,15 @@ const TaskStepDisplay = ({ steps, stepAttachments, onDownloadAttachment }: TaskS
           })}
         </div>
       </CardContent>
+
+      <AttachmentPreviewModal
+        isOpen={previewModal.isOpen}
+        onClose={closePreviewModal}
+        url={previewModal.url}
+        fileName={previewModal.fileName}
+        fileType={previewModal.fileType}
+        onDownload={handleDownloadFromPreview}
+      />
     </Card>
   );
 };
