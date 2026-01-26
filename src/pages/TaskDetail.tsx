@@ -97,12 +97,16 @@ const TaskDetail = () => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Tipos de arquivo suportados para preview
+  const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx'];
+  const DOCUMENT_EXTENSIONS = ['doc', 'docx', 'ppt', 'pptx'];
+
   // Estado do modal de preview
   const [previewModal, setPreviewModal] = useState<{
     isOpen: boolean;
     url: string | null;
     fileName: string;
-    fileType: "pdf" | "image";
+    fileType: "pdf" | "image" | "document";
     attachment: Attachment | null;
   }>({
     isOpen: false,
@@ -115,13 +119,15 @@ const TaskDetail = () => {
   // Helper para verificar se arquivo pode ser visualizado inline
   const isPreviewable = (fileName: string): boolean => {
     const extension = fileName.toLowerCase().split('.').pop();
-    return ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(extension || '');
+    return PREVIEWABLE_EXTENSIONS.includes(extension || '');
   };
 
   // Determina tipo do arquivo para o modal
-  const getFileType = (fileName: string): "pdf" | "image" => {
-    const extension = fileName.toLowerCase().split('.').pop();
-    return extension === 'pdf' ? 'pdf' : 'image';
+  const getFileType = (fileName: string): "pdf" | "image" | "document" => {
+    const extension = fileName.toLowerCase().split('.').pop() || '';
+    if (extension === 'pdf') return 'pdf';
+    if (DOCUMENT_EXTENSIONS.includes(extension)) return 'document';
+    return 'image';
   };
 
   // Gera URL assinada do Supabase Storage (bucket privado)
