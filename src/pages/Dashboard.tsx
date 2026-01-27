@@ -15,6 +15,7 @@ import DashboardSkeleton from "@/components/DashboardSkeleton";
 import EmptyState from "@/components/EmptyState";
 import StreakCard from "@/components/StreakCard";
 import { StreakKeeper } from "@/components/StreakKeeper";
+import { KanbanBoard } from "@/components/KanbanBoard";
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -883,124 +884,14 @@ const Dashboard = () => {
             ))}
           </div>
         ) : (
-          /* Kanban Board View - Mobile optimized with snap scroll */
-          <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto snap-x snap-mandatory touch-pan-x pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
-            {/* Coluna A Fazer */}
-            <div className="bg-muted/50 rounded-lg p-4 min-w-[85vw] md:min-w-0 snap-center flex-shrink-0">
-              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-yellow-500" />
-                A Fazer
-                <Badge variant="secondary" className="ml-auto">
-                  {filteredTasks.filter(t => 
-                    t.status.toLowerCase().includes("não") || 
-                    t.status.toLowerCase().includes("nao") ||
-                    t.status.toLowerCase().includes("fazer")
-                  ).length}
-                </Badge>
-              </h3>
-              <ScrollArea className="h-[600px] pr-4">
-                <div className="space-y-4">
-                  {filteredTasks
-                    .filter(t => 
-                      t.status.toLowerCase().includes("não") || 
-                      t.status.toLowerCase().includes("nao") ||
-                      t.status.toLowerCase().includes("fazer")
-                    )
-                    .map(task => (
-                      <SwipeableTaskCard 
-                        key={task.id} 
-                        id={task.id} 
-                        subjectName={task.subject_name} 
-                        description={task.description} 
-                        dueDate={task.due_date} 
-                        isGroupWork={task.is_group_work} 
-                        status={task.status} 
-                        checklist={task.checklist}
-                        availableStatuses={availableStatuses}
-                        completedStatusName={availableStatuses.find(s => s.toLowerCase().includes("conclu")) || "Concluído"}
-                        onDelete={handleDeleteTask}
-                        onStatusChange={handleStatusChange}
-                        onArchive={handleArchiveTask}
-                      />
-                    ))}
-                </div>
-              </ScrollArea>
-            </div>
-
-            {/* Coluna Em Progresso */}
-            <div className="bg-muted/50 rounded-lg p-4 min-w-[85vw] md:min-w-0 snap-center flex-shrink-0">
-              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-blue-500" />
-                Em Progresso
-                <Badge variant="secondary" className="ml-auto">
-                  {filteredTasks.filter(t => 
-                    t.status.toLowerCase().includes("progresso") || 
-                    t.status.toLowerCase().includes("andamento")
-                  ).length}
-                </Badge>
-              </h3>
-              <ScrollArea className="h-[600px] pr-4">
-                <div className="space-y-4">
-                  {filteredTasks
-                    .filter(t => 
-                      t.status.toLowerCase().includes("progresso") || 
-                      t.status.toLowerCase().includes("andamento")
-                    )
-                    .map(task => (
-                      <SwipeableTaskCard 
-                        key={task.id} 
-                        id={task.id} 
-                        subjectName={task.subject_name} 
-                        description={task.description} 
-                        dueDate={task.due_date} 
-                        isGroupWork={task.is_group_work} 
-                        status={task.status} 
-                        checklist={task.checklist}
-                        availableStatuses={availableStatuses}
-                        completedStatusName={availableStatuses.find(s => s.toLowerCase().includes("conclu")) || "Concluído"}
-                        onDelete={handleDeleteTask}
-                        onStatusChange={handleStatusChange}
-                        onArchive={handleArchiveTask}
-                      />
-                    ))}
-                </div>
-              </ScrollArea>
-            </div>
-
-            {/* Coluna Concluído */}
-            <div className="bg-muted/50 rounded-lg p-4 min-w-[85vw] md:min-w-0 snap-center flex-shrink-0">
-              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-green-500" />
-                Concluído
-                <Badge variant="secondary" className="ml-auto">
-                  {filteredTasks.filter(t => t.status.toLowerCase().includes("conclu")).length}
-                </Badge>
-              </h3>
-              <ScrollArea className="h-[600px] pr-4">
-                <div className="space-y-4">
-                  {filteredTasks
-                    .filter(t => t.status.toLowerCase().includes("conclu"))
-                    .map(task => (
-                      <SwipeableTaskCard 
-                        key={task.id} 
-                        id={task.id} 
-                        subjectName={task.subject_name} 
-                        description={task.description} 
-                        dueDate={task.due_date} 
-                        isGroupWork={task.is_group_work} 
-                        status={task.status} 
-                        checklist={task.checklist}
-                        availableStatuses={availableStatuses}
-                        completedStatusName={availableStatuses.find(s => s.toLowerCase().includes("conclu")) || "Concluído"}
-                        onDelete={handleDeleteTask}
-                        onStatusChange={handleStatusChange}
-                        onArchive={handleArchiveTask}
-                      />
-                    ))}
-                </div>
-              </ScrollArea>
-            </div>
-          </div>
+          /* Kanban Board View with Drag & Drop */
+          <KanbanBoard
+            tasks={filteredTasks}
+            availableStatuses={availableStatuses}
+            onStatusChange={handleStatusChange}
+            onDelete={handleDeleteTask}
+            onArchive={handleArchiveTask}
+          />
         )}
       </main>
     </div>
