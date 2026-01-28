@@ -27,19 +27,49 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  interface SignUpData {
+    email: string;
+    password: string;
+    fullName: string;
+    age?: number | null;
+    city?: string;
+    phone?: string;
+    educationLevel?: string;
+    termsAccepted?: boolean;
+  }
+
+  const signUp = async (data: SignUpData) => {
     const redirectUrl = `${window.location.origin}/`;
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
+    const { data: authData, error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          full_name: fullName,
+          full_name: data.fullName,
         },
       },
     });
+
+    // If signup succeeded and we have the user, update their profile with additional data
+    if (!error && authData.user) {
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          age: data.age || null,
+          city: data.city || null,
+          phone: data.phone || null,
+          education_level: data.educationLevel || null,
+          terms_accepted: data.termsAccepted || false,
+        })
+        .eq("id", authData.user.id);
+
+      if (profileError) {
+        console.error("Error updating profile:", profileError);
+      }
+    }
+
     return { error };
   };
 

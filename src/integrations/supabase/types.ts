@@ -186,36 +186,51 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           avatar_url: string | null
+          city: string | null
           created_at: string | null
           current_streak: number | null
+          education_level: string | null
           email: string
           full_name: string | null
           id: string
           last_activity_date: string | null
+          phone: string | null
           pomodoro_sessions: number | null
+          terms_accepted: boolean | null
           updated_at: string | null
         }
         Insert: {
+          age?: number | null
           avatar_url?: string | null
+          city?: string | null
           created_at?: string | null
           current_streak?: number | null
+          education_level?: string | null
           email: string
           full_name?: string | null
           id: string
           last_activity_date?: string | null
+          phone?: string | null
           pomodoro_sessions?: number | null
+          terms_accepted?: boolean | null
           updated_at?: string | null
         }
         Update: {
+          age?: number | null
           avatar_url?: string | null
+          city?: string | null
           created_at?: string | null
           current_streak?: number | null
+          education_level?: string | null
           email?: string
           full_name?: string | null
           id?: string
           last_activity_date?: string | null
+          phone?: string | null
           pomodoro_sessions?: number | null
+          terms_accepted?: boolean | null
           updated_at?: string | null
         }
         Relationships: []

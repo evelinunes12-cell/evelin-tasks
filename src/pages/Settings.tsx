@@ -7,10 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
   Loader2, 
@@ -26,13 +27,37 @@ import {
   KeyRound,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  FileCheck,
+  FileX
 } from "lucide-react";
 import { logError } from "@/lib/logger";
 import { profileSchema, passwordSchema } from "@/lib/validation";
 import { readFile } from "@/lib/cropImage";
 import { ImageCropperDialog } from "@/components/ImageCropperDialog";
+import { TermsOfUseDialog } from "@/components/TermsOfUseDialog";
+import { formatPhoneBR } from "@/lib/phoneMask";
 import qrCodePix from "@/assets/qrcode-pix.jpeg";
+
+const EDUCATION_LEVELS = [
+  { value: "ensino_fundamental", label: "Ensino Fundamental" },
+  { value: "ensino_medio", label: "Ensino Médio" },
+  { value: "cursos_livres", label: "Cursos Livres" },
+  { value: "curso_tecnico", label: "Curso Técnico" },
+  { value: "ensino_superior", label: "Ensino Superior" },
+  { value: "pos_graduacao", label: "Pós-graduação" },
+  { value: "outros", label: "Outros" },
+];
+
+interface ProfileData {
+  full_name: string;
+  avatar_url: string | null;
+  age: number | null;
+  city: string | null;
+  phone: string | null;
+  education_level: string | null;
+  terms_accepted: boolean | null;
+}
 
 export default function Settings() {
   const { user, loading: authLoading } = useAuth();
@@ -41,28 +66,30 @@ export default function Settings() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [profile, setProfile] = useState<{
-    full_name: string;
-    avatar_url: string | null;
-  }>({
+  const [profile, setProfile] = useState<ProfileData>({
     full_name: "",
     avatar_url: null,
+    age: null,
+    city: null,
+    phone: null,
+    education_level: null,
+    terms_accepted: null,
   });
   const [passwords, setPasswords] = useState({
     newPassword: "",
     confirmPassword: "",
   });
   const [copied, setCopied] = useState(false);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
   
   // Image cropper state
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  // Dados do Pix - Valor fixo de R$ 5,00
+  // Pix data
   const pixKey = "00020126500014br.gov.bcb.pix0111031539872890213Ajude o Zenit52040000530398654045.005802BR5925EVELIN CRISTINE DE OLIVEI6006MACAPA62580520SAN2026010812431328150300017br.gov.bcb.brcode01051.0.063045C5E";
   const beneficiaryName = "Evelin Cristine de Oliveira Nunes";
 
-  // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -81,13 +108,16 @@ export default function Settings() {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name, avatar_url")
+        .select("full_name, avatar_url, age, city, phone, education_level, terms_accepted")
         .eq("id", user?.id)
         .single();
 
       if (error) throw error;
       if (data) {
-        setProfile(data);
+        setProfile({
+          ...data,
+          phone: data.phone ? formatPhoneBR(data.phone) : null,
+        });
       }
     } catch (error) {
       logError("Error fetching profile", error);
@@ -109,7 +139,13 @@ export default function Settings() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: validation.data.full_name })
+        .update({ 
+          full_name: validation.data.full_name,
+          age: profile.age,
+          city: profile.city,
+          phone: profile.phone?.replace(/\D/g, "") || null,
+          education_level: profile.education_level,
+        })
         .eq("id", user?.id);
 
       if (error) throw error;
@@ -154,12 +190,10 @@ export default function Settings() {
     }
   };
 
-  // Handle file selection - opens cropper instead of immediate upload
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Reset input value to allow selecting the same file again
     e.target.value = '';
 
     if (!file.type.startsWith("image/")) {
@@ -182,14 +216,12 @@ export default function Settings() {
     }
   };
 
-  // Handle cropped image upload
   const handleCroppedImageUpload = useCallback(async (croppedBlob: Blob) => {
     if (!user?.id) return;
 
     setUploading(true);
 
     try {
-      // Delete old avatar if exists
       if (profile.avatar_url) {
         const oldPath = profile.avatar_url.split("/").pop();
         if (oldPath) {
@@ -197,7 +229,6 @@ export default function Settings() {
         }
       }
 
-      // Upload new cropped image
       const fileName = `${Date.now()}.jpg`;
       const filePath = `${user.id}/${fileName}`;
 
@@ -239,6 +270,10 @@ export default function Settings() {
     }
   }, []);
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfile({ ...profile, phone: formatPhoneBR(e.target.value) });
+  };
+
   const getInitials = () => {
     if (!profile.full_name) return user?.email?.substring(0, 2).toUpperCase() || "U";
     return profile.full_name
@@ -254,6 +289,11 @@ export default function Settings() {
     setCopied(true);
     toast.success("Chave Pix copiada para a área de transferência!");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const getEducationLevelLabel = (value: string | null) => {
+    if (!value) return null;
+    return EDUCATION_LEVELS.find(l => l.value === value)?.label || value;
   };
 
   return (
@@ -279,7 +319,7 @@ export default function Settings() {
             </TabsTrigger>
           </TabsList>
 
-          {/* ABA PERFIL */}
+          {/* PROFILE TAB */}
           <TabsContent value="profile" className="space-y-6">
             {/* Avatar Section */}
             <Card>
@@ -381,11 +421,118 @@ export default function Settings() {
                     />
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="age">Idade</Label>
+                      <Input
+                        id="age"
+                        type="number"
+                        value={profile.age || ""}
+                        onChange={(e) =>
+                          setProfile({ ...profile, age: e.target.value ? parseInt(e.target.value, 10) : null })
+                        }
+                        placeholder="Ex: 18"
+                        min={10}
+                        max={120}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">Cidade</Label>
+                      <Input
+                        id="city"
+                        type="text"
+                        value={profile.city || ""}
+                        onChange={(e) =>
+                          setProfile({ ...profile, city: e.target.value })
+                        }
+                        placeholder="Sua cidade"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Celular</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={profile.phone || ""}
+                      onChange={handlePhoneChange}
+                      placeholder="(00) 00000-0000"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="education_level">Segmento de Ensino</Label>
+                    <Select 
+                      value={profile.education_level || ""} 
+                      onValueChange={(value) => setProfile({ ...profile, education_level: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione seu segmento" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border border-border z-50">
+                        {EDUCATION_LEVELS.map((level) => (
+                          <SelectItem key={level.value} value={level.value}>
+                            {level.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <Button type="submit" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Salvar Alterações
                   </Button>
                 </form>
+              </CardContent>
+            </Card>
+
+            {/* Terms Status Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {profile.terms_accepted ? (
+                    <FileCheck className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <FileX className="h-5 w-5 text-amber-500" />
+                  )}
+                  Termos de Uso
+                </CardTitle>
+                <CardDescription>
+                  Status do aceite dos termos de uso e política de privacidade
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Status:</span>
+                      {profile.terms_accepted ? (
+                        <Badge variant="default" className="bg-green-500/10 text-green-600 hover:bg-green-500/20">
+                          <Check className="h-3 w-3 mr-1" />
+                          Aceitos
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-amber-500/10 text-amber-600">
+                          Pendente
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {profile.terms_accepted 
+                        ? "Você já aceitou os termos de uso do Zenit." 
+                        : "Você ainda não aceitou os termos de uso."}
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowTermsDialog(true)}
+                    className="gap-2"
+                  >
+                    Ver Termos
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -448,7 +595,7 @@ export default function Settings() {
             <OnboardingResetCard />
           </TabsContent>
 
-          {/* ABA APARÊNCIA */}
+          {/* APPEARANCE TAB */}
           <TabsContent value="appearance" className="space-y-6">
             <Card>
               <CardHeader>
@@ -510,7 +657,7 @@ export default function Settings() {
             </Card>
           </TabsContent>
 
-          {/* ABA APOIE */}
+          {/* SUPPORT TAB */}
           <TabsContent value="support" className="space-y-6">
             <Card className="overflow-hidden">
               <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 text-center">
@@ -526,7 +673,6 @@ export default function Settings() {
 
               <CardContent className="p-6">
                 <div className="grid md:grid-cols-2 gap-6">
-                  {/* Lado Esquerdo: Benefícios */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-lg font-semibold">
                       <Coffee className="h-5 w-5 text-primary" />
@@ -551,7 +697,6 @@ export default function Settings() {
                     </ul>
                   </div>
 
-                  {/* Lado Direito: Pix Card */}
                   <div className="p-4 rounded-xl border bg-card space-y-4">
                     <div className="text-center">
                       <p className="font-semibold">Pix - Valor Fixo de R$ 5,00</p>
@@ -560,7 +705,6 @@ export default function Settings() {
                       </p>
                     </div>
 
-                    {/* QR Code */}
                     <div className="flex items-center justify-center p-4 bg-white rounded-lg">
                       <img 
                         src={qrCodePix} 
@@ -596,6 +740,9 @@ export default function Settings() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Terms Dialog */}
+      <TermsOfUseDialog open={showTermsDialog} onOpenChange={setShowTermsDialog} />
     </div>
   );
 }

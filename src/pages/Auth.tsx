@@ -4,11 +4,25 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Mountain, Zap, Target, ArrowLeft, Check, X, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatPhoneBR } from "@/lib/phoneMask";
+import { TermsOfUseDialog } from "@/components/TermsOfUseDialog";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
+
+const EDUCATION_LEVELS = [
+  { value: "ensino_fundamental", label: "Ensino Fundamental" },
+  { value: "ensino_medio", label: "Ensino Médio" },
+  { value: "cursos_livres", label: "Cursos Livres" },
+  { value: "curso_tecnico", label: "Curso Técnico" },
+  { value: "ensino_superior", label: "Ensino Superior" },
+  { value: "pos_graduacao", label: "Pós-graduação" },
+  { value: "outros", label: "Outros" },
+];
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -20,11 +34,19 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
+  // New fields
+  const [age, setAge] = useState<string>("");
+  const [city, setCity] = useState("");
+  const [phone, setPhone] = useState("");
+  const [educationLevel, setEducationLevel] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
+  
   const { signUp, signIn, user, resetPassword, updatePassword } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Regras de Senha
+  // Password requirements
   const passwordRequirements = [
     { id: "length", label: "Pelo menos 8 caracteres", test: (p: string) => p.length >= 8 },
     { id: "uppercase", label: "Letra maiúscula (A-Z)", test: (p: string) => /[A-Z]/.test(p) },
@@ -47,6 +69,10 @@ const Auth = () => {
       navigate("/dashboard");
     }
   }, [user, navigate, mode]);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhone(formatPhoneBR(e.target.value));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,8 +116,28 @@ const Auth = () => {
           setLoading(false);
           return;
         }
+
+        if (!termsAccepted) {
+          toast({
+            variant: "destructive",
+            title: "Termos obrigatórios",
+            description: "Você precisa aceitar os Termos de Uso para continuar.",
+          });
+          setLoading(false);
+          return;
+        }
         
-        const { error } = await signUp(email, password, fullName);
+        const { error } = await signUp({
+          email,
+          password,
+          fullName,
+          age: age ? parseInt(age, 10) : null,
+          city: city || undefined,
+          phone: phone || undefined,
+          educationLevel: educationLevel || undefined,
+          termsAccepted,
+        });
+        
         if (error) {
           toast({
             variant: "destructive",
@@ -199,7 +245,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Lado Esquerdo: Marca e Benefícios */}
+      {/* Left side: Brand and Benefits */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary to-primary-foreground/10 p-12 flex-col justify-between text-primary-foreground">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary-foreground/20 rounded-xl">
@@ -238,10 +284,10 @@ const Auth = () => {
         </p>
       </div>
 
-      {/* Lado Direito: Formulário */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-background">
+      {/* Right side: Form */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-background overflow-y-auto">
         <div className="w-full max-w-md space-y-8">
-          {/* Logo mobile */}
+          {/* Mobile logo */}
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
             <div className="p-2 bg-primary/10 rounded-xl">
               <Mountain className="w-8 h-8 text-primary" />
@@ -258,25 +304,82 @@ const Auth = () => {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nome Completo</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Seu nome completo"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  className="h-12 rounded-xl"
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Nome Completo *</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    className="h-12 rounded-xl"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="age">Idade</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      placeholder="Ex: 18"
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                      min={10}
+                      max={120}
+                      className="h-12 rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">Cidade</Label>
+                    <Input
+                      id="city"
+                      type="text"
+                      placeholder="Sua cidade"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="h-12 rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Celular</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="(00) 00000-0000"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    className="h-12 rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="educationLevel">Segmento de Ensino</Label>
+                  <Select value={educationLevel} onValueChange={setEducationLevel}>
+                    <SelectTrigger className="h-12 rounded-xl">
+                      <SelectValue placeholder="Selecione seu segmento" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border border-border z-50">
+                      {EDUCATION_LEVELS.map((level) => (
+                        <SelectItem key={level.value} value={level.value}>
+                          {level.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
             )}
             
             {(mode === "login" || mode === "signup" || mode === "forgot") && (
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -292,7 +395,7 @@ const Auth = () => {
             {(mode === "login" || mode === "signup" || mode === "reset") && (
               <div className="space-y-2">
                 <Label htmlFor="password">
-                  {mode === "reset" ? "Nova Senha" : "Senha"}
+                  {mode === "reset" ? "Nova Senha *" : "Senha *"}
                 </Label>
                 <div className="relative">
                   <Input
@@ -313,7 +416,7 @@ const Auth = () => {
                   </button>
                 </div>
 
-                {/* FEEDBACK VISUAL DE SENHA */}
+                {/* Password requirements feedback */}
                 {(mode === "signup" || mode === "reset") && password.length > 0 && (
                   <div className="mt-3 p-3 bg-muted/50 rounded-lg border border-border">
                     <p className="text-xs font-medium text-muted-foreground mb-2">Sua senha deve conter:</p>
@@ -345,7 +448,7 @@ const Auth = () => {
             
             {mode === "reset" && (
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                <Label htmlFor="confirmPassword">Confirmar Senha *</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -355,6 +458,37 @@ const Auth = () => {
                   required
                   className="h-12 rounded-xl"
                 />
+              </div>
+            )}
+
+            {/* Terms checkbox for signup */}
+            {mode === "signup" && (
+              <div className="flex items-start space-x-3 p-3 bg-muted/30 rounded-lg border border-border">
+                <Checkbox
+                  id="terms"
+                  checked={termsAccepted}
+                  onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                  className="mt-0.5"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor="terms"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Li e concordo com os{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsDialog(true)}
+                      className="text-primary hover:underline font-semibold"
+                    >
+                      Termos de Uso
+                    </button>
+                    {" "}*
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Você deve aceitar os termos para criar sua conta.
+                  </p>
+                </div>
               </div>
             )}
             
@@ -410,6 +544,9 @@ const Auth = () => {
           </div>
         </div>
       </div>
+
+      {/* Terms Dialog */}
+      <TermsOfUseDialog open={showTermsDialog} onOpenChange={setShowTermsDialog} />
     </div>
   );
 };
