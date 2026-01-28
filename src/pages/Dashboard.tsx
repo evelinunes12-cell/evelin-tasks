@@ -17,6 +17,7 @@ import StreakCard from "@/components/StreakCard";
 import { StreakKeeper } from "@/components/StreakKeeper";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { OnboardingProgress } from "@/components/OnboardingProgress";
+import { IncompleteProfileAlert } from "@/components/IncompleteProfileAlert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -658,6 +659,8 @@ const Dashboard = () => {
         </div>
 
         <OnboardingProgress />
+
+        <IncompleteProfileAlert />
 
         <StatsCards aFazer={stats.aFazer} emProgresso={stats.emProgresso} concluido={stats.concluido} />
 
