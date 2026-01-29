@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { 
   Loader2, 
@@ -29,7 +31,8 @@ import {
   Moon,
   Monitor,
   FileCheck,
-  FileX
+  FileX,
+  CalendarIcon
 } from "lucide-react";
 import { logError } from "@/lib/logger";
 import { profileSchema, passwordSchema } from "@/lib/validation";
@@ -38,6 +41,9 @@ import { ImageCropperDialog } from "@/components/ImageCropperDialog";
 import { TermsOfUseDialog } from "@/components/TermsOfUseDialog";
 import { CitySearchInput } from "@/components/CitySearchInput";
 import { formatPhoneBR } from "@/lib/phoneMask";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import qrCodePix from "@/assets/qrcode-pix.jpeg";
 
 const EDUCATION_LEVELS = [
@@ -54,7 +60,7 @@ const EDUCATION_LEVELS = [
 interface ProfileData {
   full_name: string;
   avatar_url: string | null;
-  age: number | null;
+  birth_date: string | null;
   city: string | null;
   phone: string | null;
   education_level: string | null;
@@ -71,7 +77,7 @@ export default function Settings() {
   const [profile, setProfile] = useState<ProfileData>({
     full_name: "",
     avatar_url: null,
-    age: null,
+    birth_date: null,
     city: null,
     phone: null,
     education_level: null,
@@ -110,15 +116,20 @@ export default function Settings() {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name, avatar_url, age, city, phone, education_level, terms_accepted")
+        .select("full_name, avatar_url, birth_date, city, phone, education_level, terms_accepted")
         .eq("id", user?.id)
         .single();
 
       if (error) throw error;
       if (data) {
         setProfile({
-          ...data,
+          full_name: data.full_name || "",
+          avatar_url: data.avatar_url,
+          birth_date: data.birth_date,
+          city: data.city,
           phone: data.phone ? formatPhoneBR(data.phone) : null,
+          education_level: data.education_level,
+          terms_accepted: data.terms_accepted,
         });
       }
     } catch (error) {
@@ -143,7 +154,7 @@ export default function Settings() {
         .from("profiles")
         .update({ 
           full_name: validation.data.full_name,
-          age: profile.age,
+          birth_date: profile.birth_date,
           city: profile.city,
           phone: profile.phone?.replace(/\D/g, "") || null,
           education_level: profile.education_level,
@@ -444,18 +455,40 @@ export default function Settings() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="age">Idade</Label>
-                      <Input
-                        id="age"
-                        type="number"
-                        value={profile.age || ""}
-                        onChange={(e) =>
-                          setProfile({ ...profile, age: e.target.value ? parseInt(e.target.value, 10) : null })
-                        }
-                        placeholder="Ex: 18"
-                        min={10}
-                        max={120}
-                      />
+                      <Label>Data de Nascimento</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !profile.birth_date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {profile.birth_date 
+                              ? format(parseISO(profile.birth_date), "dd/MM/yyyy", { locale: ptBR }) 
+                              : "Selecionar data"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={profile.birth_date ? parseISO(profile.birth_date) : undefined}
+                            onSelect={(date) => 
+                              setProfile({ ...profile, birth_date: date ? format(date, "yyyy-MM-dd") : null })
+                            }
+                            disabled={(date) =>
+                              date > new Date() || date < new Date("1900-01-01")
+                            }
+                            initialFocus
+                            className="pointer-events-auto"
+                            captionLayout="dropdown-buttons"
+                            fromYear={1900}
+                            toYear={new Date().getFullYear()}
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="city">Cidade</Label>
