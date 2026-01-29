@@ -6,12 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { Mountain, Zap, Target, ArrowLeft, Check, X, Eye, EyeOff } from "lucide-react";
+import { Mountain, Zap, Target, ArrowLeft, Check, X, Eye, EyeOff, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatPhoneBR } from "@/lib/phoneMask";
 import { TermsOfUseDialog } from "@/components/TermsOfUseDialog";
 import { CitySearchInput } from "@/components/CitySearchInput";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
@@ -37,7 +41,7 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   
   // New fields
-  const [age, setAge] = useState<string>("");
+  const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
   const [city, setCity] = useState("");
   const [phone, setPhone] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
@@ -133,7 +137,7 @@ const Auth = () => {
           email,
           password,
           fullName,
-          age: age ? parseInt(age, 10) : null,
+          birthDate: birthDate ? format(birthDate, "yyyy-MM-dd") : undefined,
           city: city || undefined,
           phone: phone || undefined,
           educationLevel: educationLevel || undefined,
@@ -324,17 +328,36 @@ const Auth = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="age">Idade</Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      placeholder="Ex: 18"
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      min={10}
-                      max={120}
-                      className="h-12 rounded-xl"
-                    />
+                    <Label>Data de Nascimento</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "h-12 w-full justify-start text-left font-normal rounded-xl",
+                            !birthDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {birthDate ? format(birthDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={birthDate}
+                          onSelect={setBirthDate}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          className="pointer-events-auto"
+                          captionLayout="dropdown-buttons"
+                          fromYear={1900}
+                          toYear={new Date().getFullYear()}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="city">Cidade</Label>

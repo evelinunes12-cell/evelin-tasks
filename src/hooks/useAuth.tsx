@@ -31,7 +31,7 @@ export const useAuth = () => {
     email: string;
     password: string;
     fullName: string;
-    age?: number | null;
+    birthDate?: string;
     city?: string;
     phone?: string;
     educationLevel?: string;
@@ -57,7 +57,7 @@ export const useAuth = () => {
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
-          age: data.age || null,
+          birth_date: data.birthDate || null,
           city: data.city || null,
           phone: data.phone || null,
           education_level: data.educationLevel || null,
