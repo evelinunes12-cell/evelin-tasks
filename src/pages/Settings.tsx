@@ -36,17 +36,19 @@ import { profileSchema, passwordSchema } from "@/lib/validation";
 import { readFile } from "@/lib/cropImage";
 import { ImageCropperDialog } from "@/components/ImageCropperDialog";
 import { TermsOfUseDialog } from "@/components/TermsOfUseDialog";
+import { CitySearchInput } from "@/components/CitySearchInput";
 import { formatPhoneBR } from "@/lib/phoneMask";
 import qrCodePix from "@/assets/qrcode-pix.jpeg";
 
 const EDUCATION_LEVELS = [
-  { value: "ensino_fundamental", label: "Ensino Fundamental" },
-  { value: "ensino_medio", label: "Ensino Médio" },
-  { value: "cursos_livres", label: "Cursos Livres" },
-  { value: "curso_tecnico", label: "Curso Técnico" },
-  { value: "ensino_superior", label: "Ensino Superior" },
-  { value: "pos_graduacao", label: "Pós-graduação" },
-  { value: "outros", label: "Outros" },
+  { value: "Ensino Fundamental", label: "Ensino Fundamental" },
+  { value: "Ensino Médio", label: "Ensino Médio" },
+  { value: "Cursos Livres", label: "Cursos Livres" },
+  { value: "Curso Técnico", label: "Curso Técnico" },
+  { value: "Ensino Superior", label: "Ensino Superior" },
+  { value: "Pós-graduação", label: "Pós-graduação" },
+  { value: "Mestrado/Doutorado", label: "Mestrado/Doutorado" },
+  { value: "Outros", label: "Outros" },
 ];
 
 interface ProfileData {
@@ -153,6 +155,25 @@ export default function Settings() {
     } catch (error) {
       logError("Error updating profile", error);
       toast.error("Erro ao atualizar perfil");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAcceptTerms = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ terms_accepted: true })
+        .eq("id", user?.id);
+
+      if (error) throw error;
+      setProfile({ ...profile, terms_accepted: true });
+      toast.success("Termos de uso aceitos com sucesso!");
+    } catch (error) {
+      logError("Error accepting terms", error);
+      toast.error("Erro ao aceitar os termos");
     } finally {
       setLoading(false);
     }
@@ -438,14 +459,13 @@ export default function Settings() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="city">Cidade</Label>
-                      <Input
+                      <CitySearchInput
                         id="city"
-                        type="text"
                         value={profile.city || ""}
-                        onChange={(e) =>
-                          setProfile({ ...profile, city: e.target.value })
+                        onChange={(value) =>
+                          setProfile({ ...profile, city: value })
                         }
-                        placeholder="Sua cidade"
+                        placeholder="Buscar cidade..."
                       />
                     </div>
                   </div>
@@ -525,13 +545,25 @@ export default function Settings() {
                         : "Você ainda não aceitou os termos de uso."}
                     </p>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowTermsDialog(true)}
-                    className="gap-2"
-                  >
-                    Ver Termos
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowTermsDialog(true)}
+                      className="gap-2"
+                    >
+                      Ver Termos
+                    </Button>
+                    {!profile.terms_accepted && (
+                      <Button 
+                        onClick={handleAcceptTerms}
+                        disabled={loading}
+                        className="gap-2"
+                      >
+                        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                        Aceitar Termos
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

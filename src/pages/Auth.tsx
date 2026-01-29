@@ -11,17 +11,19 @@ import { Mountain, Zap, Target, ArrowLeft, Check, X, Eye, EyeOff } from "lucide-
 import { cn } from "@/lib/utils";
 import { formatPhoneBR } from "@/lib/phoneMask";
 import { TermsOfUseDialog } from "@/components/TermsOfUseDialog";
+import { CitySearchInput } from "@/components/CitySearchInput";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
 const EDUCATION_LEVELS = [
-  { value: "ensino_fundamental", label: "Ensino Fundamental" },
-  { value: "ensino_medio", label: "Ensino Médio" },
-  { value: "cursos_livres", label: "Cursos Livres" },
-  { value: "curso_tecnico", label: "Curso Técnico" },
-  { value: "ensino_superior", label: "Ensino Superior" },
-  { value: "pos_graduacao", label: "Pós-graduação" },
-  { value: "outros", label: "Outros" },
+  { value: "Ensino Fundamental", label: "Ensino Fundamental" },
+  { value: "Ensino Médio", label: "Ensino Médio" },
+  { value: "Cursos Livres", label: "Cursos Livres" },
+  { value: "Curso Técnico", label: "Curso Técnico" },
+  { value: "Ensino Superior", label: "Ensino Superior" },
+  { value: "Pós-graduação", label: "Pós-graduação" },
+  { value: "Mestrado/Doutorado", label: "Mestrado/Doutorado" },
+  { value: "Outros", label: "Outros" },
 ];
 
 const Auth = () => {
@@ -336,12 +338,11 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="city">Cidade</Label>
-                    <Input
+                    <CitySearchInput
                       id="city"
-                      type="text"
-                      placeholder="Sua cidade"
                       value={city}
-                      onChange={(e) => setCity(e.target.value)}
+                      onChange={setCity}
+                      placeholder="Buscar cidade..."
                       className="h-12 rounded-xl"
                     />
                   </div>
