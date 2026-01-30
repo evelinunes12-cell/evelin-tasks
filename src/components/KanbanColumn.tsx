@@ -15,6 +15,7 @@ interface KanbanColumnProps {
   onDelete: (taskId: string) => void;
   onStatusChange: (taskId: string, newStatus: string) => void;
   onArchive: (taskId: string) => void;
+  onTaskClick?: (taskId: string) => void;
 }
 
 export function KanbanColumn({
@@ -27,6 +28,7 @@ export function KanbanColumn({
   onDelete,
   onStatusChange,
   onArchive,
+  onTaskClick,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id,
@@ -36,7 +38,7 @@ export function KanbanColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        "bg-muted/50 rounded-lg p-4 min-w-[85vw] md:min-w-0 snap-center flex-shrink-0 transition-all duration-200",
+        "bg-muted/50 rounded-lg p-4 transition-all duration-200",
         isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background bg-muted/80"
       )}
     >
@@ -47,7 +49,8 @@ export function KanbanColumn({
           {tasks.length}
         </Badge>
       </h3>
-      <ScrollArea className="h-[600px] pr-4">
+      {/* Mobile: smaller height, Desktop: taller */}
+      <ScrollArea className="h-[300px] md:h-[600px] pr-4">
         <div className="space-y-4">
           {tasks.map((task) => (
             <KanbanCard
@@ -58,6 +61,7 @@ export function KanbanColumn({
               onDelete={onDelete}
               onStatusChange={onStatusChange}
               onArchive={onArchive}
+              onTaskClick={onTaskClick}
             />
           ))}
           {tasks.length === 0 && (

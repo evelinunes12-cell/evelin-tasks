@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -10,10 +10,10 @@ import {
   useSensors,
   closestCenter,
 } from "@dnd-kit/core";
-import { useState } from "react";
 import { Task } from "@/services/tasks";
 import { KanbanColumn } from "./KanbanColumn";
 import { KanbanCard } from "./KanbanCard";
+import { TaskQuickView } from "./TaskQuickView";
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -61,6 +61,8 @@ export function KanbanBoard({
   onArchive,
 }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [quickViewTaskId, setQuickViewTaskId] = useState<string | null>(null);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
 
   // Configure sensors for both pointer and touch
   const sensors = useSensors(
@@ -116,50 +118,68 @@ export function KanbanBoard({
     }
   };
 
+  const handleTaskClick = (taskId: string) => {
+    setQuickViewTaskId(taskId);
+    setQuickViewOpen(true);
+  };
+
   const completedStatusName =
     availableStatuses.find((s) => s.toLowerCase().includes("conclu")) ||
     "Concluído";
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto snap-x snap-mandatory touch-pan-x pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
-        {COLUMNS.map((column) => (
-          <KanbanColumn
-            key={column.id}
-            id={column.id}
-            title={column.title}
-            color={column.color}
-            tasks={tasksByColumn[column.id] || []}
-            availableStatuses={availableStatuses}
-            completedStatusName={completedStatusName}
-            onDelete={onDelete}
-            onStatusChange={onStatusChange}
-            onArchive={onArchive}
-          />
-        ))}
-      </div>
-
-      {/* Drag Overlay - shows the card being dragged */}
-      <DragOverlay>
-        {activeTask ? (
-          <div className="opacity-90 rotate-3 scale-105">
-            <KanbanCard
-              task={activeTask}
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        {/* Mobile: flex-col (vertical stack), Desktop: grid 3 cols */}
+        <div className="flex flex-col gap-6 md:grid md:grid-cols-3 md:gap-6">
+          {COLUMNS.map((column) => (
+            <KanbanColumn
+              key={column.id}
+              id={column.id}
+              title={column.title}
+              color={column.color}
+              tasks={tasksByColumn[column.id] || []}
               availableStatuses={availableStatuses}
               completedStatusName={completedStatusName}
               onDelete={onDelete}
               onStatusChange={onStatusChange}
               onArchive={onArchive}
-              isDragging
+              onTaskClick={handleTaskClick}
             />
-          </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+          ))}
+        </div>
+
+        {/* Drag Overlay - shows the card being dragged */}
+        <DragOverlay>
+          {activeTask ? (
+            <div className="opacity-90 rotate-3 scale-105">
+              <KanbanCard
+                task={activeTask}
+                availableStatuses={availableStatuses}
+                completedStatusName={completedStatusName}
+                onDelete={onDelete}
+                onStatusChange={onStatusChange}
+                onArchive={onArchive}
+                isDragging
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
+      {/* Task Quick View Modal/Drawer */}
+      <TaskQuickView
+        taskId={quickViewTaskId}
+        open={quickViewOpen}
+        onOpenChange={setQuickViewOpen}
+        onStatusChange={onStatusChange}
+        availableStatuses={availableStatuses}
+      />
+    </>
   );
 }
