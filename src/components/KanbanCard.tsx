@@ -30,6 +30,7 @@ interface KanbanCardProps {
   onDelete: (taskId: string) => void;
   onStatusChange: (taskId: string, newStatus: string) => void;
   onArchive: (taskId: string) => void;
+  onTaskClick?: (taskId: string) => void;
   isDragging?: boolean;
 }
 
@@ -37,6 +38,7 @@ export function KanbanCard({
   task,
   onDelete,
   onArchive,
+  onTaskClick,
   isDragging = false,
 }: KanbanCardProps) {
   const navigate = useNavigate();
@@ -155,12 +157,12 @@ export function KanbanCard({
         )}
       </CardContent>
 
-      {/* Actions - visible on hover */}
-      <CardFooter className="pt-0 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Actions - visible on hover (desktop) or always visible (mobile) */}
+      <CardFooter className="pt-0 gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(`/task/${task.id}`)}
+          onClick={() => onTaskClick ? onTaskClick(task.id) : navigate(`/task/${task.id}`)}
           className="flex-1 h-8"
         >
           <Eye className="w-3.5 h-3.5 mr-1" />
