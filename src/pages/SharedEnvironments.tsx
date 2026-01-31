@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Users, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface Environment {
   id: string;
@@ -94,11 +95,14 @@ const SharedEnvironments = () => {
     <div className="min-h-screen bg-background flex-1">
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Grupos de Trabalho</h1>
-            <p className="text-muted-foreground mt-2">
-              Gerencie seus grupos de estudo e projetos em equipe
-            </p>
+          <div className="flex items-center gap-4">
+            <SidebarTrigger className="md:hidden" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Grupos de Trabalho</h1>
+              <p className="text-muted-foreground mt-2">
+                Gerencie seus grupos de estudo e projetos em equipe
+              </p>
+            </div>
           </div>
           <Button onClick={() => navigate("/environment/new")} size="lg" className="gap-2">
             <Plus className="w-5 h-5" />

@@ -24,6 +24,7 @@ import { useMemo, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { ActivityHeatmap } from "@/components/ActivityHeatmap";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -265,7 +266,8 @@ const Reports = () => {
     return (
       <main className="flex-1 p-4 md:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger className="md:hidden" />
             <BarChart3 className="h-8 w-8 text-primary" />
             <h1 className="text-2xl md:text-3xl font-bold">Relatórios</h1>
           </div>
@@ -306,7 +308,8 @@ const Reports = () => {
       <main className="flex-1 p-4 md:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger className="md:hidden" />
               <BarChart3 className="h-8 w-8 text-primary" />
               <h1 className="text-2xl md:text-3xl font-bold">Relatórios</h1>
             </div>
@@ -332,7 +335,8 @@ const Reports = () => {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header with Date Filter */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger className="md:hidden" />
             <BarChart3 className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-2xl md:text-3xl font-bold">Relatórios</h1>
