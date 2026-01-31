@@ -103,8 +103,8 @@ export const ActivityHeatmap = ({
           </div>
 
           {/* Heatmap Grid */}
-          <div className="overflow-x-auto">
-            <div className="flex gap-1 min-w-max">
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <div className="flex gap-1 min-w-max pb-2">
               {weeks.map((week, weekIndex) => (
                 <div key={weekIndex} className="flex flex-col gap-1">
                   {week.map((day) => (

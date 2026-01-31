@@ -417,7 +417,7 @@ const Reports = () => {
             </CardHeader>
             <CardContent>
               {analytics.weeklyData.some((d) => d.tarefas > 0) ? (
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={300} className="min-h-[250px]">
                   <BarChart data={analytics.weeklyData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis
@@ -474,7 +474,7 @@ const Reports = () => {
             </CardHeader>
             <CardContent>
               {analytics.focusDailyData.some((d) => d.minutos > 0) ? (
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={300} className="min-h-[250px]">
                   <AreaChart data={analytics.focusDailyData}>
                     <defs>
                       <linearGradient id="colorFocus" x1="0" y1="0" x2="0" y2="1">
@@ -544,7 +544,7 @@ const Reports = () => {
             </CardHeader>
             <CardContent>
               {analytics.subjectData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={300} className="min-h-[250px]">
                   <PieChart>
                     <Pie
                       data={analytics.subjectData}
@@ -603,7 +603,7 @@ const Reports = () => {
             </CardHeader>
             <CardContent>
               {analytics.statusData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={300} className="min-h-[250px]">
                   <BarChart data={analytics.statusData} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis type="number" allowDecimals={false} />
@@ -666,7 +666,7 @@ const Reports = () => {
             <CardContent>
               {analytics.monthlyData.length > 0 && analytics.monthlyData.some((d) => d.criadas > 0 || d.concluidas > 0) ? (
                 <>
-                  <ResponsiveContainer width="100%" height={280}>
+                  <ResponsiveContainer width="100%" height={300} className="min-h-[250px]">
                     <AreaChart data={analytics.monthlyData}>
                       <defs>
                         <linearGradient id="colorCriadas" x1="0" y1="0" x2="0" y2="1">
