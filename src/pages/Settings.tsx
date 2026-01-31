@@ -45,6 +45,7 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import qrCodePix from "@/assets/qrcode-pix.jpeg";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const EDUCATION_LEVELS = [
   { value: "Ensino Fundamental", label: "Ensino Fundamental" },
@@ -331,11 +332,14 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 flex-1">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Configurações</h1>
-          <p className="text-muted-foreground mt-1">
-            Gerencie sua conta e preferências do Zenit.
-          </p>
+        <div className="flex items-center gap-4">
+          <SidebarTrigger className="md:hidden" />
+          <div>
+            <h1 className="text-3xl font-bold">Configurações</h1>
+            <p className="text-muted-foreground mt-1">
+              Gerencie sua conta e preferências do Zenit.
+            </p>
+          </div>
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
