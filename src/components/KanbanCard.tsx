@@ -96,9 +96,9 @@ export function KanbanCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "transition-all duration-200 group",
+        "transition-all duration-200 group cursor-pointer",
         isCurrentlyDragging && "opacity-50 scale-95",
-        !isCurrentlyDragging && "hover:shadow-md"
+        !isCurrentlyDragging && "hover:shadow-md hover:-translate-y-1"
       )}
     >
       <CardHeader className="pb-2">

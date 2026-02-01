@@ -38,7 +38,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <div className="p-4 flex justify-end border-b">
-          <SidebarTrigger />
+          <SidebarTrigger className="hover:bg-accent transition-colors" />
         </div>
         <SidebarGroup>
           <SidebarGroupLabel>Menu</SidebarGroupLabel>

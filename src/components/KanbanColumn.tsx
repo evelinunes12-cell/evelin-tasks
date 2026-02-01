@@ -39,6 +39,8 @@ export function KanbanColumn({
       ref={setNodeRef}
       className={cn(
         "bg-muted/50 rounded-lg p-4 transition-all duration-200",
+        // Desktop: fixed width, enhanced styling
+        "md:min-w-[320px] md:w-80 md:flex-shrink-0 md:bg-muted/30 md:rounded-xl md:border md:border-border/50",
         isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background bg-muted/80"
       )}
     >

@@ -135,23 +135,25 @@ export function KanbanBoard({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        {/* Mobile: flex-col (vertical stack), Desktop: grid 3 cols */}
-        <div className="flex flex-col gap-6 md:grid md:grid-cols-3 md:gap-6">
-          {COLUMNS.map((column) => (
-            <KanbanColumn
-              key={column.id}
-              id={column.id}
-              title={column.title}
-              color={column.color}
-              tasks={tasksByColumn[column.id] || []}
-              availableStatuses={availableStatuses}
-              completedStatusName={completedStatusName}
-              onDelete={onDelete}
-              onStatusChange={onStatusChange}
-              onArchive={onArchive}
-              onTaskClick={handleTaskClick}
-            />
-          ))}
+        {/* Mobile: flex-col (vertical stack), Desktop: horizontal scroll with fixed-width columns */}
+        <div className="flex flex-col gap-6 md:overflow-x-auto md:pb-4">
+          <div className="flex flex-col gap-6 md:flex-row md:gap-6">
+            {COLUMNS.map((column) => (
+              <KanbanColumn
+                key={column.id}
+                id={column.id}
+                title={column.title}
+                color={column.color}
+                tasks={tasksByColumn[column.id] || []}
+                availableStatuses={availableStatuses}
+                completedStatusName={completedStatusName}
+                onDelete={onDelete}
+                onStatusChange={onStatusChange}
+                onArchive={onArchive}
+                onTaskClick={handleTaskClick}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Drag Overlay - shows the card being dragged */}
