@@ -9,8 +9,8 @@ interface StatsCardsProps {
 
 const StatsCards = ({ aFazer, emProgresso, concluido }: StatsCardsProps) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-      <Card className="border-l-4 border-l-muted hover:shadow-md transition-shadow">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 mb-6">
+      <Card className="border-l-4 border-l-muted hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
         <CardContent className="pt-6">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-full bg-muted/50">
@@ -24,7 +24,7 @@ const StatsCards = ({ aFazer, emProgresso, concluido }: StatsCardsProps) => {
         </CardContent>
       </Card>
 
-      <Card className="border-l-4 border-l-warning hover:shadow-md transition-shadow">
+      <Card className="border-l-4 border-l-warning hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
         <CardContent className="pt-6">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-full bg-warning/10">
@@ -38,7 +38,7 @@ const StatsCards = ({ aFazer, emProgresso, concluido }: StatsCardsProps) => {
         </CardContent>
       </Card>
 
-      <Card className="border-l-4 border-l-success hover:shadow-md transition-shadow">
+      <Card className="border-l-4 border-l-success hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
         <CardContent className="pt-6">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-full bg-success/10">

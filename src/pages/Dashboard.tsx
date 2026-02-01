@@ -649,7 +649,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background flex-1">
       <StreakKeeper />
       <Navbar />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 max-w-[1600px]">
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold text-foreground mb-2">Minhas Tarefas</h2>
@@ -867,7 +867,7 @@ const Dashboard = () => {
         ) : filteredTasks.length === 0 ? (
           <EmptyState type="filtered" onClearFilters={clearAllFilters} />
         ) : viewMode === "list" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredTasks.map(task => (
               <SwipeableTaskCard 
                 key={task.id} 
