@@ -5,6 +5,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Task } from "@/services/tasks";
 import { unarchiveTask } from "@/services/archive";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -203,6 +204,7 @@ const ArchivedTasks = () => {
     <main className="min-h-screen bg-background flex-1 p-6">
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-2">
+            <SidebarTrigger className="md:hidden" />
             <Archive className="w-8 h-8 text-muted-foreground" />
             <h2 className="text-3xl font-bold text-foreground">Tarefas Arquivadas</h2>
           </div>

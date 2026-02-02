@@ -150,7 +150,7 @@ export default function Subjects() {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container flex h-16 items-center gap-4 px-4">
-          <SidebarTrigger />
+          <SidebarTrigger className="md:hidden" />
           <h1 className="text-2xl font-bold">Disciplinas</h1>
         </div>
       </header>
