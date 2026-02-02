@@ -36,7 +36,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+
 
 const ArchivedTasks = () => {
   const { user, loading: authLoading } = useAuth();
@@ -205,7 +205,6 @@ const ArchivedTasks = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-2">
-            <SidebarTrigger className="md:hidden" />
             <Archive className="w-8 h-8 text-muted-foreground" />
             <h2 className="text-3xl font-bold text-foreground">Tarefas Arquivadas</h2>
           </div>
