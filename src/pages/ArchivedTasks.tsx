@@ -343,7 +343,7 @@ const ArchivedTasks = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredTasks.map((task) => (
-              <Card key={task.id} className="flex flex-col">
+              <Card key={task.id} className="flex flex-col hover:bg-muted/50 transition-colors duration-200">
                 <CardContent className="pt-6 flex-1">
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="font-semibold text-lg text-foreground line-clamp-1">
