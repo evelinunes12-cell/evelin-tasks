@@ -201,7 +201,7 @@ const ArchivedTasks = () => {
 
   return (
     <div className="min-h-screen bg-background flex-1">
-      <Navbar />
+      <Navbar minimal />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-2">
