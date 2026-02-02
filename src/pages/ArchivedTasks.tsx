@@ -5,7 +5,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Task } from "@/services/tasks";
 import { unarchiveTask } from "@/services/archive";
-import Navbar from "@/components/Navbar";
+
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -200,9 +200,7 @@ const ArchivedTasks = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex-1">
-      <Navbar minimal />
-      <main className="container mx-auto px-4 py-8">
+    <main className="min-h-screen bg-background flex-1 p-6">
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-2">
             <Archive className="w-8 h-8 text-muted-foreground" />
@@ -422,8 +420,7 @@ const ArchivedTasks = () => {
             ))}
           </div>
         )}
-      </main>
-    </div>
+    </main>
   );
 };
 
