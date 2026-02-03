@@ -10,6 +10,8 @@ export interface TaskStatus {
   updated_at: string;
   is_default: boolean;
   order_index: number;
+  parent_id: string | null;
+  children?: TaskStatus[];
 }
 
 // Validate status data before database operations
@@ -28,6 +30,26 @@ export const fetchStatuses = async () => {
   
   if (error) throw error;
   return data as TaskStatus[];
+};
+
+export const fetchStatusesHierarchical = async () => {
+  const { data, error } = await supabase
+    .from("task_statuses")
+    .select("*")
+    .order("order_index", { ascending: true });
+  
+  if (error) throw error;
+  
+  const statuses = data as TaskStatus[];
+  
+  // Organize into hierarchy
+  const parentStatuses = statuses.filter(s => !s.parent_id);
+  const childStatuses = statuses.filter(s => s.parent_id);
+  
+  return parentStatuses.map(parent => ({
+    ...parent,
+    children: childStatuses.filter(child => child.parent_id === parent.id)
+  }));
 };
 
 export const fetchStatusNames = async () => {
@@ -72,7 +94,8 @@ export const ensureStatusExists = async (
 export const createStatus = async (
   name: string,
   userId: string,
-  color?: string
+  color?: string,
+  parentId?: string | null
 ) => {
   // Validate status data
   validateStatus(name, color);
@@ -83,6 +106,8 @@ export const createStatus = async (
       name,
       user_id: userId,
       color: color || null,
+      parent_id: parentId || null,
+      is_default: !parentId, // Only parent statuses can be default
     })
     .select()
     .single();
@@ -93,7 +118,7 @@ export const createStatus = async (
 
 export const updateStatus = async (
   id: string,
-  updates: { name?: string; color?: string | null }
+  updates: { name?: string; color?: string | null; parent_id?: string | null }
 ) => {
   // Validate if name is being updated
   if (updates.name) {
