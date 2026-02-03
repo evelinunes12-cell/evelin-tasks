@@ -169,7 +169,7 @@ const EnvironmentForm = () => {
         toast.success("Status adicionado!");
       } catch { toast.error("Erro ao adicionar status"); }
     } else {
-      setStatuses([...statuses, { id: `temp-${Date.now()}`, environment_id: "", name: newStatusName, color: newStatusColor, created_at: "", updated_at: "" }]);
+      setStatuses([...statuses, { id: `temp-${Date.now()}`, environment_id: "", name: newStatusName, color: newStatusColor, created_at: "", updated_at: "", is_default: false, order_index: statuses.length, parent_id: null }]);
     }
     setNewStatusName("");
     setNewStatusColor("#3b82f6");

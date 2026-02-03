@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,20 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface TaskStatus {
   id: string;
@@ -23,17 +37,22 @@ interface TaskStatus {
   color: string | null;
   is_default: boolean;
   order_index: number;
+  parent_id: string | null;
+  children?: TaskStatus[];
 }
 
 export default function TaskStatuses() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [statuses, setStatuses] = useState<TaskStatus[]>([]);
+  const [hierarchicalStatuses, setHierarchicalStatuses] = useState<TaskStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStatus, setEditingStatus] = useState<TaskStatus | null>(null);
   const [statusName, setStatusName] = useState("");
   const [statusColor, setStatusColor] = useState("#3b82f6");
+  const [parentId, setParentId] = useState<string | null>(null);
+  const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (user) {
@@ -49,7 +68,26 @@ export default function TaskStatuses() {
         .order("order_index", { ascending: true });
 
       if (error) throw error;
-      setStatuses(data || []);
+      
+      const allStatuses = (data || []) as TaskStatus[];
+      setStatuses(allStatuses);
+      
+      // Organize into hierarchy
+      const parents = allStatuses.filter(s => !s.parent_id);
+      const children = allStatuses.filter(s => s.parent_id);
+      
+      const hierarchical = parents.map(parent => ({
+        ...parent,
+        children: children.filter(child => child.parent_id === parent.id)
+      }));
+      
+      setHierarchicalStatuses(hierarchical);
+      
+      // Auto-expand parents that have children
+      const parentsWithChildren = new Set(
+        hierarchical.filter(p => p.children && p.children.length > 0).map(p => p.id)
+      );
+      setExpandedParents(parentsWithChildren);
     } catch (error) {
       toast({
         title: "Erro ao carregar status",
@@ -61,15 +99,17 @@ export default function TaskStatuses() {
     }
   };
 
-  const handleOpenDialog = (status?: TaskStatus) => {
+  const handleOpenDialog = (status?: TaskStatus, isChild: boolean = false, preselectedParentId?: string) => {
     if (status) {
       setEditingStatus(status);
       setStatusName(status.name);
       setStatusColor(status.color || "#3b82f6");
+      setParentId(status.parent_id);
     } else {
       setEditingStatus(null);
       setStatusName("");
       setStatusColor("#3b82f6");
+      setParentId(isChild && preselectedParentId ? preselectedParentId : null);
     }
     setDialogOpen(true);
   };
@@ -88,7 +128,11 @@ export default function TaskStatuses() {
       if (editingStatus) {
         const { error } = await supabase
           .from("task_statuses")
-          .update({ name: statusName, color: statusColor })
+          .update({ 
+            name: statusName, 
+            color: statusColor,
+            parent_id: parentId 
+          })
           .eq("id", editingStatus.id);
 
         if (error) throw error;
@@ -99,7 +143,13 @@ export default function TaskStatuses() {
       } else {
         const { error } = await supabase
           .from("task_statuses")
-          .insert({ name: statusName, color: statusColor, user_id: user?.id });
+          .insert({ 
+            name: statusName, 
+            color: statusColor, 
+            user_id: user?.id,
+            parent_id: parentId,
+            is_default: !parentId // Only parent statuses without a parent can be marked as potential defaults
+          });
 
         if (error) throw error;
         toast({
@@ -120,7 +170,7 @@ export default function TaskStatuses() {
   };
 
   const handleDeleteStatus = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este status?")) return;
+    if (!confirm("Tem certeza que deseja excluir este status? Os status filhos também serão excluídos.")) return;
 
     try {
       const { error } = await supabase.from("task_statuses").delete().eq("id", id);
@@ -140,6 +190,20 @@ export default function TaskStatuses() {
     }
   };
 
+  const toggleExpand = (parentId: string) => {
+    setExpandedParents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(parentId)) {
+        newSet.delete(parentId);
+      } else {
+        newSet.add(parentId);
+      }
+      return newSet;
+    });
+  };
+
+  const parentStatuses = statuses.filter(s => !s.parent_id);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -158,52 +222,136 @@ export default function TaskStatuses() {
       </header>
 
       <main className="container py-8 px-4">
-        <div className="mb-6">
+        <div className="mb-6 flex gap-2 flex-wrap">
           <Button onClick={() => handleOpenDialog()}>
             <Plus className="h-4 w-4 mr-2" />
-            Novo Status
+            Novo Status Pai
           </Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {statuses.map((status) => (
-            <Card key={status.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: status.color || "#3b82f6" }}
-                    />
-                    <CardTitle className="text-lg">{status.name}</CardTitle>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleOpenDialog(status)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    {!status.is_default && (
+        <div className="space-y-4">
+          {hierarchicalStatuses.map((status) => (
+            <Card key={status.id} className="overflow-hidden">
+              <Collapsible
+                open={expandedParents.has(status.id)}
+                onOpenChange={() => toggleExpand(status.id)}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                          {expandedParents.has(status.id) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                      <div
+                        className="w-4 h-4 rounded-full shrink-0"
+                        style={{ backgroundColor: status.color || "#3b82f6" }}
+                      />
+                      <CardTitle className="text-lg">{status.name}</CardTitle>
+                      {status.is_default && (
+                        <Badge variant="secondary" className="text-xs">Padrão</Badge>
+                      )}
+                      {status.children && status.children.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {status.children.length} {status.children.length === 1 ? 'filho' : 'filhos'}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDialog(undefined, true, status.id);
+                        }}
+                        title="Adicionar status filho"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDeleteStatus(status.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDialog(status);
+                        }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                       </Button>
-                    )}
+                      {!status.is_default && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteStatus(status.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
+                </CardHeader>
+                
+                <CollapsibleContent>
+                  <CardContent className="pt-0 pb-4">
+                    {status.children && status.children.length > 0 ? (
+                      <div className="ml-8 space-y-2">
+                        {status.children.map((child) => (
+                          <div
+                            key={child.id}
+                            className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded-full shrink-0"
+                                style={{ backgroundColor: child.color || "#3b82f6" }}
+                              />
+                              <span className="font-medium">{child.name}</span>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleOpenDialog(child)}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleDeleteStatus(child.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="ml-8 text-sm text-muted-foreground">
+                        Nenhum status filho. Clique em + para adicionar.
+                      </p>
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
             </Card>
           ))}
         </div>
 
-        {statuses.length === 0 && (
+        {hierarchicalStatuses.length === 0 && (
           <p className="text-center text-muted-foreground mt-8">
-            Nenhum status cadastrado. Clique em "Novo Status" para começar.
+            Nenhum status cadastrado. Clique em "Novo Status Pai" para começar.
           </p>
         )}
       </main>
@@ -212,10 +360,12 @@ export default function TaskStatuses() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingStatus ? "Editar Status" : "Novo Status"}
+              {editingStatus ? "Editar Status" : parentId ? "Novo Status Filho" : "Novo Status Pai"}
             </DialogTitle>
             <DialogDescription>
-              Preencha os dados do status abaixo.
+              {parentId 
+                ? "Este status será associado ao status pai selecionado."
+                : "Status pai podem ter status filhos associados."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -236,6 +386,33 @@ export default function TaskStatuses() {
                 value={statusColor}
                 onChange={(e) => setStatusColor(e.target.value)}
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="parent">Status Pai (opcional)</Label>
+              <Select
+                value={parentId || "none"}
+                onValueChange={(value) => setParentId(value === "none" ? null : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um status pai" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum (será um status pai)</SelectItem>
+                  {parentStatuses
+                    .filter(s => s.id !== editingStatus?.id)
+                    .map((status) => (
+                      <SelectItem key={status.id} value={status.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: status.color || "#3b82f6" }}
+                          />
+                          {status.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

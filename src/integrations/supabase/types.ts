@@ -55,7 +55,10 @@ export type Database = {
           created_at: string
           environment_id: string
           id: string
+          is_default: boolean
           name: string
+          order_index: number
+          parent_id: string | null
           updated_at: string
         }
         Insert: {
@@ -63,7 +66,10 @@ export type Database = {
           created_at?: string
           environment_id: string
           id?: string
+          is_default?: boolean
           name: string
+          order_index?: number
+          parent_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -71,7 +77,10 @@ export type Database = {
           created_at?: string
           environment_id?: string
           id?: string
+          is_default?: boolean
           name?: string
+          order_index?: number
+          parent_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -80,6 +89,13 @@ export type Database = {
             columns: ["environment_id"]
             isOneToOne: false
             referencedRelation: "shared_environments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "environment_statuses_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "environment_statuses"
             referencedColumns: ["id"]
           },
         ]
@@ -341,6 +357,7 @@ export type Database = {
           is_default: boolean
           name: string
           order_index: number
+          parent_id: string | null
           updated_at: string
           user_id: string
         }
@@ -351,6 +368,7 @@ export type Database = {
           is_default?: boolean
           name: string
           order_index?: number
+          parent_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -361,10 +379,19 @@ export type Database = {
           is_default?: boolean
           name?: string
           order_index?: number
+          parent_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "task_statuses_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "task_statuses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_step_attachments: {
         Row: {

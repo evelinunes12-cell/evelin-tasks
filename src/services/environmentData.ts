@@ -25,6 +25,10 @@ export interface EnvironmentStatus {
   color: string | null;
   created_at: string;
   updated_at: string;
+  is_default: boolean;
+  order_index: number;
+  parent_id: string | null;
+  children?: EnvironmentStatus[];
 }
 
 export const fetchEnvironmentSubjects = async (environmentId: string) => {
@@ -43,10 +47,31 @@ export const fetchEnvironmentStatuses = async (environmentId: string) => {
     .from("environment_statuses")
     .select("*")
     .eq("environment_id", environmentId)
-    .order("name");
+    .order("order_index", { ascending: true });
 
   if (error) throw error;
   return data as EnvironmentStatus[];
+};
+
+export const fetchEnvironmentStatusesHierarchical = async (environmentId: string) => {
+  const { data, error } = await supabase
+    .from("environment_statuses")
+    .select("*")
+    .eq("environment_id", environmentId)
+    .order("order_index", { ascending: true });
+
+  if (error) throw error;
+  
+  const statuses = data as EnvironmentStatus[];
+  
+  // Organize into hierarchy
+  const parentStatuses = statuses.filter(s => !s.parent_id);
+  const childStatuses = statuses.filter(s => s.parent_id);
+  
+  return parentStatuses.map(parent => ({
+    ...parent,
+    children: childStatuses.filter(child => child.parent_id === parent.id)
+  }));
 };
 
 export const createEnvironmentSubject = async (
@@ -74,7 +99,8 @@ export const createEnvironmentSubject = async (
 export const createEnvironmentStatus = async (
   environmentId: string,
   name: string,
-  color?: string | null
+  color?: string | null,
+  parentId?: string | null
 ) => {
   // Validate status data before insert
   validateSubjectStatus(name, color);
@@ -85,6 +111,8 @@ export const createEnvironmentStatus = async (
       environment_id: environmentId,
       name,
       color: color || null,
+      parent_id: parentId || null,
+      is_default: !parentId, // Only parent statuses can be default
     })
     .select()
     .single();
@@ -112,7 +140,7 @@ export const updateEnvironmentSubject = async (
 
 export const updateEnvironmentStatus = async (
   id: string,
-  updates: { name?: string; color?: string | null }
+  updates: { name?: string; color?: string | null; parent_id?: string | null }
 ) => {
   // Validate if name is being updated
   if (updates.name) {
