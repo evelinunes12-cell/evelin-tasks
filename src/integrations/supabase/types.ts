@@ -541,6 +541,10 @@ export type Database = {
       }
       check_overdue_tasks: { Args: never; Returns: undefined }
       check_upcoming_tasks: { Args: never; Returns: undefined }
+      create_default_environment_statuses: {
+        Args: { target_environment_id: string }
+        Returns: undefined
+      }
       create_default_task_statuses: {
         Args: { target_user_id: string }
         Returns: undefined
