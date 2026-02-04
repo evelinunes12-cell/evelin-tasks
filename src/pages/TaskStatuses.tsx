@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { Pencil, Trash2, Plus, ChevronDown, ChevronRight, LayoutDashboard, Columns3 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 interface TaskStatus {
@@ -38,6 +39,8 @@ interface TaskStatus {
   is_default: boolean;
   order_index: number;
   parent_id: string | null;
+  show_in_dashboard: boolean;
+  show_in_kanban: boolean;
   children?: TaskStatus[];
 }
 
@@ -52,6 +55,8 @@ export default function TaskStatuses() {
   const [statusName, setStatusName] = useState("");
   const [statusColor, setStatusColor] = useState("#3b82f6");
   const [parentId, setParentId] = useState<string | null>(null);
+  const [showInDashboard, setShowInDashboard] = useState(true);
+  const [showInKanban, setShowInKanban] = useState(true);
   const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -105,11 +110,15 @@ export default function TaskStatuses() {
       setStatusName(status.name);
       setStatusColor(status.color || "#3b82f6");
       setParentId(status.parent_id);
+      setShowInDashboard(status.show_in_dashboard);
+      setShowInKanban(status.show_in_kanban);
     } else {
       setEditingStatus(null);
       setStatusName("");
       setStatusColor("#3b82f6");
       setParentId(isChild && preselectedParentId ? preselectedParentId : null);
+      setShowInDashboard(true);
+      setShowInKanban(true);
     }
     setDialogOpen(true);
   };
@@ -126,13 +135,21 @@ export default function TaskStatuses() {
 
     try {
       if (editingStatus) {
+        const updateData: Record<string, unknown> = { 
+          name: statusName, 
+          color: statusColor,
+          parent_id: parentId 
+        };
+        
+        // Only include visibility options for parent statuses
+        if (!parentId) {
+          updateData.show_in_dashboard = showInDashboard;
+          updateData.show_in_kanban = showInKanban;
+        }
+
         const { error } = await supabase
           .from("task_statuses")
-          .update({ 
-            name: statusName, 
-            color: statusColor,
-            parent_id: parentId 
-          })
+          .update(updateData)
           .eq("id", editingStatus.id);
 
         if (error) throw error;
@@ -143,12 +160,14 @@ export default function TaskStatuses() {
       } else {
         const { error } = await supabase
           .from("task_statuses")
-          .insert({ 
+          .insert({
             name: statusName, 
             color: statusColor, 
-            user_id: user?.id,
+            user_id: user?.id as string,
             parent_id: parentId,
-            is_default: !parentId // Only parent statuses without a parent can be marked as potential defaults
+            is_default: !parentId,
+            show_in_dashboard: !parentId ? showInDashboard : true,
+            show_in_kanban: !parentId ? showInKanban : true,
           });
 
         if (error) throw error;
@@ -259,6 +278,16 @@ export default function TaskStatuses() {
                       {status.children && status.children.length > 0 && (
                         <Badge variant="outline" className="text-xs">
                           {status.children.length} {status.children.length === 1 ? 'filho' : 'filhos'}
+                        </Badge>
+                      )}
+                      {status.show_in_dashboard && (
+                        <Badge variant="outline" className="text-xs flex items-center gap-1">
+                          <LayoutDashboard className="h-3 w-3" />
+                        </Badge>
+                      )}
+                      {status.show_in_kanban && (
+                        <Badge variant="outline" className="text-xs flex items-center gap-1">
+                          <Columns3 className="h-3 w-3" />
                         </Badge>
                       )}
                     </div>
@@ -414,6 +443,39 @@ export default function TaskStatuses() {
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* Visibility options - only for parent statuses */}
+            {!parentId && (
+              <div className="space-y-4 pt-2 border-t">
+                <p className="text-sm font-medium text-muted-foreground">Visibilidade</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+                    <Label htmlFor="show-dashboard" className="font-normal">
+                      Mostrar na Widget do Dashboard
+                    </Label>
+                  </div>
+                  <Switch
+                    id="show-dashboard"
+                    checked={showInDashboard}
+                    onCheckedChange={setShowInDashboard}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Columns3 className="h-4 w-4 text-muted-foreground" />
+                    <Label htmlFor="show-kanban" className="font-normal">
+                      Mostrar na Visão Kanban
+                    </Label>
+                  </div>
+                  <Switch
+                    id="show-kanban"
+                    checked={showInKanban}
+                    onCheckedChange={setShowInKanban}
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>

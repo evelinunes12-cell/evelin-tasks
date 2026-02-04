@@ -11,6 +11,8 @@ export interface TaskStatus {
   is_default: boolean;
   order_index: number;
   parent_id: string | null;
+  show_in_dashboard: boolean;
+  show_in_kanban: boolean;
   children?: TaskStatus[];
 }
 
@@ -95,7 +97,9 @@ export const createStatus = async (
   name: string,
   userId: string,
   color?: string,
-  parentId?: string | null
+  parentId?: string | null,
+  showInDashboard: boolean = true,
+  showInKanban: boolean = true
 ) => {
   // Validate status data
   validateStatus(name, color);
@@ -108,6 +112,8 @@ export const createStatus = async (
       color: color || null,
       parent_id: parentId || null,
       is_default: !parentId, // Only parent statuses can be default
+      show_in_dashboard: showInDashboard,
+      show_in_kanban: showInKanban,
     })
     .select()
     .single();
@@ -118,7 +124,13 @@ export const createStatus = async (
 
 export const updateStatus = async (
   id: string,
-  updates: { name?: string; color?: string | null; parent_id?: string | null }
+  updates: { 
+    name?: string; 
+    color?: string | null; 
+    parent_id?: string | null;
+    show_in_dashboard?: boolean;
+    show_in_kanban?: boolean;
+  }
 ) => {
   // Validate if name is being updated
   if (updates.name) {
