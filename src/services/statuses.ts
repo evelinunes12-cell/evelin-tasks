@@ -111,7 +111,7 @@ export const createStatus = async (
       user_id: userId,
       color: color || null,
       parent_id: parentId || null,
-      is_default: !parentId, // Only parent statuses can be default
+      is_default: false, // New statuses are never default - only the original 3 are default
       show_in_dashboard: showInDashboard,
       show_in_kanban: showInKanban,
     })
