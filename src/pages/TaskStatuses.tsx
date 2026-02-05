@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, Plus, ChevronDown, ChevronRight, LayoutDashboard, Columns3 } from "lucide-react";
+import { Pencil, Trash2, Plus, ChevronDown, ChevronRight, LayoutDashboard, Columns3, GripVertical } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,23 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface TaskStatus {
   id: string;
@@ -42,6 +59,171 @@ interface TaskStatus {
   show_in_dashboard: boolean;
   show_in_kanban: boolean;
   children?: TaskStatus[];
+}
+
+// Sortable Card Component
+function SortableStatusCard({
+  status,
+  expandedParents,
+  toggleExpand,
+  handleOpenDialog,
+  handleDeleteStatus,
+}: {
+  status: TaskStatus;
+  expandedParents: Set<string>;
+  toggleExpand: (id: string) => void;
+  handleOpenDialog: (status?: TaskStatus, isChild?: boolean, preselectedParentId?: string) => void;
+  handleDeleteStatus: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: status.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <Card ref={setNodeRef} style={style} className="overflow-hidden">
+      <Collapsible
+        open={expandedParents.has(status.id)}
+        onOpenChange={() => toggleExpand(status.id)}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-muted"
+              >
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-6 w-6">
+                  {expandedParents.has(status.id) ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <div
+                className="w-4 h-4 rounded-full shrink-0"
+                style={{ backgroundColor: status.color || "#3b82f6" }}
+              />
+              <CardTitle className="text-lg">{status.name}</CardTitle>
+              {status.is_default && (
+                <Badge variant="secondary" className="text-xs">Padrão</Badge>
+              )}
+              {status.children && status.children.length > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  {status.children.length} {status.children.length === 1 ? 'filho' : 'filhos'}
+                </Badge>
+              )}
+              {status.show_in_dashboard && (
+                <Badge variant="outline" className="text-xs flex items-center gap-1">
+                  <LayoutDashboard className="h-3 w-3" />
+                </Badge>
+              )}
+              {status.show_in_kanban && (
+                <Badge variant="outline" className="text-xs flex items-center gap-1">
+                  <Columns3 className="h-3 w-3" />
+                </Badge>
+              )}
+            </div>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenDialog(undefined, true, status.id);
+                }}
+                title="Adicionar status filho"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenDialog(status);
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              {!status.is_default && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteStatus(status.id);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CollapsibleContent>
+          <CardContent className="pt-0 pb-4">
+            {status.children && status.children.length > 0 ? (
+              <div className="ml-8 space-y-2">
+                {status.children.map((child) => (
+                  <div
+                    key={child.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full shrink-0"
+                        style={{ backgroundColor: child.color || "#3b82f6" }}
+                      />
+                      <span className="font-medium">{child.name}</span>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleOpenDialog(child)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDeleteStatus(child.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="ml-8 text-sm text-muted-foreground">
+                Nenhum status filho. Clique em + para adicionar.
+              </p>
+            )}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
 }
 
 export default function TaskStatuses() {
@@ -223,6 +405,54 @@ export default function TaskStatuses() {
 
   const parentStatuses = statuses.filter(s => !s.parent_id);
 
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end for reordering
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = hierarchicalStatuses.findIndex((s) => s.id === active.id);
+      const newIndex = hierarchicalStatuses.findIndex((s) => s.id === over.id);
+
+      const reorderedStatuses = arrayMove(hierarchicalStatuses, oldIndex, newIndex);
+      setHierarchicalStatuses(reorderedStatuses);
+
+      // Update order_index in database
+      try {
+        const updates = reorderedStatuses.map((status, index) => ({
+          id: status.id,
+          order_index: index,
+        }));
+
+        for (const update of updates) {
+          await supabase
+            .from("task_statuses")
+            .update({ order_index: update.order_index })
+            .eq("id", update.id);
+        }
+
+        toast({
+          title: "Ordem atualizada",
+          description: "A ordem dos status foi salva com sucesso.",
+        });
+      } catch (error) {
+        toast({
+          title: "Erro ao salvar ordem",
+          description: "Não foi possível salvar a nova ordem.",
+          variant: "destructive",
+        });
+        fetchStatuses(); // Revert on error
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -241,142 +471,41 @@ export default function TaskStatuses() {
       </header>
 
       <main className="container py-8 px-4">
-        <div className="mb-6 flex gap-2 flex-wrap">
-          <Button onClick={() => handleOpenDialog()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Status Pai
-          </Button>
+        <div className="mb-6 flex flex-col gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={() => handleOpenDialog()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Status Pai
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Arraste os status pelo ícone <GripVertical className="h-4 w-4 inline" /> para reordenar a exibição na Dashboard e Kanban.
+          </p>
         </div>
 
-        <div className="space-y-4">
-          {hierarchicalStatuses.map((status) => (
-            <Card key={status.id} className="overflow-hidden">
-              <Collapsible
-                open={expandedParents.has(status.id)}
-                onOpenChange={() => toggleExpand(status.id)}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6">
-                          {expandedParents.has(status.id) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </CollapsibleTrigger>
-                      <div
-                        className="w-4 h-4 rounded-full shrink-0"
-                        style={{ backgroundColor: status.color || "#3b82f6" }}
-                      />
-                      <CardTitle className="text-lg">{status.name}</CardTitle>
-                      {status.is_default && (
-                        <Badge variant="secondary" className="text-xs">Padrão</Badge>
-                      )}
-                      {status.children && status.children.length > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          {status.children.length} {status.children.length === 1 ? 'filho' : 'filhos'}
-                        </Badge>
-                      )}
-                      {status.show_in_dashboard && (
-                        <Badge variant="outline" className="text-xs flex items-center gap-1">
-                          <LayoutDashboard className="h-3 w-3" />
-                        </Badge>
-                      )}
-                      {status.show_in_kanban && (
-                        <Badge variant="outline" className="text-xs flex items-center gap-1">
-                          <Columns3 className="h-3 w-3" />
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenDialog(undefined, true, status.id);
-                        }}
-                        title="Adicionar status filho"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenDialog(status);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {!status.is_default && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteStatus(status.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CollapsibleContent>
-                  <CardContent className="pt-0 pb-4">
-                    {status.children && status.children.length > 0 ? (
-                      <div className="ml-8 space-y-2">
-                        {status.children.map((child) => (
-                          <div
-                            key={child.id}
-                            className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-3 h-3 rounded-full shrink-0"
-                                style={{ backgroundColor: child.color || "#3b82f6" }}
-                              />
-                              <span className="font-medium">{child.name}</span>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleOpenDialog(child)}
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleDeleteStatus(child.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="ml-8 text-sm text-muted-foreground">
-                        Nenhum status filho. Clique em + para adicionar.
-                      </p>
-                    )}
-                  </CardContent>
-                </CollapsibleContent>
-              </Collapsible>
-            </Card>
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={hierarchicalStatuses.map(s => s.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-4">
+              {hierarchicalStatuses.map((status) => (
+                <SortableStatusCard
+                  key={status.id}
+                  status={status}
+                  expandedParents={expandedParents}
+                  toggleExpand={toggleExpand}
+                  handleOpenDialog={handleOpenDialog}
+                  handleDeleteStatus={handleDeleteStatus}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
 
         {hierarchicalStatuses.length === 0 && (
           <p className="text-center text-muted-foreground mt-8">
