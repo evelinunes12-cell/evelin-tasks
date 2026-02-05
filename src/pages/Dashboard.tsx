@@ -634,11 +634,16 @@ const Dashboard = () => {
     setSearchQuery("");
   };
 
-  const stats = {
-    aFazer: tasks.filter(t => t.status === "A Fazer").length,
-    emProgresso: tasks.filter(t => t.status === "Em Progresso").length,
-    concluido: tasks.filter(t => t.status === "Concluído").length
-  };
+  // Status data for dashboard widget (hierarchical)
+  const dashboardStatuses = useMemo(() => {
+    const parentStatuses = statusesData.filter(s => !s.parent_id && s.show_in_dashboard);
+    const childStatuses = statusesData.filter(s => s.parent_id);
+    
+    return parentStatuses.map(parent => ({
+      ...parent,
+      children: childStatuses.filter(child => child.parent_id === parent.id)
+    }));
+  }, [statusesData]);
 
   const overdueCount = tasks.filter(isTaskOverdue).length;
 
@@ -677,7 +682,7 @@ const Dashboard = () => {
 
         <IncompleteProfileAlert />
 
-        <StatsCards aFazer={stats.aFazer} emProgresso={stats.emProgresso} concluido={stats.concluido} />
+        <StatsCards tasks={tasks} statuses={dashboardStatuses} />
 
         {/* Search and Filters */}
         <div className="flex flex-col gap-4 mb-6">
