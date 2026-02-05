@@ -201,14 +201,32 @@ const Reports = () => {
       .sort((a, b) => b.value - a.value)
       .slice(0, 8);
 
-    // Status distribution
+    // Status distribution - group children under parents
     const statusMap = new Map<string, number>();
-    tasks.forEach((t) => {
-      const status = t.status || "Sem status";
-      statusMap.set(status, (statusMap.get(status) || 0) + 1);
+    
+    // Build a map of child status -> parent status
+    const childToParentMap = new Map<string, string>();
+    const parentStatuses = statuses?.filter(s => !s.parent_id) || [];
+    const childStatuses = statuses?.filter(s => s.parent_id) || [];
+    
+    childStatuses.forEach(child => {
+      const parent = parentStatuses.find(p => p.id === child.parent_id);
+      if (parent) {
+        childToParentMap.set(child.name, parent.name);
+      }
     });
+    
+    tasks.forEach((t) => {
+      const taskStatus = t.status || "Sem status";
+      // If this is a child status, count it under the parent
+      const parentName = childToParentMap.get(taskStatus) || taskStatus;
+      statusMap.set(parentName, (statusMap.get(parentName) || 0) + 1);
+    });
+    
     const statusData = Array.from(statusMap.entries()).map(([name, value]) => {
-      const statusInfo = statuses?.find((s) => s.name === name);
+      // Find the parent status info for color
+      const statusInfo = parentStatuses.find((s) => s.name === name) || 
+                         statuses?.find((s) => s.name === name);
       return {
         name,
         value,

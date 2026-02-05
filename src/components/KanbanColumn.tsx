@@ -9,6 +9,7 @@ interface KanbanColumnProps {
   id: string;
   title: string;
   color: string;
+  colorHex?: string | null;
   tasks: Task[];
   availableStatuses: string[];
   completedStatusName: string;
@@ -22,6 +23,7 @@ export function KanbanColumn({
   id,
   title,
   color,
+  colorHex,
   tasks,
   availableStatuses,
   completedStatusName,
@@ -45,7 +47,10 @@ export function KanbanColumn({
       )}
     >
       <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-        <span className={cn("w-3 h-3 rounded-full", color)} />
+        <span 
+          className="w-3 h-3 rounded-full" 
+          style={{ backgroundColor: colorHex || undefined }}
+        />
         {title}
         <Badge variant="secondary" className="ml-auto">
           {tasks.length}

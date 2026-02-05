@@ -15,47 +15,27 @@ import { KanbanColumn } from "./KanbanColumn";
 import { KanbanCard } from "./KanbanCard";
 import { TaskQuickView } from "./TaskQuickView";
 
+export interface KanbanStatus {
+  id: string;
+  name: string;
+  color: string | null;
+  show_in_kanban: boolean;
+  children?: KanbanStatus[];
+}
+
 interface KanbanBoardProps {
   tasks: Task[];
   availableStatuses: string[];
+  kanbanStatuses: KanbanStatus[];
   onStatusChange: (taskId: string, newStatus: string) => void;
   onDelete: (taskId: string) => void;
   onArchive: (taskId: string) => void;
 }
 
-// Status column configuration
-const COLUMNS = [
-  {
-    id: "a-fazer",
-    title: "A Fazer",
-    color: "bg-yellow-500",
-    matcher: (status: string) =>
-      status.toLowerCase().includes("não") ||
-      status.toLowerCase().includes("nao") ||
-      status.toLowerCase().includes("fazer"),
-    targetStatus: "A Fazer",
-  },
-  {
-    id: "em-progresso",
-    title: "Em Progresso",
-    color: "bg-blue-500",
-    matcher: (status: string) =>
-      status.toLowerCase().includes("progresso") ||
-      status.toLowerCase().includes("andamento"),
-    targetStatus: "Em Progresso",
-  },
-  {
-    id: "concluido",
-    title: "Concluído",
-    color: "bg-green-500",
-    matcher: (status: string) => status.toLowerCase().includes("conclu"),
-    targetStatus: "Concluído",
-  },
-];
-
 export function KanbanBoard({
   tasks,
   availableStatuses,
+  kanbanStatuses,
   onStatusChange,
   onDelete,
   onArchive,
@@ -79,16 +59,24 @@ export function KanbanBoard({
     })
   );
 
-  // Group tasks by column
+  // Group tasks by column - matching parent status or any of its children
   const tasksByColumn = useMemo(() => {
     const grouped: Record<string, Task[]> = {};
     
-    COLUMNS.forEach((col) => {
-      grouped[col.id] = tasks.filter((task) => col.matcher(task.status));
+    kanbanStatuses.forEach((parentStatus) => {
+      // Collect all status names that belong to this column (parent + children)
+      const columnStatusNames = [
+        parentStatus.name,
+        ...(parentStatus.children?.map(c => c.name) || [])
+      ];
+      
+      grouped[parentStatus.id] = tasks.filter((task) => 
+        columnStatusNames.includes(task.status)
+      );
     });
     
     return grouped;
-  }, [tasks]);
+  }, [tasks, kanbanStatuses]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -108,12 +96,21 @@ export function KanbanBoard({
     const overId = over.id as string;
 
     // Check if dropped on a column
-    const targetColumn = COLUMNS.find((col) => col.id === overId);
+    const targetColumn = kanbanStatuses.find((col) => col.id === overId);
     
     if (targetColumn) {
       const task = tasks.find((t) => t.id === taskId);
-      if (task && !targetColumn.matcher(task.status)) {
-        onStatusChange(taskId, targetColumn.targetStatus);
+      if (task) {
+        // Get all status names for this column
+        const columnStatusNames = [
+          targetColumn.name,
+          ...(targetColumn.children?.map(c => c.name) || [])
+        ];
+        
+        // Only change if task is not already in this column
+        if (!columnStatusNames.includes(task.status)) {
+          onStatusChange(taskId, targetColumn.name);
+        }
       }
     }
   };
@@ -127,6 +124,16 @@ export function KanbanBoard({
     availableStatuses.find((s) => s.toLowerCase().includes("conclu")) ||
     "Concluído";
 
+  // If no kanban statuses configured, show fallback message
+  if (kanbanStatuses.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <p>Nenhum status configurado para exibição no Kanban.</p>
+        <p className="text-sm mt-2">Configure seus status em Configurações → Status.</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <DndContext
@@ -138,13 +145,14 @@ export function KanbanBoard({
         {/* Mobile: flex-col (vertical stack), Desktop: horizontal scroll with fixed-width columns */}
         <div className="flex flex-col gap-6 md:overflow-x-auto md:pb-4">
           <div className="flex flex-col gap-6 md:flex-row md:gap-6">
-            {COLUMNS.map((column) => (
+            {kanbanStatuses.map((status) => (
               <KanbanColumn
-                key={column.id}
-                id={column.id}
-                title={column.title}
-                color={column.color}
-                tasks={tasksByColumn[column.id] || []}
+                key={status.id}
+                id={status.id}
+                title={status.name}
+                color={status.color ? `bg-[${status.color}]` : "bg-muted-foreground"}
+                colorHex={status.color}
+                tasks={tasksByColumn[status.id] || []}
                 availableStatuses={availableStatuses}
                 completedStatusName={completedStatusName}
                 onDelete={onDelete}
