@@ -600,6 +600,7 @@ export type Database = {
         Args: { _environment_id: string; _user_id: string }
         Returns: boolean
       }
+      purge_old_focus_sessions: { Args: never; Returns: undefined }
     }
     Enums: {
       environment_permission: "view" | "create" | "edit" | "delete"
