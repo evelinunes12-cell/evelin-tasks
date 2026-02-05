@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -158,20 +158,35 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
-  // React Query para statuses com cache de 30 minutos
-  const { data: availableStatuses = [] } = useQuery({
-    queryKey: ['statuses', user?.id],
+  // React Query para statuses com cache de 30 minutos (completo para hierarquia)
+  const { data: statusesData = [] } = useQuery({
+    queryKey: ['statuses-full', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_statuses")
-        .select("name")
-        .order("name", { ascending: true });
+        .select("*")
+        .order("order_index", { ascending: true });
       if (error) throw error;
-      return data?.map(s => s.name) || [];
+      return data || [];
     },
     staleTime: 1000 * 60 * 30,
     enabled: !!user,
   });
+
+  // Nomes de status para compatibilidade
+  const availableStatuses = statusesData.map(s => s.name);
+
+  // Status hierárquicos para Kanban
+  const kanbanStatuses = useMemo(() => {
+    // Filtra apenas status pais com show_in_kanban = true
+    const parentStatuses = statusesData.filter(s => !s.parent_id && s.show_in_kanban);
+    const childStatuses = statusesData.filter(s => s.parent_id);
+    
+    return parentStatuses.map(parent => ({
+      ...parent,
+      children: childStatuses.filter(child => child.parent_id === parent.id)
+    }));
+  }, [statusesData]);
 
   // React Query para environments com cache de 30 minutos
   const { data: environments = [] } = useQuery({
@@ -891,6 +906,7 @@ const Dashboard = () => {
           <KanbanBoard
             tasks={filteredTasks}
             availableStatuses={availableStatuses}
+            kanbanStatuses={kanbanStatuses}
             onStatusChange={handleStatusChange}
             onDelete={handleDeleteTask}
             onArchive={handleArchiveTask}
