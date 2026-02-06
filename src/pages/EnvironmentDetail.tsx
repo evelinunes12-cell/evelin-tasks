@@ -8,9 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Plus, Users, Trash2 } from "lucide-react";
+import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
+import { fetchEnvironmentStatusesHierarchical, type EnvironmentStatus } from "@/services/environmentData";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +60,8 @@ const EnvironmentDetail = () => {
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [hierarchicalStatuses, setHierarchicalStatuses] = useState<EnvironmentStatus[]>([]);
+  const [expandedStatuses, setExpandedStatuses] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
 
@@ -94,6 +102,12 @@ const EnvironmentDetail = () => {
 
       if (tasksError) throw tasksError;
       setTasks(tasksData || []);
+
+      // Fetch hierarchical statuses
+      const statusesData = await fetchEnvironmentStatusesHierarchical(id!);
+      setHierarchicalStatuses(statusesData);
+      // Auto-expand all parent statuses
+      setExpandedStatuses(new Set(statusesData.map(s => s.id)));
 
       // Fetch members
       const { data: membersData, error: membersError } = await supabase
@@ -251,6 +265,149 @@ const EnvironmentDetail = () => {
                   </Button>
                 </CardContent>
               </Card>
+            ) : hierarchicalStatuses.length > 0 ? (
+              <div className="space-y-4">
+                {hierarchicalStatuses.map((parentStatus) => {
+                  // Collect all status names under this parent (parent + children)
+                  const childNames = parentStatus.children?.map(c => c.name) || [];
+                  const allNames = childNames.length > 0 ? childNames : [parentStatus.name];
+                  const statusTasks = tasks.filter(t => allNames.includes(t.status));
+                  
+                  if (statusTasks.length === 0) return null;
+
+                  return (
+                    <Collapsible
+                      key={parentStatus.id}
+                      open={expandedStatuses.has(parentStatus.id)}
+                      onOpenChange={() => {
+                        setExpandedStatuses(prev => {
+                          const next = new Set(prev);
+                          if (next.has(parentStatus.id)) next.delete(parentStatus.id);
+                          else next.add(parentStatus.id);
+                          return next;
+                        });
+                      }}
+                    >
+                      <Card>
+                        <CollapsibleTrigger asChild>
+                          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                {expandedStatuses.has(parentStatus.id) ? (
+                                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                                ) : (
+                                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                                )}
+                                <div
+                                  className="w-4 h-4 rounded-full shrink-0"
+                                  style={{ backgroundColor: parentStatus.color || "#3b82f6" }}
+                                />
+                                <CardTitle className="text-lg">{parentStatus.name}</CardTitle>
+                                <Badge variant="secondary">{statusTasks.length}</Badge>
+                              </div>
+                            </div>
+                          </CardHeader>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <CardContent className="pt-0">
+                            {parentStatus.children && parentStatus.children.length > 0 ? (
+                              // Group tasks by child status
+                              <div className="space-y-4">
+                                {parentStatus.children.map(childStatus => {
+                                  const childTasks = tasks.filter(t => t.status === childStatus.name);
+                                  if (childTasks.length === 0) return null;
+                                  return (
+                                    <div key={childStatus.id}>
+                                      <div className="flex items-center gap-2 mb-3">
+                                        <div
+                                          className="w-3 h-3 rounded-full shrink-0"
+                                          style={{ backgroundColor: childStatus.color || "#3b82f6" }}
+                                        />
+                                        <span className="text-sm font-medium text-muted-foreground">
+                                          {childStatus.name}
+                                        </span>
+                                        <Badge variant="outline" className="text-xs">
+                                          {childTasks.length}
+                                        </Badge>
+                                      </div>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ml-5">
+                                        {childTasks.map(task => (
+                                          <TaskCard
+                                            key={task.id}
+                                            id={task.id}
+                                            subjectName={task.subject_name}
+                                            description={task.description || undefined}
+                                            dueDate={task.due_date}
+                                            isGroupWork={task.is_group_work}
+                                            status={task.status}
+                                            checklist={task.checklist}
+                                            onDelete={handleDeleteTask}
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              // No children, show tasks directly
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {statusTasks.map(task => (
+                                  <TaskCard
+                                    key={task.id}
+                                    id={task.id}
+                                    subjectName={task.subject_name}
+                                    description={task.description || undefined}
+                                    dueDate={task.due_date}
+                                    isGroupWork={task.is_group_work}
+                                    status={task.status}
+                                    checklist={task.checklist}
+                                    onDelete={handleDeleteTask}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </CardContent>
+                        </CollapsibleContent>
+                      </Card>
+                    </Collapsible>
+                  );
+                })}
+
+                {/* Tasks with unmatched statuses */}
+                {(() => {
+                  const allKnownNames = hierarchicalStatuses.flatMap(p => {
+                    const childNames = p.children?.map(c => c.name) || [];
+                    return childNames.length > 0 ? childNames : [p.name];
+                  });
+                  const unmatchedTasks = tasks.filter(t => !allKnownNames.includes(t.status));
+                  if (unmatchedTasks.length === 0) return null;
+                  return (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Outros</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {unmatchedTasks.map(task => (
+                            <TaskCard
+                              key={task.id}
+                              id={task.id}
+                              subjectName={task.subject_name}
+                              description={task.description || undefined}
+                              dueDate={task.due_date}
+                              isGroupWork={task.is_group_work}
+                              status={task.status}
+                              checklist={task.checklist}
+                              onDelete={handleDeleteTask}
+                            />
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {tasks.map((task) => (

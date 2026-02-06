@@ -22,7 +22,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import TaskStepForm, { TaskStep } from "@/components/TaskStepForm";
 import { Separator } from "@/components/ui/separator";
 import ChecklistManager, { ChecklistItem } from "@/components/ChecklistManager";
-import { fetchEnvironmentSubjects, fetchEnvironmentStatuses } from "@/services/environmentData";
+import { fetchEnvironmentSubjects, fetchEnvironmentStatusesHierarchical } from "@/services/environmentData";
+import HierarchicalStatusSelect, { HierarchicalStatus } from "@/components/HierarchicalStatusSelect";
 import { logError } from "@/lib/logger";
 import { taskFormSchema, linkSchema } from "@/lib/validation";
 import { registerActivity } from "@/services/activity";
@@ -60,7 +61,7 @@ const TaskForm = () => {
   const [existingSubjects, setExistingSubjects] = useState<string[]>([]);
   const [openSubjectCombo, setOpenSubjectCombo] = useState(false);
   const [steps, setSteps] = useState<TaskStep[]>([]);
-  const [existingStatuses, setExistingStatuses] = useState<{ name: string; color: string | null }[]>([]);
+  const [existingStatuses, setExistingStatuses] = useState<HierarchicalStatus[]>([]);
   const [openStatusCombo, setOpenStatusCombo] = useState(false);
   const [environmentName, setEnvironmentName] = useState<string>("");
 
@@ -127,9 +128,9 @@ const TaskForm = () => {
       const subjects = await fetchEnvironmentSubjects(envId);
       setExistingSubjects(subjects.map(s => s.name));
 
-      // Fetch environment statuses
-      const statuses = await fetchEnvironmentStatuses(envId);
-      setExistingStatuses(statuses.map(s => ({ name: s.name, color: s.color })));
+      // Fetch environment statuses (hierarchical)
+      const statuses = await fetchEnvironmentStatusesHierarchical(envId);
+      setExistingStatuses(statuses);
     } catch (error) {
       logError("Error fetching environment data", error);
       // Fallback to user's personal subjects/statuses
@@ -158,12 +159,19 @@ const TaskForm = () => {
     try {
       const { data, error } = await supabase
         .from("task_statuses")
-        .select("name, color")
-        .order("name");
+        .select("*")
+        .order("order_index", { ascending: true });
 
       if (error) throw error;
 
-      setExistingStatuses(data || []);
+      const allStatuses = (data || []) as HierarchicalStatus[];
+      const parents = allStatuses.filter(s => !s.parent_id);
+      const children = allStatuses.filter(s => s.parent_id);
+      const hierarchical = parents.map(parent => ({
+        ...parent,
+        children: children.filter(child => child.parent_id === parent.id),
+      }));
+      setExistingStatuses(hierarchical);
     } catch (error) {
       logError("Error fetching statuses", error);
     }
@@ -279,8 +287,8 @@ const TaskForm = () => {
       if (data.environment_id) {
         const subjects = await fetchEnvironmentSubjects(data.environment_id);
         setExistingSubjects(subjects.map(s => s.name));
-        const statuses = await fetchEnvironmentStatuses(data.environment_id);
-        setExistingStatuses(statuses.map(s => ({ name: s.name, color: s.color })));
+        const statuses = await fetchEnvironmentStatusesHierarchical(data.environment_id);
+        setExistingStatuses(statuses);
       }
       
       // Fetch existing links
@@ -840,87 +848,15 @@ const TaskForm = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="status">Status da Tarefa *</Label>
-                <Popover open={openStatusCombo} onOpenChange={setOpenStatusCombo}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openStatusCombo}
-                      className="w-full justify-between"
-                    >
-                      {status ? (
-                        <div className="flex items-center gap-2">
-                          {existingStatuses.find(s => s.name === status)?.color && (
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: existingStatuses.find(s => s.name === status)?.color || "#3b82f6" }}
-                            />
-                          )}
-                          {status}
-                        </div>
-                      ) : "Selecione um status"}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0">
-                    <Command>
-                      <CommandInput 
-                        placeholder="Pesquisar ou adicionar status..." 
-                        value={status}
-                        onValueChange={setStatus}
-                      />
-                      <CommandList>
-                        <CommandEmpty>
-                          <div className="text-sm p-2">
-                            {status ? (
-                              environmentId ? (
-                                <span className="text-muted-foreground">
-                                  Status "{status}" não encontrado. Peça ao proprietário do ambiente para adicionar.
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => setOpenStatusCombo(false)}
-                                  className="w-full text-left hover:bg-accent rounded p-2"
-                                >
-                                  Criar "{status}"
-                                </button>
-                              )
-                            ) : (
-                              "Digite o nome do status"
-                            )}
-                          </div>
-                        </CommandEmpty>
-                        <CommandGroup>
-                          {existingStatuses.map((statusItem) => (
-                            <CommandItem
-                              key={statusItem.name}
-                              value={statusItem.name}
-                              onSelect={(value) => {
-                                setStatus(value);
-                                setOpenStatusCombo(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  status === statusItem.name ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {statusItem.color && (
-                                <div
-                                  className="w-3 h-3 rounded-full mr-2"
-                                  style={{ backgroundColor: statusItem.color }}
-                                />
-                              )}
-                              {statusItem.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <HierarchicalStatusSelect
+                  value={status}
+                  onChange={setStatus}
+                  statuses={existingStatuses}
+                  open={openStatusCombo}
+                  onOpenChange={setOpenStatusCombo}
+                  allowCreate={!environmentId}
+                  environmentId={environmentId}
+                />
                 {existingStatuses.length === 0 && environmentId && (
                   <p className="text-xs text-muted-foreground">
                     Nenhum status configurado para este ambiente. O proprietário precisa adicionar status nas configurações.
