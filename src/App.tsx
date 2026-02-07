@@ -22,6 +22,7 @@ import Reports from "./pages/Reports";
 import ArchivedTasks from "./pages/ArchivedTasks";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
+import InvitePage from "./pages/InvitePage";
 import ZenitCommand from "./components/ZenitCommand";
 
 const queryClient = new QueryClient();
@@ -82,6 +83,7 @@ const App = () => (
                   <Route path="/task/new" element={<TaskForm />} />
                   <Route path="/task/edit/:id" element={<TaskForm />} />
                   <Route path="/task/:id" element={<TaskDetail />} />
+                  <Route path="/invite/:token" element={<InvitePage />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

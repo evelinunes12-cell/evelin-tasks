@@ -176,6 +176,82 @@ export type Database = {
           },
         ]
       }
+      invite_uses: {
+        Row: {
+          id: string
+          invite_id: string
+          used_at: string
+          used_by: string
+        }
+        Insert: {
+          id?: string
+          invite_id: string
+          used_at?: string
+          used_by: string
+        }
+        Update: {
+          id?: string
+          invite_id?: string
+          used_at?: string
+          used_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_uses_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "invites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invites: {
+        Row: {
+          created_at: string
+          created_by: string
+          environment_id: string | null
+          expires_at: string
+          id: string
+          max_uses: number | null
+          revoked: boolean
+          token: string
+          type: string
+          uses_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          environment_id?: string | null
+          expires_at?: string
+          id?: string
+          max_uses?: number | null
+          revoked?: boolean
+          token?: string
+          type: string
+          uses_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          environment_id?: string | null
+          expires_at?: string
+          id?: string
+          max_uses?: number | null
+          revoked?: boolean
+          token?: string
+          type?: string
+          uses_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invites_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "shared_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -580,6 +656,7 @@ export type Database = {
       }
       check_overdue_tasks: { Args: never; Returns: undefined }
       check_upcoming_tasks: { Args: never; Returns: undefined }
+      consume_invite: { Args: { invite_token: string }; Returns: Json }
       create_default_environment_statuses: {
         Args: { target_environment_id: string }
         Returns: undefined
@@ -601,6 +678,7 @@ export type Database = {
         Returns: boolean
       }
       purge_old_focus_sessions: { Args: never; Returns: undefined }
+      validate_invite: { Args: { invite_token: string }; Returns: Json }
     }
     Enums: {
       environment_permission: "view" | "create" | "edit" | "delete"

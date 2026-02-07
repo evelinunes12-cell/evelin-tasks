@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import InviteManager from "@/components/InviteManager";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
 import { fetchEnvironmentStatusesHierarchical, type EnvironmentStatus } from "@/services/environmentData";
@@ -241,6 +242,7 @@ const EnvironmentDetail = () => {
           <TabsList>
             <TabsTrigger value="tasks">Tarefas</TabsTrigger>
             <TabsTrigger value="members">Membros</TabsTrigger>
+            {isOwner && <TabsTrigger value="invites">Convites</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="tasks" className="space-y-6">
@@ -512,6 +514,12 @@ const EnvironmentDetail = () => {
               ))}
             </div>
           </TabsContent>
+
+          {isOwner && (
+            <TabsContent value="invites" className="space-y-6">
+              <InviteManager environmentId={id!} isOwner={isOwner} />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

@@ -67,14 +67,17 @@ const Auth = () => {
     const resetMode = searchParams.get("mode");
     if (resetMode === "reset") {
       setMode("reset");
+    } else if (resetMode === "signup") {
+      setMode("signup");
     }
   }, [searchParams]);
 
   useEffect(() => {
     if (user && mode !== "reset") {
-      navigate("/dashboard");
+      const redirect = searchParams.get("redirect");
+      navigate(redirect || "/dashboard");
     }
-  }, [user, navigate, mode]);
+  }, [user, navigate, mode, searchParams]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhone(formatPhoneBR(e.target.value));
@@ -100,7 +103,8 @@ const Auth = () => {
             title: "Login realizado com sucesso!",
             description: "Bem-vindo de volta ao Zenit.",
           });
-          navigate("/dashboard");
+          const redirect = searchParams.get("redirect");
+          navigate(redirect || "/dashboard");
         }
       } else if (mode === "signup") {
         if (!fullName) {
@@ -157,7 +161,8 @@ const Auth = () => {
             title: "Conta criada com sucesso!",
             description: "Bem-vindo ao Zenit!",
           });
-          navigate("/dashboard");
+          const redirect = searchParams.get("redirect");
+          navigate(redirect || "/dashboard");
         }
       } else if (mode === "forgot") {
         const { error } = await resetPassword(email);
