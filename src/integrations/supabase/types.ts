@@ -295,6 +295,7 @@ export type Database = {
           full_name: string | null
           id: string
           last_activity_date: string | null
+          onboarding_completed: boolean
           phone: string | null
           pomodoro_sessions: number | null
           terms_accepted: boolean | null
@@ -312,6 +313,7 @@ export type Database = {
           full_name?: string | null
           id: string
           last_activity_date?: string | null
+          onboarding_completed?: boolean
           phone?: string | null
           pomodoro_sessions?: number | null
           terms_accepted?: boolean | null
@@ -329,6 +331,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           last_activity_date?: string | null
+          onboarding_completed?: boolean
           phone?: string | null
           pomodoro_sessions?: number | null
           terms_accepted?: boolean | null

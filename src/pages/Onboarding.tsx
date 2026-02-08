@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -51,6 +52,7 @@ const features = [
 
 const Onboarding = () => {
   const navigate = useNavigate();
+  const { completeOnboarding } = useOnboarding();
   const [currentStep, setCurrentStep] = useState(0);
   const totalSteps = features.length + 1; // Features + Welcome
 
@@ -68,13 +70,13 @@ const Onboarding = () => {
     }
   };
 
-  const handleComplete = () => {
-    localStorage.setItem("zenit_onboarding_completed", "true");
+  const handleComplete = async () => {
+    await completeOnboarding();
     navigate("/dashboard");
   };
 
-  const handleSkip = () => {
-    localStorage.setItem("zenit_onboarding_completed", "true");
+  const handleSkip = async () => {
+    await completeOnboarding();
     navigate("/dashboard");
   };
 
