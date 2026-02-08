@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 import {
   DndContext,
   DragEndEvent,
@@ -124,6 +125,11 @@ export function KanbanBoard({
     availableStatuses.find((s) => s.toLowerCase().includes("conclu")) ||
     "Concluído";
 
+  // Determine if any status has children (hierarchical) or all are flat
+  const isFlatLayout = kanbanStatuses.every(
+    (s) => !s.children || s.children.length === 0
+  );
+
   // If no kanban statuses configured, show fallback message
   if (kanbanStatuses.length === 0) {
     return (
@@ -142,9 +148,15 @@ export function KanbanBoard({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        {/* Mobile: flex-col (vertical stack), Desktop: horizontal scroll with fixed-width columns */}
-        <div className="flex flex-col gap-6 md:overflow-x-auto md:pb-4">
-          <div className="flex flex-col gap-6 md:flex-row md:gap-6">
+        {/* Mobile: vertical stack. Desktop: proportional if flat, scrollable if hierarchical */}
+        <div className={cn(
+          "flex flex-col gap-6",
+          !isFlatLayout && "md:overflow-x-auto md:pb-4"
+        )}>
+          <div className={cn(
+            "flex flex-col gap-6 md:flex-row md:gap-6",
+            isFlatLayout && "md:w-full"
+          )}>
             {kanbanStatuses.map((status) => (
               <KanbanColumn
                 key={status.id}
@@ -159,6 +171,7 @@ export function KanbanBoard({
                 onStatusChange={onStatusChange}
                 onArchive={onArchive}
                 onTaskClick={handleTaskClick}
+                flexible={isFlatLayout}
               />
             ))}
           </div>
