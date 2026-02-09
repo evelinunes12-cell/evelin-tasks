@@ -20,6 +20,7 @@ import EnvironmentForm from "./pages/EnvironmentForm";
 import EnvironmentDetail from "./pages/EnvironmentDetail";
 import Reports from "./pages/Reports";
 import ArchivedTasks from "./pages/ArchivedTasks";
+import Planner from "./pages/Planner";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import InvitePage from "./pages/InvitePage";
@@ -41,6 +42,7 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
     pathname === "/shared-environments" ||
     pathname === "/reports" ||
     pathname === "/archived" ||
+    pathname === "/planner" ||
     pathname === "/task/new" ||
     /^\/task\/edit\/.+/.test(pathname) ||
     /^\/environment\/[^/]+$/.test(pathname);
@@ -77,6 +79,7 @@ const App = () => (
                   <Route path="/shared-environments" element={<SharedEnvironments />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/archived" element={<ArchivedTasks />} />
+                  <Route path="/planner" element={<Planner />} />
                   <Route path="/environment/new" element={<EnvironmentForm />} />
                   <Route path="/environment/:id/edit" element={<EnvironmentForm />} />
                   <Route path="/environment/:id" element={<EnvironmentDetail />} />

@@ -21,6 +21,7 @@ import {
   BookOpen,
   Tags,
   FolderOpen,
+  NotebookPen,
 } from "lucide-react";
 
 const ZenitCommand = () => {
@@ -108,6 +109,10 @@ const ZenitCommand = () => {
             <FolderOpen className="mr-2 h-4 w-4" />
             <span>Ir para Ambientes</span>
             <CommandShortcut>⌘E</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => navigate("/planner"))}>
+            <NotebookPen className="mr-2 h-4 w-4" />
+            <span>Ir para Planner</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => navigate("/subjects"))}>
             <BookOpen className="mr-2 h-4 w-4" />
