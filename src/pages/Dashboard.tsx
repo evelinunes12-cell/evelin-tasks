@@ -7,7 +7,7 @@ import { useUserStreak } from "@/hooks/useUserStreak";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Task, isTaskOverdue as checkTaskOverdue, parseDueDate } from "@/services/tasks";
-import { isSameDay, parseISO, isPast, isToday } from "date-fns";
+import { isSameDay, parseISO, isPast, isToday, isValid } from "date-fns";
 import Navbar from "@/components/Navbar";
 import StatsCards from "@/components/StatsCards";
 import SwipeableTaskCard from "@/components/SwipeableTaskCard";
@@ -328,8 +328,11 @@ const Dashboard = () => {
     const lastCheckDate = localStorage.getItem(`zenit_last_overdue_check_${user.id}`);
     
     // Evita spam: só roda se ainda não rodou hoje
-    if (lastCheckDate && isSameDay(parseISO(lastCheckDate), today)) {
-      return;
+    if (lastCheckDate) {
+      const parsedLastCheckDate = parseISO(lastCheckDate);
+      if (isValid(parsedLastCheckDate) && isSameDay(parsedLastCheckDate, today)) {
+        return;
+      }
     }
 
     // 1. Verifica Tarefas Principais Atrasadas
@@ -400,8 +403,11 @@ const Dashboard = () => {
     // Chave diferente no localStorage para não misturar com atrasados
     const lastCheckToday = localStorage.getItem(`zenit_last_today_check_${user.id}`);
     
-    if (lastCheckToday && isSameDay(parseISO(lastCheckToday), today)) {
-      return;
+    if (lastCheckToday) {
+      const parsedLastCheckToday = parseISO(lastCheckToday);
+      if (isValid(parsedLastCheckToday) && isSameDay(parsedLastCheckToday, today)) {
+        return;
+      }
     }
 
     // 1. Conta tarefas que vencem HOJE e não estão concluídas
