@@ -53,6 +53,19 @@ export const fetchNotesByDate = async (date: string) => {
   return data as PlannerNote[];
 };
 
+export const fetchGoalsForWeek = async (startDate: string, endDate: string) => {
+  const { data, error } = await supabase
+    .from("planner_goals")
+    .select("*, subject:subjects(name, color)")
+    .gte("target_date", startDate)
+    .lte("target_date", endDate)
+    .order("target_date")
+    .order("completed");
+
+  if (error) throw error;
+  return data as PlannerGoal[];
+};
+
 export const fetchNotesForWeek = async (startDate: string, endDate: string) => {
   const { data, error } = await supabase
     .from("planner_notes")
