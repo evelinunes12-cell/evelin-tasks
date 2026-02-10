@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +8,8 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Plus, StickyNote, CalendarDays, Target } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
-import { startOfWeek, format } from "date-fns";
+import { startOfWeek, format, addWeeks, subWeeks } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
   fetchNotes,
   fetchNotesForWeek,
@@ -23,7 +24,7 @@ import {
   PlannerNote,
   PlannerGoal,
 } from "@/services/planner";
-import { fetchSubjects } from "@/services/subjects";
+import { fetchSubjects, Subject } from "@/services/subjects";
 import { NoteCard } from "@/components/planner/NoteCard";
 import { NoteDialog } from "@/components/planner/NoteDialog";
 import { GoalCard } from "@/components/planner/GoalCard";
@@ -44,11 +45,11 @@ const Planner = () => {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [prefillDate, setPrefillDate] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    }
-  }, [loading, user, navigate]);
+  // Redirect if not logged in
+  if (!loading && !user) {
+    navigate("/auth");
+    return null;
+  }
 
   const { data: subjects = [] } = useQuery({
     queryKey: ["subjects"],
@@ -123,17 +124,6 @@ const Planner = () => {
       queryClient.invalidateQueries({ queryKey: ["planner-notes-week"] });
     },
   });
-
-  const toggleCompleteMut = useMutation({
-    mutationFn: ({ id, completed }: { id: string; completed: boolean }) => updateNote(id, { completed }),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["planner-notes"] });
-      queryClient.invalidateQueries({ queryKey: ["planner-notes-week"] });
-      toast.success(variables.completed ? "Anotação concluída!" : "Anotação reaberta!");
-    },
-    onError: () => toast.error("Erro ao atualizar anotação"),
-  });
-
 
   // Goal mutations
   const createGoalMut = useMutation({
@@ -210,8 +200,6 @@ const Planner = () => {
   // Build prefilled note for dialog
   const prefillNote = editingNote || (prefillDate ? { planned_date: prefillDate } as PlannerNote : null);
 
-  if (!user) return null;
-
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -269,7 +257,6 @@ const Planner = () => {
                     onEdit={openEditNote}
                     onDelete={(id) => deleteNoteMut.mutate(id)}
                     onTogglePin={(id, pinned) => togglePinMut.mutate({ id, pinned })}
-                    onToggleComplete={(id, completed) => toggleCompleteMut.mutate({ id, completed })}
                   />
                 ))}
               </div>
@@ -286,7 +273,6 @@ const Planner = () => {
               onEditNote={openEditNote}
               onDeleteNote={(id) => deleteNoteMut.mutate(id)}
               onTogglePin={(id, pinned) => togglePinMut.mutate({ id, pinned })}
-              onToggleNoteComplete={(id, completed) => toggleCompleteMut.mutate({ id, completed })}
               onEditGoal={openEditGoal}
               onToggleGoalComplete={(id, completed, progress) =>
                 updateGoalMut.mutate({ id, completed, progress })
