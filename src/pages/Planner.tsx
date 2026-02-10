@@ -17,6 +17,7 @@ import {
   updateNote,
   deleteNote,
   fetchGoals,
+  fetchGoalsForWeek,
   createGoal,
   updateGoal,
   deleteGoal,
@@ -62,14 +63,20 @@ const Planner = () => {
     enabled: !!user,
   });
 
-  const weekEnd = format(addWeeks(weekStart, 0).setDate(weekStart.getDate() + 6) ? weekStart : weekStart, "yyyy-MM-dd");
+  const weekStartStr = format(weekStart, "yyyy-MM-dd");
+  const weekEndDate = new Date(weekStart);
+  weekEndDate.setDate(weekEndDate.getDate() + 6);
+  const weekEndStr = format(weekEndDate, "yyyy-MM-dd");
+
   const { data: weekNotes = [] } = useQuery({
-    queryKey: ["planner-notes-week", format(weekStart, "yyyy-MM-dd")],
-    queryFn: () => {
-      const end = new Date(weekStart);
-      end.setDate(end.getDate() + 6);
-      return fetchNotesForWeek(format(weekStart, "yyyy-MM-dd"), format(end, "yyyy-MM-dd"));
-    },
+    queryKey: ["planner-notes-week", weekStartStr],
+    queryFn: () => fetchNotesForWeek(weekStartStr, weekEndStr),
+    enabled: !!user && tab === "weekly",
+  });
+
+  const { data: weekGoals = [] } = useQuery({
+    queryKey: ["planner-goals-week", weekStartStr],
+    queryFn: () => fetchGoalsForWeek(weekStartStr, weekEndStr),
     enabled: !!user && tab === "weekly",
   });
 
@@ -123,6 +130,7 @@ const Planner = () => {
     mutationFn: (data: Parameters<typeof createGoal>[1]) => createGoal(user!.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planner-goals"] });
+      queryClient.invalidateQueries({ queryKey: ["planner-goals-week"] });
       toast.success("Meta criada!");
     },
     onError: () => toast.error("Erro ao criar meta"),
@@ -132,6 +140,7 @@ const Planner = () => {
     mutationFn: ({ id, ...data }: { id: string } & Parameters<typeof updateGoal>[1]) => updateGoal(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planner-goals"] });
+      queryClient.invalidateQueries({ queryKey: ["planner-goals-week"] });
       toast.success("Meta atualizada!");
     },
     onError: () => toast.error("Erro ao atualizar meta"),
@@ -141,6 +150,7 @@ const Planner = () => {
     mutationFn: deleteGoal,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planner-goals"] });
+      queryClient.invalidateQueries({ queryKey: ["planner-goals-week"] });
       toast.success("Meta removida!");
     },
     onError: () => toast.error("Erro ao remover meta"),
@@ -258,10 +268,15 @@ const Planner = () => {
               weekStart={weekStart}
               onWeekChange={setWeekStart}
               notes={weekNotes}
+              goals={weekGoals}
               onAddNote={(date) => openNewNote(date)}
               onEditNote={openEditNote}
               onDeleteNote={(id) => deleteNoteMut.mutate(id)}
               onTogglePin={(id, pinned) => togglePinMut.mutate({ id, pinned })}
+              onEditGoal={openEditGoal}
+              onToggleGoalComplete={(id, completed, progress) =>
+                updateGoalMut.mutate({ id, completed, progress })
+              }
             />
           </TabsContent>
 
