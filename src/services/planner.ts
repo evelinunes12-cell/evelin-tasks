@@ -8,6 +8,7 @@ export interface PlannerNote {
   content: string;
   color: string | null;
   pinned: boolean;
+  completed: boolean;
   planned_date: string | null;
   created_at: string;
   updated_at: string;
@@ -30,7 +31,30 @@ export interface PlannerGoal {
 
 // ---- Notes ----
 
+const shouldFallbackCompletedOrder = (error: unknown) => {
+  const message = error && typeof error === "object" && "message" in error
+    ? String((error as { message?: unknown }).message || "")
+    : "";
+
+  return message.toLowerCase().includes("completed");
+};
+
 export const fetchNotes = async () => {
+  const orderedQuery = await supabase
+    .from("planner_notes")
+    .select("*, subject:subjects(name, color)")
+    .order("pinned", { ascending: false })
+    .order("completed", { ascending: true })
+    .order("updated_at", { ascending: false });
+
+  if (!orderedQuery.error) {
+    return orderedQuery.data as PlannerNote[];
+  }
+
+  if (!shouldFallbackCompletedOrder(orderedQuery.error)) {
+    throw orderedQuery.error;
+  }
+
   const { data, error } = await supabase
     .from("planner_notes")
     .select("*, subject:subjects(name, color)")
@@ -42,6 +66,22 @@ export const fetchNotes = async () => {
 };
 
 export const fetchNotesByDate = async (date: string) => {
+  const orderedQuery = await supabase
+    .from("planner_notes")
+    .select("*, subject:subjects(name, color)")
+    .eq("planned_date", date)
+    .order("pinned", { ascending: false })
+    .order("completed", { ascending: true })
+    .order("updated_at", { ascending: false });
+
+  if (!orderedQuery.error) {
+    return orderedQuery.data as PlannerNote[];
+  }
+
+  if (!shouldFallbackCompletedOrder(orderedQuery.error)) {
+    throw orderedQuery.error;
+  }
+
   const { data, error } = await supabase
     .from("planner_notes")
     .select("*, subject:subjects(name, color)")
@@ -67,6 +107,23 @@ export const fetchGoalsForWeek = async (startDate: string, endDate: string) => {
 };
 
 export const fetchNotesForWeek = async (startDate: string, endDate: string) => {
+  const orderedQuery = await supabase
+    .from("planner_notes")
+    .select("*, subject:subjects(name, color)")
+    .gte("planned_date", startDate)
+    .lte("planned_date", endDate)
+    .order("planned_date")
+    .order("pinned", { ascending: false })
+    .order("completed", { ascending: true });
+
+  if (!orderedQuery.error) {
+    return orderedQuery.data as PlannerNote[];
+  }
+
+  if (!shouldFallbackCompletedOrder(orderedQuery.error)) {
+    throw orderedQuery.error;
+  }
+
   const { data, error } = await supabase
     .from("planner_notes")
     .select("*, subject:subjects(name, color)")
@@ -88,6 +145,7 @@ export const createNote = async (
     color?: string | null;
     planned_date?: string | null;
     pinned?: boolean;
+    completed?: boolean;
   }
 ) => {
   const { data, error } = await supabase
@@ -109,6 +167,7 @@ export const updateNote = async (
     color: string | null;
     planned_date: string | null;
     pinned: boolean;
+    completed: boolean;
   }>
 ) => {
   const { data, error } = await supabase
