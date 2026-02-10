@@ -17,6 +17,7 @@ interface WeeklyViewProps {
   onEditNote: (note: PlannerNote) => void;
   onDeleteNote: (id: string) => void;
   onTogglePin: (id: string, pinned: boolean) => void;
+  onToggleNoteComplete: (id: string, completed: boolean) => void;
   onEditGoal?: (goal: PlannerGoal) => void;
   onToggleGoalComplete?: (id: string, completed: boolean, progress: number) => void;
 }
@@ -30,6 +31,7 @@ export function WeeklyView({
   onEditNote,
   onDeleteNote,
   onTogglePin,
+  onToggleNoteComplete,
   onEditGoal,
   onToggleGoalComplete,
 }: WeeklyViewProps) {
@@ -160,6 +162,7 @@ export function WeeklyView({
                     onEdit={onEditNote}
                     onDelete={onDeleteNote}
                     onTogglePin={onTogglePin}
+                    onToggleComplete={onToggleNoteComplete}
                   />
                 ))}
               </div>
