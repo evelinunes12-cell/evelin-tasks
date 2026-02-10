@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { PlannerGoal } from "@/services/planner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { CheckCircle2, Circle, Pencil, Trash2, Target } from "lucide-react";
 import { format } from "date-fns";
@@ -19,6 +20,14 @@ interface GoalCardProps {
 
 export function GoalCard({ goal, onEdit, onDelete, onToggleComplete, onProgressChange }: GoalCardProps) {
   const isOverdue = goal.target_date && !goal.completed && new Date(goal.target_date + "T23:59:59") < new Date();
+  const [localProgress, setLocalProgress] = useState(goal.progress);
+  const [editingInput, setEditingInput] = useState(false);
+
+  const commitProgress = (value: number) => {
+    const clamped = Math.max(0, Math.min(100, value));
+    setLocalProgress(clamped);
+    onProgressChange(goal.id, clamped);
+  };
 
   return (
     <Card className={cn(
@@ -66,13 +75,43 @@ export function GoalCard({ goal, onEdit, onDelete, onToggleComplete, onProgressC
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>Progresso</span>
-              <span>{goal.progress}%</span>
+              {editingInput ? (
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  autoFocus
+                  defaultValue={localProgress}
+                  className="h-5 w-14 text-xs text-right px-1 py-0"
+                  onBlur={(e) => {
+                    setEditingInput(false);
+                    const val = parseInt(e.target.value, 10);
+                    if (!isNaN(val)) commitProgress(val);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setEditingInput(false);
+                      const val = parseInt((e.target as HTMLInputElement).value, 10);
+                      if (!isNaN(val)) commitProgress(val);
+                    }
+                  }}
+                />
+              ) : (
+                <button
+                  className="hover:text-foreground cursor-pointer tabular-nums"
+                  onClick={() => setEditingInput(true)}
+                  title="Clique para digitar um valor específico"
+                >
+                  {localProgress}%
+                </button>
+              )}
             </div>
             <Slider
-              value={[goal.progress]}
-              onValueCommit={(value) => onProgressChange(goal.id, value[0])}
+              value={[localProgress]}
+              onValueChange={(value) => setLocalProgress(value[0])}
+              onValueCommit={(value) => commitProgress(value[0])}
               max={100}
-              step={5}
+              step={1}
               className="cursor-pointer"
             />
           </div>
