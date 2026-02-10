@@ -8,6 +8,7 @@ export interface PlannerNote {
   content: string;
   color: string | null;
   pinned: boolean;
+  completed: boolean;
   planned_date: string | null;
   created_at: string;
   updated_at: string;
@@ -35,6 +36,7 @@ export const fetchNotes = async () => {
     .from("planner_notes")
     .select("*, subject:subjects(name, color)")
     .order("pinned", { ascending: false })
+    .order("completed", { ascending: true })
     .order("updated_at", { ascending: false });
 
   if (error) throw error;
@@ -47,6 +49,7 @@ export const fetchNotesByDate = async (date: string) => {
     .select("*, subject:subjects(name, color)")
     .eq("planned_date", date)
     .order("pinned", { ascending: false })
+    .order("completed", { ascending: true })
     .order("updated_at", { ascending: false });
 
   if (error) throw error;
@@ -73,7 +76,8 @@ export const fetchNotesForWeek = async (startDate: string, endDate: string) => {
     .gte("planned_date", startDate)
     .lte("planned_date", endDate)
     .order("planned_date")
-    .order("pinned", { ascending: false });
+    .order("pinned", { ascending: false })
+    .order("completed", { ascending: true });
 
   if (error) throw error;
   return data as PlannerNote[];
@@ -88,6 +92,7 @@ export const createNote = async (
     color?: string | null;
     planned_date?: string | null;
     pinned?: boolean;
+    completed?: boolean;
   }
 ) => {
   const { data, error } = await supabase
@@ -109,6 +114,7 @@ export const updateNote = async (
     color: string | null;
     planned_date: string | null;
     pinned: boolean;
+    completed: boolean;
   }>
 ) => {
   const { data, error } = await supabase
