@@ -39,3 +39,20 @@ export const logInfo = (context: string, data?: unknown): void => {
     console.log(`${context}:`, data);
   }
 };
+
+/**
+ * Maps technical/database errors to safe, user-friendly messages.
+ * Prevents leaking internal details (table names, constraints, etc.) to users.
+ */
+export const getUserFriendlyError = (error: unknown): string => {
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes('duplicate') || msg.includes('unique')) return 'Este item já existe.';
+    if (msg.includes('foreign key') || msg.includes('violates foreign key')) return 'Não é possível realizar esta ação — há dependências.';
+    if (msg.includes('not found') || msg.includes('no rows')) return 'Item não encontrado.';
+    if (msg.includes('permission') || msg.includes('denied') || msg.includes('rls')) return 'Você não tem permissão para esta ação.';
+    if (msg.includes('network') || msg.includes('fetch')) return 'Erro de conexão. Verifique sua internet.';
+    if (msg.includes('timeout')) return 'A operação demorou muito. Tente novamente.';
+  }
+  return 'Ocorreu um erro. Tente novamente.';
+};

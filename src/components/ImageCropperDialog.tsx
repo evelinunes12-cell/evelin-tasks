@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { logError } from "@/lib/logger";
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import {
@@ -65,7 +66,7 @@ export function ImageCropperDialog({
       );
       onCropComplete(croppedBlob);
     } catch (error) {
-      console.error('Error cropping image:', error);
+      logError('Error cropping image', error);
     } finally {
       setProcessing(false);
     }

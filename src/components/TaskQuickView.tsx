@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logError } from "@/lib/logger";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Task, parseDueDate } from "@/services/tasks";
@@ -57,7 +58,7 @@ export function TaskQuickView({
       if (error) throw error;
       setTask(data as unknown as Task);
     } catch (error) {
-      console.error("Error fetching task:", error);
+      logError("Error fetching task", error);
     } finally {
       setLoading(false);
     }
