@@ -2,7 +2,7 @@ import { PlannerNote } from "@/services/planner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pin, PinOff, Pencil, Trash2, Calendar } from "lucide-react";
+import { Pin, PinOff, Pencil, Trash2, Calendar, Check, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -12,14 +12,16 @@ interface NoteCardProps {
   onEdit: (note: PlannerNote) => void;
   onDelete: (id: string) => void;
   onTogglePin: (id: string, pinned: boolean) => void;
+  onToggleComplete: (id: string, completed: boolean) => void;
 }
 
-export function NoteCard({ note, onEdit, onDelete, onTogglePin }: NoteCardProps) {
+export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleComplete }: NoteCardProps) {
   return (
     <Card
       className={cn(
         "group relative transition-all hover:shadow-md",
-        note.pinned && "ring-1 ring-primary/30"
+        note.pinned && "ring-1 ring-primary/30",
+        note.completed && "opacity-60"
       )}
     >
       <CardContent className="p-4 space-y-2">
@@ -28,6 +30,15 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin }: NoteCardProps)
             {note.title || "Sem título"}
           </h3>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => onToggleComplete(note.id, !note.completed)}
+              title={note.completed ? "Reabrir" : "Concluir"}
+            >
+              {note.completed ? <RotateCcw className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5 text-green-600" />}
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -62,6 +73,11 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin }: NoteCardProps)
         )}
 
         <div className="flex items-center gap-2 flex-wrap pt-1">
+          {note.completed && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              Concluída
+            </Badge>
+          )}
           {note.subject && (
             <Badge
               variant="outline"

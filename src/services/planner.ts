@@ -9,6 +9,7 @@ export interface PlannerNote {
   color: string | null;
   pinned: boolean;
   planned_date: string | null;
+  completed: boolean;
   created_at: string;
   updated_at: string;
   subject?: { name: string; color: string | null } | null;
@@ -88,6 +89,7 @@ export const createNote = async (
     color?: string | null;
     planned_date?: string | null;
     pinned?: boolean;
+    completed?: boolean;
   }
 ) => {
   const { data, error } = await supabase
@@ -109,6 +111,7 @@ export const updateNote = async (
     color: string | null;
     planned_date: string | null;
     pinned: boolean;
+    completed: boolean;
   }>
 ) => {
   const { data, error } = await supabase
