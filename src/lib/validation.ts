@@ -75,6 +75,15 @@ export const checklistItemSchema = z.object({
   completed: z.boolean(),
 });
 
+// Checklist array schema (validates full array before DB insertion)
+export const checklistSchema = z.array(checklistItemSchema);
+
+// Planner note schema
+export const plannerNoteSchema = z.object({
+  title: trimmedString.max(255, { message: 'Título deve ter no máximo 255 caracteres' }),
+  content: trimmedString.max(10000, { message: 'Conteúdo deve ter no máximo 10000 caracteres' }),
+});
+
 // Link attachment schema
 export const linkSchema = z.object({
   name: nonEmptyString(255, 'Nome do link'),

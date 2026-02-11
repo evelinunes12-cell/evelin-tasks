@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { plannerNoteSchema } from "@/lib/validation";
 
 export interface PlannerNote {
   id: string;
@@ -92,6 +93,7 @@ export const createNote = async (
     completed?: boolean;
   }
 ) => {
+  plannerNoteSchema.parse({ title: note.title, content: note.content });
   const { data, error } = await supabase
     .from("planner_notes")
     .insert({ user_id: userId, ...note })
@@ -114,6 +116,9 @@ export const updateNote = async (
     completed: boolean;
   }>
 ) => {
+  if (updates.title !== undefined || updates.content !== undefined) {
+    plannerNoteSchema.partial().parse({ title: updates.title, content: updates.content });
+  }
   const { data, error } = await supabase
     .from("planner_notes")
     .update(updates)
