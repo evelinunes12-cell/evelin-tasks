@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { registerActivity } from "@/services/activity";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -92,6 +93,8 @@ const Planner = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planner-notes"] });
       queryClient.invalidateQueries({ queryKey: ["planner-notes-week"] });
+      if (user) registerActivity(user.id);
+      queryClient.invalidateQueries({ queryKey: ["user-streak"] });
       toast.success("Anotação criada!");
     },
     onError: () => toast.error("Erro ao criar anotação"),
@@ -102,6 +105,8 @@ const Planner = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planner-notes"] });
       queryClient.invalidateQueries({ queryKey: ["planner-notes-week"] });
+      if (user) registerActivity(user.id);
+      queryClient.invalidateQueries({ queryKey: ["user-streak"] });
       toast.success("Anotação atualizada!");
     },
     onError: () => toast.error("Erro ao atualizar anotação"),
@@ -131,6 +136,8 @@ const Planner = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planner-goals"] });
       queryClient.invalidateQueries({ queryKey: ["planner-goals-week"] });
+      if (user) registerActivity(user.id);
+      queryClient.invalidateQueries({ queryKey: ["user-streak"] });
       toast.success("Meta criada!");
     },
     onError: () => toast.error("Erro ao criar meta"),
@@ -141,6 +148,8 @@ const Planner = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planner-goals"] });
       queryClient.invalidateQueries({ queryKey: ["planner-goals-week"] });
+      if (user) registerActivity(user.id);
+      queryClient.invalidateQueries({ queryKey: ["user-streak"] });
       toast.success("Meta atualizada!");
     },
     onError: () => toast.error("Erro ao atualizar meta"),
