@@ -25,7 +25,7 @@ import ChecklistManager, { ChecklistItem } from "@/components/ChecklistManager";
 import { fetchEnvironmentSubjects, fetchEnvironmentStatusesHierarchical } from "@/services/environmentData";
 import HierarchicalStatusSelect, { HierarchicalStatus } from "@/components/HierarchicalStatusSelect";
 import { logError } from "@/lib/logger";
-import { taskFormSchema, linkSchema } from "@/lib/validation";
+import { taskFormSchema, linkSchema, checklistSchema } from "@/lib/validation";
 import { registerActivity } from "@/services/activity";
 
 const TaskForm = () => {
@@ -519,7 +519,7 @@ const TaskForm = () => {
             google_docs_link: step.googleDocsLink || null,
             canva_link: step.canvaLink || null,
             order_index: i,
-            checklist: step.checklist as any,
+            checklist: checklistSchema.parse(step.checklist || []) as any,
           })
           .select()
           .single();
@@ -626,7 +626,7 @@ const TaskForm = () => {
         canva_link: validatedData.canva_link || null,
         status: validatedData.status,
         user_id: user!.id,
-        checklist: checklist as any,
+        checklist: checklistSchema.parse(checklist) as any,
         environment_id: environmentId,
       };
 
