@@ -587,7 +587,7 @@ const TaskDetail = () => {
                       href={task.google_docs_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline"
+                      className="text-sm text-primary hover:underline break-all"
                     >
                       {task.google_docs_link}
                     </a>
@@ -600,7 +600,7 @@ const TaskDetail = () => {
                       href={task.canva_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline"
+                      className="text-sm text-primary hover:underline break-all"
                     >
                       {task.canva_link}
                     </a>
@@ -686,7 +686,7 @@ const TaskDetail = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           {attachment.is_link && <LinkIcon className="w-4 h-4 text-muted-foreground" />}
-                          <p className="text-sm font-medium truncate">{attachment.file_name}</p>
+                          <p className="text-sm font-medium break-all">{attachment.file_name}</p>
                         </div>
                         {attachment.file_size && !attachment.is_link && (
                           <p className="text-xs text-muted-foreground">
