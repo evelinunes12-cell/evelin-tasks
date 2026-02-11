@@ -251,12 +251,13 @@ const Planner = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {notes.map((note) => (
-                  <NoteCard
+                   <NoteCard
                     key={note.id}
                     note={note}
                     onEdit={openEditNote}
                     onDelete={(id) => deleteNoteMut.mutate(id)}
                     onTogglePin={(id, pinned) => togglePinMut.mutate({ id, pinned })}
+                    onToggleComplete={(id, completed) => updateNoteMut.mutate({ id, completed })}
                   />
                 ))}
               </div>
@@ -273,6 +274,7 @@ const Planner = () => {
               onEditNote={openEditNote}
               onDeleteNote={(id) => deleteNoteMut.mutate(id)}
               onTogglePin={(id, pinned) => togglePinMut.mutate({ id, pinned })}
+              onToggleNoteComplete={(id, completed) => updateNoteMut.mutate({ id, completed })}
               onEditGoal={openEditGoal}
               onToggleGoalComplete={(id, completed, progress) =>
                 updateGoalMut.mutate({ id, completed, progress })

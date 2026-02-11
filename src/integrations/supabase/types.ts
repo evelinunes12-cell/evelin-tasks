@@ -332,6 +332,7 @@ export type Database = {
       planner_notes: {
         Row: {
           color: string | null
+          completed: boolean
           content: string
           created_at: string
           id: string
@@ -344,6 +345,7 @@ export type Database = {
         }
         Insert: {
           color?: string | null
+          completed?: boolean
           content?: string
           created_at?: string
           id?: string
@@ -356,6 +358,7 @@ export type Database = {
         }
         Update: {
           color?: string | null
+          completed?: boolean
           content?: string
           created_at?: string
           id?: string
