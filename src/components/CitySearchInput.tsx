@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { logError } from "@/lib/logger";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, MapPin } from "lucide-react";
@@ -70,7 +71,7 @@ export function CitySearchInput({
         
         setCities(filtered);
       } catch (error) {
-        console.error("Error fetching cities:", error);
+        logError("Error fetching cities", error);
         setCities([]);
       } finally {
         setLoading(false);

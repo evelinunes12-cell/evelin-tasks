@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logError } from "@/lib/logger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -99,7 +100,7 @@ const TaskStepDisplay = ({ steps, stepAttachments, onDownloadAttachment }: TaskS
         attachment,
       });
     } catch (error) {
-      console.error("Erro ao gerar URL de preview:", error);
+      logError("Erro ao gerar URL de preview", error);
       onDownloadAttachment(attachment);
     }
   };

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logError } from "@/lib/logger";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -66,7 +67,7 @@ export const useAuth = () => {
         .eq("id", authData.user.id);
 
       if (profileError) {
-        console.error("Error updating profile:", profileError);
+        logError("Error updating profile", profileError);
       }
     }
 
