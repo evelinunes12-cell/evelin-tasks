@@ -26,7 +26,7 @@ const Planner = lazy(() => import("./pages/Planner"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const InvitePage = lazy(() => import("./pages/InvitePage"));
-const ZenitCommand = lazy(() => import("./components/ZenitCommand"));
+import ZenitCommand from "./components/ZenitCommand";
 
 const queryClient = new QueryClient();
 
@@ -69,7 +69,7 @@ const App = () => (
           <BrowserRouter>
             <ZenitCommand />
             <FocusTimerProvider>
-              <Suspense fallback={null}>
+              <Suspense fallback={<div className="flex min-h-screen w-full" />}>
                 <SidebarShell>
                   <Routes>
                     <Route path="/" element={<Navigate to="/auth" replace />} />
