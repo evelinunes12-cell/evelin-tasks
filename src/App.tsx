@@ -53,7 +53,7 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         {showSidebar ? <AppSidebar /> : null}
-        <div className="flex-1">{children}</div>
+        <main className="flex-1">{children}</main>
       </div>
     </SidebarProvider>
   );
