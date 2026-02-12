@@ -176,6 +176,11 @@ const EnvironmentForm = () => {
   };
 
   const handleRemoveStatus = async (statusId: string) => {
+    const status = statuses.find(s => s.id === statusId);
+    if (status?.is_default) {
+      toast.error("Status padrão não pode ser removido");
+      return;
+    }
     if (!isNewEnvironment && !statusId.startsWith("temp-")) {
       try { await deleteEnvironmentStatus(statusId); toast.success("Status removido!"); } catch { toast.error("Erro"); }
     }
@@ -280,7 +285,7 @@ const EnvironmentForm = () => {
                 <CardHeader><CardTitle>Status</CardTitle><CardDescription>Status disponíveis neste grupo</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-2"><Input value={newStatusName} onChange={(e) => setNewStatusName(e.target.value)} placeholder="Nome do status" className="flex-1" /><Input type="color" value={newStatusColor} onChange={(e) => setNewStatusColor(e.target.value)} className="w-12" /><Button type="button" onClick={handleAddStatus}><Plus className="w-4 h-4" /></Button></div>
-                  {statuses.map(s => <div key={s.id} className="flex items-center justify-between p-3 bg-muted rounded-lg"><div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full" style={{ backgroundColor: s.color || "#3b82f6" }} /><span>{s.name}</span></div><Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveStatus(s.id)}><Trash2 className="w-4 h-4" /></Button></div>)}
+                  {statuses.map(s => <div key={s.id} className="flex items-center justify-between p-3 bg-muted rounded-lg"><div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full" style={{ backgroundColor: s.color || "#3b82f6" }} /><span>{s.name}</span>{s.is_default && <span className="text-xs text-muted-foreground">(padrão)</span>}</div>{!s.is_default && <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveStatus(s.id)}><Trash2 className="w-4 h-4" /></Button>}</div>)}
                 </CardContent>
               </Card>
             </TabsContent>
