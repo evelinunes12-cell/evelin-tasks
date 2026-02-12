@@ -13,16 +13,17 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const menuItems = [
-  { title: "Início", url: "/dashboard", icon: Home },
-  { title: "Planner", url: "/planner", icon: NotebookPen },
-  { title: "Grupos de Trabalho", url: "/shared-environments", icon: Users },
-  { title: "Relatórios", url: "/reports", icon: BarChart3 },
-  { title: "Arquivadas", url: "/archived", icon: Archive },
-  { title: "Disciplinas", url: "/subjects", icon: BookOpen },
-  { title: "Status", url: "/task-statuses", icon: ListChecks },
-  { title: "Configurações", url: "/settings", icon: Settings },
+  { title: "Início", url: "/dashboard", icon: Home, description: "Painel principal com suas tarefas" },
+  { title: "Planner", url: "/planner", icon: NotebookPen, description: "Planeje metas e anotações" },
+  { title: "Grupos de Trabalho", url: "/shared-environments", icon: Users, description: "Colabore com colegas em tarefas compartilhadas" },
+  { title: "Relatórios", url: "/reports", icon: BarChart3, description: "Veja estatísticas e sua constância" },
+  { title: "Arquivadas", url: "/archived", icon: Archive, description: "Tarefas que foram arquivadas" },
+  { title: "Disciplinas", url: "/subjects", icon: BookOpen, description: "Gerencie suas disciplinas/matérias" },
+  { title: "Status", url: "/task-statuses", icon: ListChecks, description: "Personalize os status das tarefas" },
+  { title: "Configurações", url: "/settings", icon: Settings, description: "Perfil, tema e preferências" },
 ];
 
 export function AppSidebar() {
@@ -45,24 +46,36 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      onClick={handleLinkClick}
-                      className={({ isActive }) =>
-                        isActive
-                          ? "bg-accent text-accent-foreground"
-                          : "hover:bg-accent/50"
-                      }
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {open && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <TooltipProvider delayDuration={300}>
+                {menuItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <SidebarMenuButton asChild>
+                          <NavLink
+                            to={item.url}
+                            onClick={handleLinkClick}
+                            className={({ isActive }) =>
+                              isActive
+                                ? "bg-accent text-accent-foreground"
+                                : "hover:bg-accent/50"
+                            }
+                          >
+                            <item.icon className="h-4 w-4" />
+                            {open && <span>{item.title}</span>}
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </TooltipTrigger>
+                      {!open && (
+                        <TooltipContent side="right">
+                          <p className="font-medium">{item.title}</p>
+                          <p className="text-xs text-muted-foreground">{item.description}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </SidebarMenuItem>
+                ))}
+              </TooltipProvider>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

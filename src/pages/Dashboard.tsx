@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { Search, Filter, X, LayoutGrid, Columns } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { logError } from "@/lib/logger";
 import { useDebounce } from "@/hooks/useDebounce";
 import { registerActivity } from "@/services/activity";
@@ -816,22 +817,34 @@ const Dashboard = () => {
 
             {/* View Mode Toggle */}
             <div className="flex border rounded-md">
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className="rounded-r-none"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === "board" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("board")}
-                className="rounded-l-none"
-              >
-                <Columns className="w-4 h-4" />
-              </Button>
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={viewMode === "list" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("list")}
+                      className="rounded-r-none"
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Visualização em grade</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={viewMode === "board" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("board")}
+                      className="rounded-l-none"
+                    >
+                      <Columns className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Visualização Kanban</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             {/* Sort */}

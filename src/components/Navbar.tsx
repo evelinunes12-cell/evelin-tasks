@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "./NotificationBell";
 import { FocusTimer } from "./FocusTimer";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface NavbarProps {
   minimal?: boolean;
@@ -38,18 +39,40 @@ const Navbar = ({ minimal = false }: NavbarProps) => {
           </div>
         </div>
         {!minimal && (
-          <div className="flex items-center gap-3">
-            <FocusTimer />
-            <NotificationBell />
-            <Button onClick={() => navigate("/task/new")} size="lg" className="gap-2 rounded-xl">
-              <Plus className="w-5 h-5" />
-              Nova Tarefa
-            </Button>
-            <Button variant="outline" size="lg" onClick={signOut} className="gap-2 rounded-xl">
-              <LogOut className="w-5 h-5" />
-              Sair
-            </Button>
-          </div>
+          <TooltipProvider delayDuration={300}>
+            <div className="flex items-center gap-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div><FocusTimer /></div>
+                </TooltipTrigger>
+                <TooltipContent>Timer Pomodoro — foque por 25 min e mantenha sua ofensiva 🔥</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div><NotificationBell /></div>
+                </TooltipTrigger>
+                <TooltipContent>Notificações de prazos e atualizações</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={() => navigate("/task/new")} size="lg" className="gap-2 rounded-xl">
+                    <Plus className="w-5 h-5" />
+                    Nova Tarefa
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Criar uma nova tarefa</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="lg" onClick={signOut} className="gap-2 rounded-xl">
+                    <LogOut className="w-5 h-5" />
+                    Sair
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Encerrar sessão</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         )}
       </div>
     </nav>
