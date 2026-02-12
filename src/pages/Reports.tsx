@@ -81,6 +81,40 @@ const Reports = () => {
     enabled: !!user,
   });
 
+  // Fetch planner notes for activity heatmap
+  const { data: plannerNotes } = useQuery({
+    queryKey: ["planner-notes-reports", user?.id, fromDate.toISOString(), toDate.toISOString()],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("planner_notes")
+        .select("created_at, updated_at")
+        .eq("user_id", user.id)
+        .gte("created_at", fromDate.toISOString())
+        .lte("created_at", toDate.toISOString());
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch planner goals for activity heatmap
+  const { data: plannerGoals } = useQuery({
+    queryKey: ["planner-goals-reports", user?.id, fromDate.toISOString(), toDate.toISOString()],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("planner_goals")
+        .select("created_at, updated_at")
+        .eq("user_id", user.id)
+        .gte("created_at", fromDate.toISOString())
+        .lte("created_at", toDate.toISOString());
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
   const { data: statuses } = useQuery({
     queryKey: ["task_statuses", user?.id],
     queryFn: async () => {
@@ -672,6 +706,10 @@ const Reports = () => {
             <ActivityHeatmap
               completedTasks={completedTasksInRange}
               focusSessions={focusSessions || []}
+              createdTasks={tasks || []}
+              updatedTasks={allTasks?.filter(t => t.updated_at && !t.status?.toLowerCase().includes("conclu")) || []}
+              plannerNotes={plannerNotes || []}
+              plannerGoals={plannerGoals || []}
               fromDate={fromDate}
               toDate={toDate}
             />
