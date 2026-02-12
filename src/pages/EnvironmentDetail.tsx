@@ -110,11 +110,9 @@ const EnvironmentDetail = () => {
       // Auto-expand all parent statuses
       setExpandedStatuses(new Set(statusesData.map(s => s.id)));
 
-      // Fetch members
+      // Fetch members with email masking for non-owners
       const { data: membersData, error: membersError } = await supabase
-        .from("environment_members")
-        .select("*")
-        .eq("environment_id", id);
+        .rpc("get_environment_members", { p_environment_id: id });
 
       if (membersError) throw membersError;
       setMembers(membersData || []);

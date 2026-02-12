@@ -766,6 +766,17 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: undefined
       }
+      get_environment_members: {
+        Args: { p_environment_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          environment_id: string
+          id: string
+          permissions: string[]
+          user_id: string
+        }[]
+      }
       has_environment_permission: {
         Args: {
           _environment_id: string
