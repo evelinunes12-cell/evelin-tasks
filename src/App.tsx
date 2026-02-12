@@ -8,23 +8,25 @@ import { ThemeProvider } from "next-themes";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ConfettiProvider } from "@/hooks/useConfetti";
 import { FocusTimerProvider } from "@/contexts/FocusTimerContext";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import TaskForm from "./pages/TaskForm";
-import TaskDetail from "./pages/TaskDetail";
-import Subjects from "./pages/Subjects";
-import TaskStatuses from "./pages/TaskStatuses";
-import Settings from "./pages/Settings";
-import SharedEnvironments from "./pages/SharedEnvironments";
-import EnvironmentForm from "./pages/EnvironmentForm";
-import EnvironmentDetail from "./pages/EnvironmentDetail";
-import Reports from "./pages/Reports";
-import ArchivedTasks from "./pages/ArchivedTasks";
-import Planner from "./pages/Planner";
-import NotFound from "./pages/NotFound";
-import Onboarding from "./pages/Onboarding";
-import InvitePage from "./pages/InvitePage";
-import ZenitCommand from "./components/ZenitCommand";
+import { lazy, Suspense } from "react";
+
+const Auth = lazy(() => import("./pages/Auth"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const TaskForm = lazy(() => import("./pages/TaskForm"));
+const TaskDetail = lazy(() => import("./pages/TaskDetail"));
+const Subjects = lazy(() => import("./pages/Subjects"));
+const TaskStatuses = lazy(() => import("./pages/TaskStatuses"));
+const Settings = lazy(() => import("./pages/Settings"));
+const SharedEnvironments = lazy(() => import("./pages/SharedEnvironments"));
+const EnvironmentForm = lazy(() => import("./pages/EnvironmentForm"));
+const EnvironmentDetail = lazy(() => import("./pages/EnvironmentDetail"));
+const Reports = lazy(() => import("./pages/Reports"));
+const ArchivedTasks = lazy(() => import("./pages/ArchivedTasks"));
+const Planner = lazy(() => import("./pages/Planner"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const InvitePage = lazy(() => import("./pages/InvitePage"));
+const ZenitCommand = lazy(() => import("./components/ZenitCommand"));
 
 const queryClient = new QueryClient();
 
@@ -67,30 +69,32 @@ const App = () => (
           <BrowserRouter>
             <ZenitCommand />
             <FocusTimerProvider>
-              <SidebarShell>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/auth" replace />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/onboarding" element={<Onboarding />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/subjects" element={<Subjects />} />
-                  <Route path="/task-statuses" element={<TaskStatuses />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/shared-environments" element={<SharedEnvironments />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/archived" element={<ArchivedTasks />} />
-                  <Route path="/planner" element={<Planner />} />
-                  <Route path="/environment/new" element={<EnvironmentForm />} />
-                  <Route path="/environment/:id/edit" element={<EnvironmentForm />} />
-                  <Route path="/environment/:id" element={<EnvironmentDetail />} />
-                  <Route path="/task/new" element={<TaskForm />} />
-                  <Route path="/task/edit/:id" element={<TaskForm />} />
-                  <Route path="/task/:id" element={<TaskDetail />} />
-                  <Route path="/invite/:token" element={<InvitePage />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </SidebarShell>
+              <Suspense fallback={null}>
+                <SidebarShell>
+                  <Routes>
+                    <Route path="/" element={<Navigate to="/auth" replace />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/onboarding" element={<Onboarding />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/subjects" element={<Subjects />} />
+                    <Route path="/task-statuses" element={<TaskStatuses />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/shared-environments" element={<SharedEnvironments />} />
+                    <Route path="/reports" element={<Reports />} />
+                    <Route path="/archived" element={<ArchivedTasks />} />
+                    <Route path="/planner" element={<Planner />} />
+                    <Route path="/environment/new" element={<EnvironmentForm />} />
+                    <Route path="/environment/:id/edit" element={<EnvironmentForm />} />
+                    <Route path="/environment/:id" element={<EnvironmentDetail />} />
+                    <Route path="/task/new" element={<TaskForm />} />
+                    <Route path="/task/edit/:id" element={<TaskForm />} />
+                    <Route path="/task/:id" element={<TaskDetail />} />
+                    <Route path="/invite/:token" element={<InvitePage />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </SidebarShell>
+              </Suspense>
             </FocusTimerProvider>
           </BrowserRouter>
         </TooltipProvider>
