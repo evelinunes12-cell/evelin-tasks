@@ -35,7 +35,6 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
   // Keep behavior consistent with the previous routing setup:
   // only show the sidebar on the routes that previously rendered <AppSidebar />.
   const showSidebar =
-    pathname === "/" ||
     pathname === "/dashboard" ||
     pathname === "/subjects" ||
     pathname === "/task-statuses" ||
@@ -70,7 +69,7 @@ const App = () => (
             <FocusTimerProvider>
               <SidebarShell>
                 <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/" element={<Navigate to="/auth" replace />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/onboarding" element={<Onboarding />} />
                   <Route path="/dashboard" element={<Dashboard />} />
