@@ -35,6 +35,7 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
   // Keep behavior consistent with the previous routing setup:
   // only show the sidebar on the routes that previously rendered <AppSidebar />.
   const showSidebar =
+    pathname === "/" ||
     pathname === "/dashboard" ||
     pathname === "/subjects" ||
     pathname === "/task-statuses" ||
