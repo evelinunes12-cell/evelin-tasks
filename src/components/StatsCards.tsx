@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckCircle2, PlayCircle, Circle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMemo } from "react";
 
 interface StatusData {
@@ -85,38 +86,49 @@ const StatsCards = ({ tasks, statuses }: StatsCardsProps) => {
     : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
   return (
-    <div className={`grid ${gridCols} gap-4 mb-6`}>
-      {dashboardStatuses.map((status) => {
-        const Icon = getStatusIcon(status.name);
-        const colorClasses = getStatusColorClass(status.name, status.color);
-        
-        return (
-          <Card 
-            key={status.id} 
-            className={`border-l-4 ${colorClasses.border} hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default`}
-            style={status.color ? { borderLeftColor: status.color } : undefined}
-          >
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div 
-                  className={`p-3 rounded-full ${colorClasses.bg}`}
-                  style={status.color ? { backgroundColor: `${status.color}20` } : undefined}
+    <TooltipProvider delayDuration={300}>
+      <div className={`grid ${gridCols} gap-4 mb-6`}>
+        {dashboardStatuses.map((status) => {
+          const Icon = getStatusIcon(status.name);
+          const colorClasses = getStatusColorClass(status.name, status.color);
+          const count = taskCounts[status.id] || 0;
+          
+          return (
+            <Tooltip key={status.id}>
+              <TooltipTrigger asChild>
+                <Card 
+                  className={`border-l-4 ${colorClasses.border} hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default`}
+                  style={status.color ? { borderLeftColor: status.color } : undefined}
                 >
-                  <Icon 
-                    className={`w-6 h-6 ${colorClasses.text}`} 
-                    style={status.color ? { color: status.color } : undefined}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium">{status.name}</p>
-                  <p className="text-3xl font-bold text-foreground">{taskCounts[status.id] || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className={`p-3 rounded-full ${colorClasses.bg}`}
+                        style={status.color ? { backgroundColor: `${status.color}20` } : undefined}
+                      >
+                        <Icon 
+                          className={`w-6 h-6 ${colorClasses.text}`} 
+                          style={status.color ? { color: status.color } : undefined}
+                        />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground font-medium">{status.name}</p>
+                        <p className="text-3xl font-bold text-foreground">{count}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TooltipTrigger>
+              <TooltipContent>
+                {count === 0
+                  ? `Nenhuma tarefa com status "${status.name}"`
+                  : `${count} tarefa${count > 1 ? "s" : ""} com status "${status.name}"`}
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    </TooltipProvider>
   );
 };
 
