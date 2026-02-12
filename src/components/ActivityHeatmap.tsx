@@ -8,6 +8,10 @@ import { cn } from "@/lib/utils";
 interface ActivityHeatmapProps {
   completedTasks: { updated_at: string | null }[];
   focusSessions: { started_at: string }[];
+  createdTasks: { created_at: string | null }[];
+  updatedTasks: { updated_at: string | null }[];
+  plannerNotes: { created_at: string; updated_at: string }[];
+  plannerGoals: { created_at: string; updated_at: string }[];
   fromDate: Date;
   toDate: Date;
 }
@@ -15,6 +19,10 @@ interface ActivityHeatmapProps {
 export const ActivityHeatmap = ({
   completedTasks,
   focusSessions,
+  createdTasks,
+  updatedTasks,
+  plannerNotes,
+  plannerGoals,
   fromDate,
   toDate,
 }: ActivityHeatmapProps) => {
@@ -33,16 +41,48 @@ export const ActivityHeatmap = ({
         return isSameDay(parseISO(session.started_at), dayStart);
       });
 
-      const isActive = hasCompletedTask || hasFocusSession;
+      const hasCreatedTask = createdTasks.some((task) => {
+        if (!task.created_at) return false;
+        return isSameDay(parseISO(task.created_at), dayStart);
+      });
+
+      const hasUpdatedTask = updatedTasks.some((task) => {
+        if (!task.updated_at) return false;
+        return isSameDay(parseISO(task.updated_at), dayStart);
+      });
+
+      const hasPlannerActivity = [...plannerNotes, ...plannerGoals].some((item) => {
+        return (
+          isSameDay(parseISO(item.created_at), dayStart) ||
+          isSameDay(parseISO(item.updated_at), dayStart)
+        );
+      });
+
+      const isActive = hasCompletedTask || hasFocusSession || hasCreatedTask || hasUpdatedTask || hasPlannerActivity;
+
+      // Build activity labels
+      const activities: string[] = [];
+      if (hasCompletedTask) activities.push("Tarefa concluída");
+      if (hasCreatedTask && !hasCompletedTask) activities.push("Tarefa criada");
+      if (hasUpdatedTask && !hasCompletedTask && !hasCreatedTask) activities.push("Tarefa atualizada");
+      if (hasFocusSession) activities.push("Sessão de foco");
+      if (hasPlannerActivity) activities.push("Planejamento");
+
+      // Determine intensity level
+      const activityCount = [hasCompletedTask, hasFocusSession, hasCreatedTask || hasUpdatedTask, hasPlannerActivity].filter(Boolean).length;
 
       return {
         date: day,
         isActive,
         hasTask: hasCompletedTask,
         hasFocus: hasFocusSession,
+        hasPlanner: hasPlannerActivity,
+        hasCreatedOrUpdated: hasCreatedTask || hasUpdatedTask,
+        activityCount,
+        activities,
       };
     });
-  }, [completedTasks, focusSessions, fromDate, toDate]);
+  }, [completedTasks, focusSessions, createdTasks, updatedTasks, plannerNotes, plannerGoals, fromDate, toDate]);
 
   const activeDays = activityData.filter((d) => d.isActive).length;
   const totalDays = activityData.length;
@@ -82,6 +122,16 @@ export const ActivityHeatmap = ({
     );
   }
 
+  const getColor = (day: typeof activityData[0]) => {
+    if (!day.isActive) return "bg-muted";
+    if (day.activityCount >= 3) return "bg-orange-600";
+    if (day.activityCount === 2) return "bg-orange-500";
+    if (day.hasTask) return "bg-green-500";
+    if (day.hasFocus) return "bg-primary";
+    if (day.hasPlanner) return "bg-violet-500";
+    return "bg-emerald-400";
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -112,20 +162,12 @@ export const ActivityHeatmap = ({
                       key={day.date.toISOString()}
                       title={`${format(day.date, "dd/MM/yyyy", { locale: ptBR })}${
                         day.isActive
-                          ? ` - ${day.hasTask ? "Tarefa concluída" : ""}${
-                              day.hasTask && day.hasFocus ? " e " : ""
-                            }${day.hasFocus ? "Sessão de foco" : ""}`
+                          ? ` - ${day.activities.join(", ")}`
                           : " - Sem atividade"
                       }`}
                       className={cn(
                         "w-4 h-4 rounded-sm transition-all cursor-default",
-                        day.isActive
-                          ? day.hasTask && day.hasFocus
-                            ? "bg-orange-500"
-                            : day.hasTask
-                              ? "bg-green-500"
-                              : "bg-primary"
-                          : "bg-muted"
+                        getColor(day)
                       )}
                     />
                   ))}
@@ -141,6 +183,10 @@ export const ActivityHeatmap = ({
               <span>Sem atividade</span>
             </div>
             <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm bg-emerald-400" />
+              <span>Tarefa criada</span>
+            </div>
+            <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm bg-green-500" />
               <span>Tarefa concluída</span>
             </div>
@@ -149,8 +195,16 @@ export const ActivityHeatmap = ({
               <span>Sessão de foco</span>
             </div>
             <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm bg-violet-500" />
+              <span>Planejamento</span>
+            </div>
+            <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm bg-orange-500" />
-              <span>Ambos</span>
+              <span>2 tipos</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm bg-orange-600" />
+              <span>3+ tipos</span>
             </div>
           </div>
         </div>
