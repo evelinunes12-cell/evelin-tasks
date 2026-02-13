@@ -750,6 +750,24 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -791,6 +809,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_environment_member: {
         Args: { _environment_id: string; _user_id: string }
         Returns: boolean
@@ -799,6 +824,7 @@ export type Database = {
       validate_invite: { Args: { invite_token: string }; Returns: Json }
     }
     Enums: {
+      app_role: "admin" | "user"
       environment_permission: "view" | "create" | "edit" | "delete"
     }
     CompositeTypes: {
@@ -927,6 +953,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       environment_permission: ["view", "create", "edit", "delete"],
     },
   },

@@ -26,7 +26,9 @@ const Planner = lazy(() => import("./pages/Planner"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const InvitePage = lazy(() => import("./pages/InvitePage"));
+const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 import ZenitCommand from "./components/ZenitCommand";
+import { AdminRoute } from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +48,8 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
     pathname === "/archived" ||
     pathname === "/planner" ||
     pathname === "/task/new" ||
+    pathname === "/admin" ||
+    pathname === "/admin/users" ||
     /^\/task\/edit\/.+/.test(pathname) ||
     /^\/environment\/[^/]+$/.test(pathname);
 
@@ -90,6 +94,8 @@ const App = () => (
                     <Route path="/task/edit/:id" element={<TaskForm />} />
                     <Route path="/task/:id" element={<TaskDetail />} />
                     <Route path="/invite/:token" element={<InvitePage />} />
+                    <Route path="/admin" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+                    <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

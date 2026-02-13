@@ -1,5 +1,6 @@
-import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen } from "lucide-react";
+import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useAdminRole } from "@/hooks/useAdminRole";
 import {
   Sidebar,
   SidebarContent,
@@ -29,6 +30,14 @@ const menuItems = [
 export function AppSidebar() {
   const { open, setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
+  const { isAdmin } = useAdminRole();
+
+  const allMenuItems = [
+    ...menuItems,
+    ...(isAdmin
+      ? [{ title: "Admin", url: "/admin", icon: ShieldCheck, description: "Painel administrativo de gestão" }]
+      : []),
+  ];
 
   const handleLinkClick = () => {
     if (isMobile) {
@@ -47,7 +56,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <TooltipProvider delayDuration={300}>
-                {menuItems.map((item) => (
+                {allMenuItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <Tooltip>
                       <TooltipTrigger asChild>
