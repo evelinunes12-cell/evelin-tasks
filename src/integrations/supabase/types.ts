@@ -391,10 +391,12 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          is_active: boolean | null
           last_activity_date: string | null
           onboarding_completed: boolean
           phone: string | null
           pomodoro_sessions: number | null
+          role: string | null
           terms_accepted: boolean | null
           updated_at: string | null
         }
@@ -409,10 +411,12 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          is_active?: boolean | null
           last_activity_date?: string | null
           onboarding_completed?: boolean
           phone?: string | null
           pomodoro_sessions?: number | null
+          role?: string | null
           terms_accepted?: boolean | null
           updated_at?: string | null
         }
@@ -427,10 +431,12 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          is_active?: boolean | null
           last_activity_date?: string | null
           onboarding_completed?: boolean
           phone?: string | null
           pomodoro_sessions?: number | null
+          role?: string | null
           terms_accepted?: boolean | null
           updated_at?: string | null
         }
