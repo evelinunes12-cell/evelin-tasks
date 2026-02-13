@@ -1,13 +1,28 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { User } from "@supabase/supabase-js";
 
-export const useAdminRole = () => {
-  const { user } = useAuth();
+interface UseAdminRoleOptions {
+  user?: User | null;
+  authLoading?: boolean;
+}
+
+export const useAdminRole = (options?: UseAdminRoleOptions) => {
+  const auth = useAuth();
+  const user = options?.user ?? auth.user;
+  const authLoading = options?.authLoading ?? auth.loading;
+
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Don't resolve until auth is done loading
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+
     if (!user) {
       setIsAdmin(false);
       setLoading(false);
@@ -15,6 +30,7 @@ export const useAdminRole = () => {
     }
 
     const checkAdmin = async () => {
+      setLoading(true);
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
@@ -27,7 +43,7 @@ export const useAdminRole = () => {
     };
 
     checkAdmin();
-  }, [user]);
+  }, [user, authLoading]);
 
   return { isAdmin, loading };
 };

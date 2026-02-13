@@ -10,7 +10,7 @@ interface AdminRouteProps {
 
 export const AdminRoute = ({ children }: AdminRouteProps) => {
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, loading: roleLoading } = useAdminRole();
+  const { isAdmin, loading: roleLoading } = useAdminRole({ user, authLoading });
   const navigate = useNavigate();
 
   useEffect(() => {
