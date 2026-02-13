@@ -49,13 +49,12 @@ export const fetchEnvironmentById = async (id: string) => {
 };
 
 export const fetchEnvironmentMembers = async (environmentId: string) => {
+  // Use RPC to get members with email masking for non-owners
   const { data, error } = await supabase
-    .from("environment_members")
-    .select("*")
-    .eq("environment_id", environmentId);
+    .rpc("get_environment_members", { p_environment_id: environmentId });
   
   if (error) throw error;
-  return data as EnvironmentMember[];
+  return (data || []) as EnvironmentMember[];
 };
 
 export const createEnvironment = async (
