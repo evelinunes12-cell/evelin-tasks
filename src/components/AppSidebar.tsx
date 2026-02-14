@@ -1,4 +1,4 @@
-import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck } from "lucide-react";
+import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import {
@@ -35,7 +35,10 @@ export function AppSidebar() {
   const allMenuItems = [
     ...menuItems,
     ...(isAdmin
-      ? [{ title: "Admin", url: "/admin", icon: ShieldCheck, description: "Painel administrativo de gestão" }]
+      ? [
+          { title: "Admin", url: "/admin", icon: ShieldCheck, description: "Painel administrativo de gestão" },
+          { title: "Banners", url: "/admin/banners", icon: Image, description: "Gerenciar banners da Dashboard" },
+        ]
       : []),
   ];
 
