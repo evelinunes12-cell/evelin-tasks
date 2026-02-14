@@ -33,6 +33,7 @@ import { logError } from "@/lib/logger";
 import { useDebounce } from "@/hooks/useDebounce";
 import { registerActivity } from "@/services/activity";
 import { archiveTask } from "@/services/archive";
+import DashboardBannerCarousel from "@/components/DashboardBannerCarousel";
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -684,6 +685,8 @@ const Dashboard = () => {
           </div>
           <StreakCard streak={currentStreak} completedToday={completedToday} />
         </div>
+
+        <DashboardBannerCarousel />
 
         <OnboardingProgress />
 
