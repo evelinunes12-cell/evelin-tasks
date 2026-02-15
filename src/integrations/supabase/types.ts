@@ -820,6 +820,7 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: undefined
       }
+      get_admin_stats: { Args: never; Returns: Json }
       get_environment_members: {
         Args: { p_environment_id: string }
         Returns: {
