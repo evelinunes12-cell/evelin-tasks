@@ -28,6 +28,7 @@ const Onboarding = lazy(() => import("./pages/Onboarding"));
 const InvitePage = lazy(() => import("./pages/InvitePage"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminBanners = lazy(() => import("./pages/AdminBanners"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 import ZenitCommand from "./components/ZenitCommand";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -52,6 +53,7 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
     pathname === "/admin" ||
     pathname === "/admin/users" ||
     pathname === "/admin/banners" ||
+    pathname === "/admin/users" ||
     /^\/task\/edit\/.+/.test(pathname) ||
     /^\/environment\/[^/]+$/.test(pathname);
 
@@ -96,7 +98,7 @@ const App = () => (
                     <Route path="/task/edit/:id" element={<TaskForm />} />
                     <Route path="/task/:id" element={<TaskDetail />} />
                     <Route path="/invite/:token" element={<InvitePage />} />
-                    <Route path="/admin" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+                    <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                     <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
                     <Route path="/admin/banners" element={<AdminRoute><AdminBanners /></AdminRoute>} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
