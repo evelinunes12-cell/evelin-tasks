@@ -27,10 +27,13 @@ interface Profile {
   education_level: string | null;
 }
 
+const ITEMS_PER_PAGE = 15;
+
 const AdminUsers = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchProfiles = async () => {
     setLoading(true);
@@ -88,6 +91,14 @@ const AdminUsers = () => {
     );
   });
 
+  // Reset page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
@@ -131,7 +142,7 @@ const AdminUsers = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((profile) => (
+              paginated.map((profile) => (
                 <TableRow key={profile.id}>
                   <TableCell className="font-medium">
                     {profile.full_name || "Sem nome"}
@@ -190,9 +201,42 @@ const AdminUsers = () => {
         </Table>
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Total: {filtered.length} usuário(s)
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} de {filtered.length} usuário(s)
+        </p>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
+              Anterior
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={page === currentPage ? "default" : "outline"}
+                size="sm"
+                className="w-8 h-8 p-0"
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
+              Próximo
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
