@@ -95,7 +95,7 @@ const DashboardBannerCarousel = () => {
           {banners.map(banner => (
             <CarouselItem key={banner.id}>
               <Wrapper banner={banner}>
-                <div className="relative w-full overflow-hidden rounded-xl aspect-[2/1] md:aspect-[3/1]">
+                <div className="relative w-full overflow-hidden rounded-xl aspect-[2.5/1] md:aspect-[5/1]">
                   <img
                     src={banner.image_url}
                     alt={banner.title || "Banner"}
