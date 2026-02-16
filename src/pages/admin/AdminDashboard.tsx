@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, CheckCircle2, Activity } from "lucide-react";
+import { Users, CheckCircle2, Activity, Filter } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DateRangePicker } from "@/components/DateRangePicker";
+import { DateRange } from "react-day-picker";
+import { Badge } from "@/components/ui/badge";
 
 interface AdminStats {
   total_users: number;
@@ -23,26 +26,50 @@ const statCards = [
 const AdminDashboard = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
+
+  const fetchStats = useCallback(async () => {
+    setLoading(true);
+    const params: Record<string, string> = {};
+    if (dateRange?.from) params.p_start_date = dateRange.from.toISOString();
+    if (dateRange?.to) params.p_end_date = dateRange.to.toISOString();
+
+    const { data, error } = await supabase.rpc("get_admin_stats", params);
+    if (!error && data) {
+      setStats(data as unknown as AdminStats);
+    }
+    setLoading(false);
+  }, [dateRange]);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const { data, error } = await supabase.rpc("get_admin_stats");
-      if (!error && data) {
-        setStats(data as unknown as AdminStats);
-      }
-      setLoading(false);
-    };
     fetchStats();
-  }, []);
+  }, [fetchStats]);
 
   const chartData = stats?.new_users_chart.map((d) => ({
     ...d,
     label: format(parseISO(d.date), "dd/MM", { locale: ptBR }),
   })) ?? [];
 
+  const isFiltering = !!(dateRange?.from || dateRange?.to);
+
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">Visão Geral</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl font-bold">Visão Geral</h1>
+        <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
+      </div>
+
+      {isFiltering && dateRange?.from && dateRange?.to && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Filter className="h-3 w-3" />
+            Exibindo dados de: {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} até {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
+          </Badge>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

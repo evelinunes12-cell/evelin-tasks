@@ -820,7 +820,13 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: undefined
       }
-      get_admin_stats: { Args: never; Returns: Json }
+      get_active_users_count: { Args: never; Returns: number }
+      get_admin_stats:
+        | { Args: never; Returns: Json }
+        | {
+            Args: { p_end_date?: string; p_start_date?: string }
+            Returns: Json
+          }
       get_environment_members: {
         Args: { p_environment_id: string }
         Returns: {
@@ -852,11 +858,24 @@ export type Database = {
         Returns: boolean
       }
       purge_old_focus_sessions: { Args: never; Returns: undefined }
+      send_broadcast_notification: {
+        Args: {
+          p_message: string
+          p_title: string
+          p_type?: Database["public"]["Enums"]["notification_type"]
+        }
+        Returns: undefined
+      }
+      send_individual_notification: {
+        Args: { p_message: string; p_title: string; p_user_id: string }
+        Returns: undefined
+      }
       validate_invite: { Args: { invite_token: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"
       environment_permission: "view" | "create" | "edit" | "delete"
+      notification_type: "info" | "warning" | "success"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -986,6 +1005,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       environment_permission: ["view", "create", "edit", "delete"],
+      notification_type: ["info", "warning", "success"],
     },
   },
 } as const
