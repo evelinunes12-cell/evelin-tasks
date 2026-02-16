@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard } from "lucide-react";
+import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import {
@@ -33,6 +33,7 @@ const adminSubItems = [
   { title: "Visão Geral", url: "/admin", icon: LayoutDashboard, description: "Métricas e estatísticas do sistema" },
   { title: "Usuários", url: "/admin/users", icon: Users, description: "Gerenciar usuários da plataforma" },
   { title: "Banners", url: "/admin/banners", icon: Image, description: "Gerenciar banners da Dashboard" },
+  { title: "Notificações", url: "/admin/notifications", icon: Bell, description: "Enviar notificações aos usuários" },
 ];
 
 export function AppSidebar() {
