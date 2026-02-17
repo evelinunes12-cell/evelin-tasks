@@ -46,6 +46,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import qrCodePix from "@/assets/qrcode-pix.jpeg";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { AchievementsList } from "@/components/AchievementsList";
 
 const EDUCATION_LEVELS = [
   { value: "Ensino Fundamental", label: "Ensino Fundamental" },
@@ -604,6 +605,9 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Achievements */}
+            <AchievementsList userName={profile.full_name} />
 
             {/* Password Section */}
             <Card>
