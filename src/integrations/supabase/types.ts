@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          created_at: string
+          description: string | null
+          gradient_from: string
+          gradient_to: string
+          icon: string
+          id: string
+          required_value: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          gradient_from?: string
+          gradient_to?: string
+          icon?: string
+          id?: string
+          required_value: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          gradient_from?: string
+          gradient_to?: string
+          icon?: string
+          id?: string
+          required_value?: number
+          title?: string
+        }
+        Relationships: []
+      }
       environment_members: {
         Row: {
           created_at: string
@@ -773,6 +806,42 @@ export type Database = {
           },
           {
             foreignKeyName: "tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_achievements_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

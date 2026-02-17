@@ -15,6 +15,7 @@ import DashboardSkeleton from "@/components/DashboardSkeleton";
 import EmptyState from "@/components/EmptyState";
 import StreakCard from "@/components/StreakCard";
 import { StreakKeeper } from "@/components/StreakKeeper";
+import { AchievementUnlockChecker } from "@/components/AchievementUnlockChecker";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { IncompleteProfileAlert } from "@/components/IncompleteProfileAlert";
@@ -676,6 +677,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background flex-1">
       <StreakKeeper />
+      <AchievementUnlockChecker />
       <Navbar />
       <main className="container mx-auto px-4 py-8 max-w-[1600px]">
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
