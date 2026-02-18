@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History } from "lucide-react";
+import EnvironmentActivityTimeline from "@/components/EnvironmentActivityTimeline";
 import InviteManager from "@/components/InviteManager";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
@@ -240,6 +241,10 @@ const EnvironmentDetail = () => {
           <TabsList>
             <TabsTrigger value="tasks">Tarefas</TabsTrigger>
             <TabsTrigger value="members">Membros</TabsTrigger>
+            <TabsTrigger value="history">
+              <History className="w-4 h-4 mr-1" />
+              Histórico
+            </TabsTrigger>
             {isOwner && <TabsTrigger value="invites">Convites</TabsTrigger>}
           </TabsList>
 
@@ -511,6 +516,14 @@ const EnvironmentDetail = () => {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-6">
+            <div className="flex items-center gap-2 mb-2">
+              <History className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-xl font-semibold">Histórico de Atividades</h2>
+            </div>
+            <EnvironmentActivityTimeline environmentId={id!} />
           </TabsContent>
 
           {isOwner && (
