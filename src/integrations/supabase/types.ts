@@ -47,6 +47,50 @@ export type Database = {
         }
         Relationships: []
       }
+      environment_activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: string | null
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string
+          environment_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string | null
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type: string
+          environment_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string | null
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string
+          environment_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environment_activity_log_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "shared_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       environment_members: {
         Row: {
           created_at: string
