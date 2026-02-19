@@ -59,12 +59,12 @@ const AdminDashboard = () => {
     fetchStats();
   }, [fetchStats]);
 
-  const newUsersChartData = stats?.new_users_chart.map((d) => ({
+  const newUsersChartData = stats?.new_users_chart?.map((d) => ({
     ...d,
     label: format(parseISO(d.date), "dd/MM", { locale: ptBR }),
   })) ?? [];
 
-  const tasksChartData = stats?.tasks_created_chart.map((d) => ({
+  const tasksChartData = stats?.tasks_created_chart?.map((d) => ({
     ...d,
     label: format(parseISO(d.date), "dd/MM", { locale: ptBR }),
   })) ?? [];
