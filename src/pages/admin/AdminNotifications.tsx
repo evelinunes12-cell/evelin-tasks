@@ -32,6 +32,7 @@ const AdminNotifications = () => {
   const [bTitle, setBTitle] = useState("");
   const [bMessage, setBMessage] = useState("");
   const [bType, setBType] = useState<"info" | "warning" | "success">("info");
+  const [bLink, setBLink] = useState("");
   const [sending, setSending] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [activeCount, setActiveCount] = useState<number | null>(null);
@@ -42,6 +43,7 @@ const AdminNotifications = () => {
   const [selectedUser, setSelectedUser] = useState<{ id: string; full_name: string | null; email: string } | null>(null);
   const [iTitle, setITitle] = useState("");
   const [iMessage, setIMessage] = useState("");
+  const [iLink, setILink] = useState("");
   const [searching, setSearching] = useState(false);
   const [sendingIndividual, setSendingIndividual] = useState(false);
 
@@ -67,6 +69,7 @@ const AdminNotifications = () => {
       p_title: bTitle,
       p_message: bMessage || null,
       p_type: bType,
+      p_link: bLink.trim() || null,
     });
     setSending(false);
     if (error) {
@@ -76,6 +79,7 @@ const AdminNotifications = () => {
       setBTitle("");
       setBMessage("");
       setBType("info");
+      setBLink("");
     }
   };
 
@@ -109,6 +113,7 @@ const AdminNotifications = () => {
       p_user_id: selectedUser.id,
       p_title: iTitle,
       p_message: iMessage || null,
+      p_link: iLink.trim() || null,
     });
     setSendingIndividual(false);
     if (error) {
@@ -117,6 +122,7 @@ const AdminNotifications = () => {
       toast.success(`Notificação enviada para ${selectedUser.full_name || selectedUser.email}!`);
       setITitle("");
       setIMessage("");
+      setILink("");
       setSelectedUser(null);
       setSearchResults([]);
       setSearchQuery("");
@@ -166,6 +172,17 @@ const AdminNotifications = () => {
                   maxLength={1000}
                   rows={4}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="b-link">Link de Redirecionamento (opcional)</Label>
+                <Input
+                  id="b-link"
+                  placeholder="Ex: /planner ou /task/abc123"
+                  value={bLink}
+                  onChange={(e) => setBLink(e.target.value)}
+                  maxLength={500}
+                />
+                <p className="text-xs text-muted-foreground">Deve começar com /. Ao clicar na notificação, o usuário será redirecionado.</p>
               </div>
               <div className="space-y-2">
                 <Label>Tipo</Label>
@@ -265,6 +282,17 @@ const AdminNotifications = () => {
                   maxLength={1000}
                   rows={4}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="i-link">Link de Redirecionamento (opcional)</Label>
+                <Input
+                  id="i-link"
+                  placeholder="Ex: /planner ou /task/abc123"
+                  value={iLink}
+                  onChange={(e) => setILink(e.target.value)}
+                  maxLength={500}
+                />
+                <p className="text-xs text-muted-foreground">Deve começar com /. Ao clicar na notificação, o usuário será redirecionado.</p>
               </div>
               <Button onClick={handleSendIndividual} disabled={sendingIndividual || !selectedUser} className="w-full">
                 <Send className="h-4 w-4 mr-2" />

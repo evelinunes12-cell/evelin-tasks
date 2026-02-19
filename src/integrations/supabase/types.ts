@@ -971,18 +971,38 @@ export type Database = {
         Returns: boolean
       }
       purge_old_focus_sessions: { Args: never; Returns: undefined }
-      send_broadcast_notification: {
-        Args: {
-          p_message: string
-          p_title: string
-          p_type?: Database["public"]["Enums"]["notification_type"]
-        }
-        Returns: undefined
-      }
-      send_individual_notification: {
-        Args: { p_message: string; p_title: string; p_user_id: string }
-        Returns: undefined
-      }
+      send_broadcast_notification:
+        | {
+            Args: {
+              p_message: string
+              p_title: string
+              p_type?: Database["public"]["Enums"]["notification_type"]
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_link?: string
+              p_message: string
+              p_title: string
+              p_type?: Database["public"]["Enums"]["notification_type"]
+            }
+            Returns: undefined
+          }
+      send_individual_notification:
+        | {
+            Args: { p_message: string; p_title: string; p_user_id: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_link?: string
+              p_message: string
+              p_title: string
+              p_user_id: string
+            }
+            Returns: undefined
+          }
       validate_invite: { Args: { invite_token: string }; Returns: Json }
     }
     Enums: {
