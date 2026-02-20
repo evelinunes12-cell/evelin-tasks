@@ -22,6 +22,8 @@ import {
   Tags,
   FolderOpen,
   NotebookPen,
+  Timer,
+  Repeat,
 } from "lucide-react";
 
 const ZenitCommand = () => {
@@ -126,6 +128,14 @@ const ZenitCommand = () => {
             <Settings className="mr-2 h-4 w-4" />
             <span>Ir para Configurações</span>
             <CommandShortcut>⌘,</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => navigate("/estudos/pomodoro"))}>
+            <Timer className="mr-2 h-4 w-4" />
+            <span>Ir para Pomodoro</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => navigate("/estudos/ciclo"))}>
+            <Repeat className="mr-2 h-4 w-4" />
+            <span>Ir para Ciclo de Estudos</span>
           </CommandItem>
         </CommandGroup>
 

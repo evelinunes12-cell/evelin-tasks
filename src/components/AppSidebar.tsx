@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell } from "lucide-react";
+import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import {
@@ -29,6 +29,11 @@ const menuItems = [
   { title: "Configurações", url: "/settings", icon: Settings, description: "Perfil, tema e preferências" },
 ];
 
+const studySubItems = [
+  { title: "Pomodoro", url: "/estudos/pomodoro", icon: Timer, description: "Timer de foco Pomodoro" },
+  { title: "Ciclo de Estudos", url: "/estudos/ciclo", icon: Repeat, description: "Configure seu ciclo ideal de estudos" },
+];
+
 const adminSubItems = [
   { title: "Visão Geral", url: "/admin", icon: LayoutDashboard, description: "Métricas e estatísticas do sistema" },
   { title: "Usuários", url: "/admin/users", icon: Users, description: "Gerenciar usuários da plataforma" },
@@ -42,7 +47,9 @@ export function AppSidebar() {
   const { isAdmin } = useAdminRole();
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
+  const isStudyRoute = location.pathname.startsWith("/estudos");
   const [adminOpen, setAdminOpen] = useState(isAdminRoute);
+  const [studyOpen, setStudyOpen] = useState(isStudyRoute);
 
   const handleLinkClick = () => {
     if (isMobile) {
@@ -94,6 +101,31 @@ export function AppSidebar() {
               </TooltipProvider>
             </SidebarMenu>
           </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <Collapsible open={studyOpen} onOpenChange={setStudyOpen}>
+            <CollapsibleTrigger className="w-full">
+              <SidebarGroupLabel className="cursor-pointer flex items-center justify-between pr-2">
+                <span className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  {open && "Estudos"}
+                </span>
+                {open && (
+                  <ChevronDown className={`h-4 w-4 transition-transform ${studyOpen ? "rotate-180" : ""}`} />
+                )}
+              </SidebarGroupLabel>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <TooltipProvider delayDuration={300}>
+                    {studySubItems.map(renderMenuItem)}
+                  </TooltipProvider>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </Collapsible>
         </SidebarGroup>
 
         {isAdmin && (
