@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat } from "lucide-react";
+import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import {
@@ -111,9 +112,17 @@ export function AppSidebar() {
                   <BookOpen className="h-4 w-4" />
                   {open && "Estudos"}
                 </span>
-                {open && (
-                  <ChevronDown className={`h-4 w-4 transition-transform ${studyOpen ? "rotate-180" : ""}`} />
-                )}
+                <span className="flex items-center gap-1">
+                  {open && (
+                    <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 bg-primary text-primary-foreground animate-pulse">
+                      <Sparkles className="h-3 w-3 mr-0.5" />
+                      Novo
+                    </Badge>
+                  )}
+                  {open && (
+                    <ChevronDown className={`h-4 w-4 transition-transform ${studyOpen ? "rotate-180" : ""}`} />
+                  )}
+                </span>
               </SidebarGroupLabel>
             </CollapsibleTrigger>
             <CollapsibleContent>
