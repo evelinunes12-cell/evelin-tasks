@@ -546,6 +546,77 @@ export type Database = {
         }
         Relationships: []
       }
+      study_cycle_blocks: {
+        Row: {
+          allocated_minutes: number
+          cycle_id: string
+          id: string
+          order_index: number
+          subject_id: string
+        }
+        Insert: {
+          allocated_minutes?: number
+          cycle_id: string
+          id?: string
+          order_index?: number
+          subject_id: string
+        }
+        Update: {
+          allocated_minutes?: number
+          cycle_id?: string
+          id?: string
+          order_index?: number
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_cycle_blocks_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "study_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_cycle_blocks_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_cycles: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_cycles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subjects: {
         Row: {
           color: string | null

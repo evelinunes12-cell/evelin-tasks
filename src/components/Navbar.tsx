@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Mountain, LogOut, Plus, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "./NotificationBell";
-import { FocusTimer } from "./FocusTimer";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -41,12 +40,6 @@ const Navbar = ({ minimal = false }: NavbarProps) => {
         {!minimal && (
           <TooltipProvider delayDuration={300}>
             <div className="flex items-center gap-3">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div><FocusTimer /></div>
-                </TooltipTrigger>
-                <TooltipContent>Timer Pomodoro — foque por 25 min e mantenha sua ofensiva 🔥</TooltipContent>
-              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div><NotificationBell /></div>
