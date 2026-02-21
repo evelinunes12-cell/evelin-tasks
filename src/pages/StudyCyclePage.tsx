@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import { Repeat, Plus, BookOpen, Clock, Trash2, Power, PowerOff } from "lucide-react";
+import { Repeat, Plus, BookOpen, Clock, Trash2, Power, PowerOff, Play } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import {
   NewBlock,
 } from "@/services/studyCycles";
 import StudyCycleDialog from "@/components/StudyCycleDialog";
+import StudyCyclePlayer from "@/components/StudyCyclePlayer";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -37,6 +38,7 @@ const StudyCyclePage = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [playingCycle, setPlayingCycle] = useState<StudyCycle | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -216,6 +218,17 @@ const StudyCyclePage = () => {
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
+                        {cycle.is_active && (cycle.blocks?.length || 0) > 0 && (
+                          <Button
+                            variant="default"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => setPlayingCycle(cycle)}
+                            title="Iniciar ciclo"
+                          >
+                            <Play className="h-4 w-4 ml-0.5" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -270,6 +283,11 @@ const StudyCyclePage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Player */}
+      {playingCycle && (
+        <StudyCyclePlayer cycle={playingCycle} onClose={() => setPlayingCycle(null)} />
+      )}
     </div>
   );
 };
