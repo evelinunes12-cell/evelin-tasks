@@ -588,6 +588,8 @@ export type Database = {
       study_cycles: {
         Row: {
           created_at: string
+          current_block_index: number
+          current_block_remaining_seconds: number | null
           id: string
           is_active: boolean
           name: string
@@ -595,6 +597,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_block_index?: number
+          current_block_remaining_seconds?: number | null
           id?: string
           is_active?: boolean
           name: string
@@ -602,6 +606,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_block_index?: number
+          current_block_remaining_seconds?: number | null
           id?: string
           is_active?: boolean
           name?: string

@@ -6,6 +6,8 @@ export interface StudyCycle {
   name: string;
   is_active: boolean;
   created_at: string;
+  current_block_index: number;
+  current_block_remaining_seconds: number | null;
   blocks?: StudyCycleBlock[];
 }
 
@@ -102,6 +104,22 @@ export const toggleCycleActive = async (cycleId: string, isActive: boolean) => {
   const { error } = await supabase
     .from("study_cycles")
     .update({ is_active: isActive })
+    .eq("id", cycleId);
+
+  if (error) throw error;
+};
+
+export const saveCycleProgress = async (
+  cycleId: string,
+  currentBlockIndex: number,
+  remainingSeconds: number | null
+) => {
+  const { error } = await supabase
+    .from("study_cycles")
+    .update({
+      current_block_index: currentBlockIndex,
+      current_block_remaining_seconds: remainingSeconds,
+    })
     .eq("id", cycleId);
 
   if (error) throw error;
