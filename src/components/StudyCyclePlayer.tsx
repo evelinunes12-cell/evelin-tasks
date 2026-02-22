@@ -66,20 +66,29 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     }
   }, [currentIndex, blocks, currentBlock, user, clearTimer]);
 
-  // Timer tick
+  // Timer tick - only updates timeRemaining, no other deps
   useEffect(() => {
     if (isRunning && endTimeRef.current) {
       intervalRef.current = setInterval(() => {
         const now = Date.now();
         const remaining = Math.max(0, Math.floor((endTimeRef.current! - now) / 1000));
         setTimeRemaining(remaining);
-        if (remaining <= 0) {
-          handleBlockComplete();
-        }
       }, 250);
     }
-    return clearTimer;
-  }, [isRunning, handleBlockComplete, clearTimer]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isRunning]);
+
+  // Separate effect to handle block completion when time reaches 0
+  useEffect(() => {
+    if (isRunning && timeRemaining <= 0 && endTimeRef.current) {
+      handleBlockComplete();
+    }
+  }, [isRunning, timeRemaining, handleBlockComplete]);
 
   const startTimer = () => {
     const now = Date.now();
