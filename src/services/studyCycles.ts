@@ -81,14 +81,38 @@ export const createStudyCycle = async (
 
 export const updateStudyCycle = async (
   cycleId: string,
-  updates: { name?: string; is_active?: boolean }
+  name: string,
+  blocks: NewBlock[]
 ) => {
-  const { error } = await supabase
+  const { error: cycleError } = await supabase
     .from("study_cycles")
-    .update(updates)
+    .update({ name, current_block_index: 0, current_block_remaining_seconds: null })
     .eq("id", cycleId);
 
-  if (error) throw error;
+  if (cycleError) throw cycleError;
+
+  // Delete old blocks then insert new ones
+  const { error: deleteError } = await supabase
+    .from("study_cycle_blocks")
+    .delete()
+    .eq("cycle_id", cycleId);
+
+  if (deleteError) throw deleteError;
+
+  if (blocks.length > 0) {
+    const blockRows = blocks.map((b, i) => ({
+      cycle_id: cycleId,
+      subject_id: b.subject_id,
+      allocated_minutes: b.allocated_minutes,
+      order_index: i,
+    }));
+
+    const { error: insertError } = await supabase
+      .from("study_cycle_blocks")
+      .insert(blockRows);
+
+    if (insertError) throw insertError;
+  }
 };
 
 export const deleteStudyCycle = async (cycleId: string) => {

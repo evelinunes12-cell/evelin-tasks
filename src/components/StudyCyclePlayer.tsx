@@ -86,11 +86,31 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     persistProgress(nextIdx, null);
   }, [currentIndex, blocks, persistProgress]);
 
+  const playAlarm = useCallback(() => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = "sine";
+      gain.gain.value = 0.3;
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+      osc.stop(ctx.currentTime + 1.2);
+    } catch {
+      // silent fallback
+    }
+  }, []);
+
   const handleStudyComplete = useCallback(async () => {
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
     setCompletedBlocks((prev) => new Set(prev).add(currentIndex));
+
+    playAlarm();
 
     if (user) {
       await registerActivity(user.id);
@@ -101,12 +121,13 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     // Start break
     setMode("break");
     setTimeRemaining(BREAK_SECONDS);
-  }, [currentIndex, currentBlock, user, clearTimer]);
+  }, [currentIndex, currentBlock, user, clearTimer, playAlarm]);
 
   const handleBreakComplete = useCallback(() => {
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
+    playAlarm();
 
     const allDone = completedBlocks.size + 1 >= blocks.length;
     if (allDone && completedBlocks.has(currentIndex)) {
@@ -116,7 +137,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
       return;
     }
     advanceToNextBlock();
-  }, [clearTimer, completedBlocks, blocks.length, currentIndex, advanceToNextBlock, persistProgress]);
+  }, [clearTimer, completedBlocks, blocks.length, currentIndex, advanceToNextBlock, persistProgress, playAlarm]);
 
   // Timer tick
   useEffect(() => {
