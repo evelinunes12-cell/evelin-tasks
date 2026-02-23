@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import { Repeat, Plus, BookOpen, Clock, Trash2, Power, PowerOff, Play } from "lucide-react";
+import { Repeat, Plus, BookOpen, Clock, Trash2, Power, PowerOff, Play, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { fetchSubjects, Subject } from "@/services/subjects";
 import {
   fetchStudyCycles,
   createStudyCycle,
+  updateStudyCycle,
   deleteStudyCycle,
   toggleCycleActive,
   StudyCycle,
@@ -37,6 +38,7 @@ const StudyCyclePage = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingCycle, setEditingCycle] = useState<StudyCycle | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [playingCycle, setPlayingCycle] = useState<StudyCycle | null>(null);
 
@@ -58,11 +60,27 @@ const StudyCyclePage = () => {
     }
   };
 
-  const handleCreate = async (name: string, blocks: NewBlock[]) => {
+  const handleSave = async (name: string, blocks: NewBlock[]) => {
     if (!user) return;
-    await createStudyCycle(user.id, name, blocks);
-    toast.success("Ciclo criado com sucesso!");
+    if (editingCycle) {
+      await updateStudyCycle(editingCycle.id, name, blocks);
+      toast.success("Ciclo atualizado com sucesso!");
+    } else {
+      await createStudyCycle(user.id, name, blocks);
+      toast.success("Ciclo criado com sucesso!");
+    }
+    setEditingCycle(null);
     loadData();
+  };
+
+  const handleOpenEdit = (cycle: StudyCycle) => {
+    setEditingCycle(cycle);
+    setDialogOpen(true);
+  };
+
+  const handleOpenCreate = () => {
+    setEditingCycle(null);
+    setDialogOpen(true);
   };
 
   const handleDelete = async () => {
@@ -121,7 +139,7 @@ const StudyCyclePage = () => {
               <p className="text-sm text-muted-foreground">Monte seu ciclo como uma playlist</p>
             </div>
           </div>
-          <Button onClick={() => setDialogOpen(true)} className="gap-1.5">
+          <Button onClick={handleOpenCreate} className="gap-1.5">
             <Plus className="h-4 w-4" />
             Criar Ciclo
           </Button>
@@ -152,7 +170,7 @@ const StudyCyclePage = () => {
             <p className="text-muted-foreground mb-6 max-w-sm">
               Crie seu primeiro ciclo de estudos adicionando suas disciplinas e definindo o tempo dedicado a cada uma.
             </p>
-            <Button onClick={() => setDialogOpen(true)} className="gap-1.5">
+            <Button onClick={handleOpenCreate} className="gap-1.5">
               <Plus className="h-4 w-4" />
               Criar Primeiro Ciclo
             </Button>
@@ -218,6 +236,15 @@ const StudyCyclePage = () => {
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleOpenEdit(cycle)}
+                          title="Editar ciclo"
+                        >
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                        </Button>
                         {cycle.is_active && (cycle.blocks?.length || 0) > 0 && (
                           <Button
                             variant="default"
@@ -260,12 +287,13 @@ const StudyCyclePage = () => {
         )}
       </div>
 
-      {/* Create Dialog */}
+      {/* Create/Edit Dialog */}
       <StudyCycleDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         subjects={subjects}
-        onSave={handleCreate}
+        onSave={handleSave}
+        cycleToEdit={editingCycle}
       />
 
       {/* Delete Confirmation */}
