@@ -225,6 +225,7 @@ export type Database = {
           ended_at: string
           id: string
           started_at: string
+          subject_id: string | null
           user_id: string
         }
         Insert: {
@@ -233,6 +234,7 @@ export type Database = {
           ended_at?: string
           id?: string
           started_at?: string
+          subject_id?: string | null
           user_id: string
         }
         Update: {
@@ -241,9 +243,17 @@ export type Database = {
           ended_at?: string
           id?: string
           started_at?: string
+          subject_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "focus_sessions_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "focus_sessions_user_id_fkey"
             columns: ["user_id"]
