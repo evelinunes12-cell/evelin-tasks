@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Play, Pause, SkipForward, RotateCcw, X, Coffee } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StudyCycle, saveCycleProgress } from "@/services/studyCycles";
+import { createFocusSession } from "@/services/focusSessions";
 import { registerActivity } from "@/services/activity";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -114,6 +115,12 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
 
     if (user) {
       await registerActivity(user.id);
+      // Register focus session with subject
+      const block = blocks[currentIndex];
+      if (block) {
+        const startedAt = new Date(Date.now() - block.allocated_minutes * 60 * 1000);
+        await createFocusSession(user.id, startedAt, block.allocated_minutes, block.subject_id);
+      }
     }
 
     toast.success(`✅ ${currentBlock?.subject?.name || "Bloco"} concluído!`);
@@ -121,7 +128,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     // Start break
     setMode("break");
     setTimeRemaining(BREAK_SECONDS);
-  }, [currentIndex, currentBlock, user, clearTimer, playAlarm]);
+  }, [currentIndex, currentBlock, blocks, user, clearTimer, playAlarm]);
 
   const handleBreakComplete = useCallback(() => {
     clearTimer();

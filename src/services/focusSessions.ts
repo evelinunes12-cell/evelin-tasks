@@ -8,26 +8,31 @@ export interface FocusSession {
   ended_at: string;
   duration_minutes: number;
   created_at: string;
+  subject_id: string | null;
 }
 
 export const createFocusSession = async (
   userId: string,
   startedAt: Date,
-  durationMinutes: number
+  durationMinutes: number,
+  subjectId?: string | null
 ): Promise<FocusSession | null> => {
   if (!userId) return null;
 
   try {
     const endedAt = new Date(startedAt.getTime() + durationMinutes * 60 * 1000);
 
+    const insertData: any = {
+      user_id: userId,
+      started_at: startedAt.toISOString(),
+      ended_at: endedAt.toISOString(),
+      duration_minutes: durationMinutes,
+      ...(subjectId ? { subject_id: subjectId } : {}),
+    };
+
     const { data, error } = await supabase
       .from("focus_sessions")
-      .insert({
-        user_id: userId,
-        started_at: startedAt.toISOString(),
-        ended_at: endedAt.toISOString(),
-        duration_minutes: durationMinutes,
-      })
+      .insert(insertData)
       .select()
       .single();
 

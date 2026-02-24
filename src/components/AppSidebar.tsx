@@ -33,6 +33,7 @@ const menuItems = [
 const studySubItems = [
   { title: "Pomodoro", url: "/estudos/pomodoro", icon: Timer, description: "Timer de foco Pomodoro" },
   { title: "Ciclo de Estudos", url: "/estudos/ciclo", icon: Repeat, description: "Configure seu ciclo ideal de estudos" },
+  { title: "Desempenho", url: "/estudos/desempenho", icon: BarChart3, description: "Métricas e relatórios de estudo" },
 ];
 
 const adminSubItems = [
