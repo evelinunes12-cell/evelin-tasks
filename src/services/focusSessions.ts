@@ -15,7 +15,8 @@ export const createFocusSession = async (
   userId: string,
   startedAt: Date,
   durationMinutes: number,
-  subjectId?: string | null
+  subjectId?: string | null,
+  studyCycleId?: string | null
 ): Promise<FocusSession | null> => {
   if (!userId) return null;
 
@@ -28,6 +29,7 @@ export const createFocusSession = async (
       ended_at: endedAt.toISOString(),
       duration_minutes: durationMinutes,
       ...(subjectId ? { subject_id: subjectId } : {}),
+      ...(studyCycleId ? { study_cycle_id: studyCycleId } : {}),
     };
 
     const { data, error } = await supabase
