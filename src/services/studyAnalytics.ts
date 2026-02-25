@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { logError } from "@/lib/logger";
 
-export interface FocusSessionWithSubject {
+export interface FocusSessionWithDetails {
   id: string;
   user_id: string;
   started_at: string;
@@ -11,19 +11,21 @@ export interface FocusSessionWithSubject {
   subject_id: string | null;
   subject_name: string | null;
   subject_color: string | null;
+  study_cycle_id: string | null;
+  study_cycle_name: string | null;
 }
 
-export const fetchFocusSessionsWithSubjects = async (
+export const fetchFocusSessionsWithDetails = async (
   userId: string,
   fromDate?: Date,
   toDate?: Date
-): Promise<FocusSessionWithSubject[]> => {
+): Promise<FocusSessionWithDetails[]> => {
   if (!userId) return [];
 
   try {
     let query = supabase
       .from("focus_sessions")
-      .select("*, subjects(name, color)")
+      .select("*, subjects(name, color), study_cycles(name)")
       .eq("user_id", userId)
       .order("started_at", { ascending: false });
 
@@ -47,9 +49,15 @@ export const fetchFocusSessionsWithSubjects = async (
       subject_id: s.subject_id,
       subject_name: s.subjects?.name ?? null,
       subject_color: s.subjects?.color ?? null,
+      study_cycle_id: s.study_cycle_id,
+      study_cycle_name: s.study_cycles?.name ?? null,
     }));
   } catch (error) {
-    logError("Erro ao buscar sessões com disciplinas", error);
+    logError("Erro ao buscar sessões com detalhes", error);
     return [];
   }
 };
+
+// Keep backward compat export
+export type FocusSessionWithSubject = FocusSessionWithDetails;
+export const fetchFocusSessionsWithSubjects = fetchFocusSessionsWithDetails;

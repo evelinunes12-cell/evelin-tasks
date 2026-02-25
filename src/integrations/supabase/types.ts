@@ -225,6 +225,7 @@ export type Database = {
           ended_at: string
           id: string
           started_at: string
+          study_cycle_id: string | null
           subject_id: string | null
           user_id: string
         }
@@ -234,6 +235,7 @@ export type Database = {
           ended_at?: string
           id?: string
           started_at?: string
+          study_cycle_id?: string | null
           subject_id?: string | null
           user_id: string
         }
@@ -243,10 +245,18 @@ export type Database = {
           ended_at?: string
           id?: string
           started_at?: string
+          study_cycle_id?: string | null
           subject_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "focus_sessions_study_cycle_id_fkey"
+            columns: ["study_cycle_id"]
+            isOneToOne: false
+            referencedRelation: "study_cycles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "focus_sessions_subject_id_fkey"
             columns: ["subject_id"]

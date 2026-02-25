@@ -119,7 +119,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
       const block = blocks[currentIndex];
       if (block) {
         const startedAt = new Date(Date.now() - block.allocated_minutes * 60 * 1000);
-        await createFocusSession(user.id, startedAt, block.allocated_minutes, block.subject_id);
+        await createFocusSession(user.id, startedAt, block.allocated_minutes, block.subject_id, cycle.id);
       }
     }
 
