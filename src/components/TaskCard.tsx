@@ -100,19 +100,19 @@ const TaskCard = ({
         <div className="absolute top-0 left-0 right-0 h-1 bg-destructive animate-pulse" />
       )}
       <CardContent className="pt-6">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-lg text-foreground">{subjectName}</h3>
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start gap-2 mb-1 flex-wrap">
+              <h3 className="font-semibold text-lg text-foreground break-words">{subjectName}</h3>
               {isOverdue && (
-                <Badge variant="destructive" className="text-xs flex items-center gap-1">
+                <Badge variant="destructive" className="text-xs flex items-center gap-1 shrink-0">
                   <AlertTriangle className="w-3 h-3" />
                   Atrasada
                 </Badge>
               )}
             </div>
             {description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+              <p className="text-sm text-muted-foreground break-words line-clamp-3">{description}</p>
             )}
           </div>
           
