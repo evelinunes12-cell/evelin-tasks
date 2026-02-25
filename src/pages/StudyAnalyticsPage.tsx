@@ -186,27 +186,42 @@ const StudyAnalyticsPage = () => {
                 <CardHeader><CardTitle className="text-base">Tempo por Disciplina</CardTitle></CardHeader>
                 <CardContent>
                   {analytics.bySubject.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={analytics.bySubject}
-                          dataKey="minutes"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={100}
-                          paddingAngle={2}
-                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                          labelLine={false}
-                        >
-                          {analytics.bySubject.map((entry, index) => (
-                            <Cell key={entry.name} fill={entry.color || COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value: number) => [formatTime(value), "Tempo"]} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <div className="flex flex-col items-center gap-4">
+                      <ResponsiveContainer width="100%" height={250}>
+                        <PieChart>
+                          <Pie
+                            data={analytics.bySubject}
+                            dataKey="minutes"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={55}
+                            outerRadius={95}
+                            paddingAngle={2}
+                          >
+                            {analytics.bySubject.map((entry, index) => (
+                              <Cell key={entry.name} fill={entry.color || COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: number) => [formatTime(value), "Tempo"]} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      {/* Custom legend */}
+                      <div className="w-full space-y-1.5">
+                        {analytics.bySubject.map((entry, index) => {
+                          const pct = analytics.totalMinutes > 0 ? ((entry.minutes / analytics.totalMinutes) * 100).toFixed(0) : "0";
+                          return (
+                            <div key={entry.name} className="flex items-center justify-between gap-2 text-sm">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: entry.color || COLORS[index % COLORS.length] }} />
+                                <span className="text-foreground truncate">{entry.name}</span>
+                              </div>
+                              <span className="text-muted-foreground shrink-0">{formatTime(entry.minutes)} ({pct}%)</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   ) : (
                     <p className="text-center text-muted-foreground py-8 text-sm">Sem dados</p>
                   )}
