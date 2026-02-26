@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { studyScheduleSchema } from "@/lib/validation";
 
 export interface StudySchedule {
   id: string;
@@ -11,6 +12,14 @@ export interface StudySchedule {
   color: string | null;
   created_at: string;
 }
+
+// Validate schedule data before database operations
+const validateSchedule = (schedule: Omit<StudySchedule, "id" | "created_at" | "user_id">) => {
+  const result = studyScheduleSchema.safeParse(schedule);
+  if (!result.success) {
+    throw new Error(result.error.errors.map(e => e.message).join(', '));
+  }
+};
 
 export const fetchStudySchedules = async (userId: string) => {
   const { data, error } = await supabase
@@ -27,6 +36,8 @@ export const fetchStudySchedules = async (userId: string) => {
 export const createStudySchedule = async (
   schedule: Omit<StudySchedule, "id" | "created_at">
 ) => {
+  validateSchedule(schedule);
+
   const { data, error } = await supabase
     .from("study_schedules" as any)
     .insert(schedule as any)
@@ -40,6 +51,11 @@ export const createStudySchedule = async (
 export const createMultipleStudySchedules = async (
   schedules: Omit<StudySchedule, "id" | "created_at">[]
 ) => {
+  // Validate each schedule
+  for (const schedule of schedules) {
+    validateSchedule(schedule);
+  }
+
   const { data, error } = await supabase
     .from("study_schedules" as any)
     .insert(schedules as any)

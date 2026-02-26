@@ -109,7 +109,7 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, edit
     }
   };
 
-  const isValid = title.trim() && selectedDays.length > 0 && startTime && endTime && startTime < endTime;
+  const isValid = title.trim() && title.trim().length <= 255 && selectedDays.length > 0 && startTime && endTime && startTime < endTime;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -124,6 +124,7 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, edit
               placeholder="Ex: Aula de Cálculo"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              maxLength={255}
             />
           </div>
 
