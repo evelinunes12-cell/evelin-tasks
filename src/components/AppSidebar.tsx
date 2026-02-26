@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat, Sparkles } from "lucide-react";
+import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat, Sparkles, CalendarDays } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAdminRole } from "@/hooks/useAdminRole";
@@ -33,6 +33,7 @@ const menuItems = [
 const studySubItems = [
   { title: "Pomodoro", url: "/estudos/pomodoro", icon: Timer, description: "Timer de foco Pomodoro" },
   { title: "Ciclo de Estudos", url: "/estudos/ciclo", icon: Repeat, description: "Configure seu ciclo ideal de estudos" },
+  { title: "Grade Horária", url: "/estudos/grade", icon: CalendarDays, description: "Monte sua grade semanal de aulas e estudos" },
   { title: "Desempenho", url: "/estudos/desempenho", icon: BarChart3, description: "Métricas e relatórios de estudo" },
 ];
 
