@@ -109,6 +109,19 @@ export const taskStepSchema = z.object({
   canva_link: optionalUrl,
 });
 
+// Study schedule schema
+export const studyScheduleSchema = z.object({
+  title: nonEmptyString(255, 'Título'),
+  type: z.enum(['fixed', 'variable'], { message: 'Tipo deve ser fixo ou variável' }),
+  day_of_week: z.number().int().min(0).max(6, { message: 'Dia da semana inválido' }),
+  start_time: z.string().regex(/^\d{2}:\d{2}$/, { message: 'Horário de início inválido' }),
+  end_time: z.string().regex(/^\d{2}:\d{2}$/, { message: 'Horário de fim inválido' }),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, { message: 'Cor inválida' }).optional().or(z.literal('')).or(z.null()),
+}).refine((data) => data.start_time < data.end_time, {
+  message: 'O horário de fim deve ser após o início',
+  path: ['end_time'],
+});
+
 // Password validation schema
 export const passwordSchema = z
   .string()
@@ -125,6 +138,7 @@ export type EnvironmentFormData = z.infer<typeof environmentFormSchema>;
 export type MemberFormData = z.infer<typeof memberSchema>;
 export type LinkFormData = z.infer<typeof linkSchema>;
 export type TaskStepFormData = z.infer<typeof taskStepSchema>;
+export type StudyScheduleFormData = z.infer<typeof studyScheduleSchema>;
 
 // Validation helper function
 export const validateInput = <T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; errors: string[] } => {
