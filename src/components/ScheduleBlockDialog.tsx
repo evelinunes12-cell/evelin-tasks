@@ -132,7 +132,7 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, edit
             <RadioGroup value={type} onValueChange={(v) => setType(v as "fixed" | "variable")} className="flex gap-4">
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="fixed" id="fixed" />
-                <Label htmlFor="fixed" className="cursor-pointer font-normal">Fixo (Aula)</Label>
+                <Label htmlFor="fixed" className="cursor-pointer font-normal">Fixo (Aula/Trabalho)</Label>
               </div>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="variable" id="variable" />
