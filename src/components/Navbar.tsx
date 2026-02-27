@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Mountain, LogOut, Plus, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "./NotificationBell";
+import ShortcutsHelpDialog from "./ShortcutsHelpDialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -40,6 +41,12 @@ const Navbar = ({ minimal = false }: NavbarProps) => {
         {!minimal && (
           <TooltipProvider delayDuration={300}>
             <div className="flex items-center gap-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div><ShortcutsHelpDialog /></div>
+                </TooltipTrigger>
+                <TooltipContent>Atalhos do teclado</TooltipContent>
+              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div><NotificationBell /></div>
