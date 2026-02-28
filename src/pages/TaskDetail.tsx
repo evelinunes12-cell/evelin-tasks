@@ -52,6 +52,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import TaskStepDisplay from "@/components/TaskStepDisplay";
+import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -480,6 +481,10 @@ const TaskDetail = () => {
     <div className="min-h-screen bg-background">
       <Navbar minimal />
       <main className="container mx-auto px-4 py-8 max-w-4xl">
+        <PageBreadcrumb segments={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: task.subject_name },
+        ]} />
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-foreground">{task.subject_name}</h1>
           <div className="flex items-center gap-2">
