@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { Mountain, LogOut, Plus, ArrowLeft } from "lucide-react";
+import { Mountain, LogOut, Plus, ArrowLeft, Sun, Moon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "./NotificationBell";
 import ShortcutsHelpDialog from "./ShortcutsHelpDialog";
@@ -24,8 +25,11 @@ interface NavbarProps {
 
 const Navbar = ({ minimal = false }: NavbarProps) => {
   const { signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
   
   return (
     <>
@@ -64,6 +68,20 @@ const Navbar = ({ minimal = false }: NavbarProps) => {
                     <div><NotificationBell /></div>
                   </TooltipTrigger>
                   <TooltipContent>Notificações de prazos e atualizações</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleTheme}
+                      aria-label="Alternar tema"
+                      className="rounded-xl"
+                    >
+                      {theme === "dark" ? <Sun className="w-4 h-4 sm:w-5 sm:h-5" /> : <Moon className="w-4 h-4 sm:w-5 sm:h-5" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Alternar tema claro/escuro</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
