@@ -36,6 +36,7 @@ const StudyAnalyticsPage = lazy(() => import("./pages/StudyAnalyticsPage"));
 const StudySchedulePage = lazy(() => import("./pages/StudySchedulePage"));
 import ZenitCommand from "./components/ZenitCommand";
 import { AdminRoute } from "./components/AdminRoute";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -91,26 +92,28 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<Navigate to="/auth" replace />} />
                     <Route path="/auth" element={<Auth />} />
-                    <Route path="/onboarding" element={<Onboarding />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/subjects" element={<Subjects />} />
-                    <Route path="/task-statuses" element={<TaskStatuses />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/shared-environments" element={<SharedEnvironments />} />
-                    <Route path="/reports" element={<Reports />} />
-                    <Route path="/archived" element={<ArchivedTasks />} />
-                    <Route path="/planner" element={<Planner />} />
-                    <Route path="/environment/new" element={<EnvironmentForm />} />
-                    <Route path="/environment/:id/edit" element={<EnvironmentForm />} />
-                    <Route path="/environment/:id" element={<EnvironmentDetail />} />
-                    <Route path="/task/new" element={<TaskForm />} />
-                    <Route path="/task/edit/:id" element={<TaskForm />} />
-                    <Route path="/task/:id" element={<TaskDetail />} />
+                    <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
                     <Route path="/invite/:token" element={<InvitePage />} />
-                    <Route path="/estudos/pomodoro" element={<PomodoroPage />} />
-                    <Route path="/estudos/ciclo" element={<StudyCyclePage />} />
-                    <Route path="/estudos/desempenho" element={<StudyAnalyticsPage />} />
-                    <Route path="/estudos/grade" element={<StudySchedulePage />} />
+                    {/* Protected routes */}
+                    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    <Route path="/subjects" element={<ProtectedRoute><Subjects /></ProtectedRoute>} />
+                    <Route path="/task-statuses" element={<ProtectedRoute><TaskStatuses /></ProtectedRoute>} />
+                    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/shared-environments" element={<ProtectedRoute><SharedEnvironments /></ProtectedRoute>} />
+                    <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                    <Route path="/archived" element={<ProtectedRoute><ArchivedTasks /></ProtectedRoute>} />
+                    <Route path="/planner" element={<ProtectedRoute><Planner /></ProtectedRoute>} />
+                    <Route path="/environment/new" element={<ProtectedRoute><EnvironmentForm /></ProtectedRoute>} />
+                    <Route path="/environment/:id/edit" element={<ProtectedRoute><EnvironmentForm /></ProtectedRoute>} />
+                    <Route path="/environment/:id" element={<ProtectedRoute><EnvironmentDetail /></ProtectedRoute>} />
+                    <Route path="/task/new" element={<ProtectedRoute><TaskForm /></ProtectedRoute>} />
+                    <Route path="/task/edit/:id" element={<ProtectedRoute><TaskForm /></ProtectedRoute>} />
+                    <Route path="/task/:id" element={<ProtectedRoute><TaskDetail /></ProtectedRoute>} />
+                    <Route path="/estudos/pomodoro" element={<ProtectedRoute><PomodoroPage /></ProtectedRoute>} />
+                    <Route path="/estudos/ciclo" element={<ProtectedRoute><StudyCyclePage /></ProtectedRoute>} />
+                    <Route path="/estudos/desempenho" element={<ProtectedRoute><StudyAnalyticsPage /></ProtectedRoute>} />
+                    <Route path="/estudos/grade" element={<ProtectedRoute><StudySchedulePage /></ProtectedRoute>} />
+                    {/* Admin routes */}
                     <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                     <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
                     <Route path="/admin/banners" element={<AdminRoute><AdminBanners /></AdminRoute>} />
