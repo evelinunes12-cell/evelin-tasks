@@ -26,6 +26,7 @@ import {
   EnvironmentStatus,
 } from "@/services/environmentData";
 import { registerActivity } from "@/services/activity";
+import PageBreadcrumb from "@/components/PageBreadcrumb";
 
 interface Member {
   email: string;
@@ -242,6 +243,11 @@ const EnvironmentForm = () => {
     <div className="min-h-screen bg-background">
       <Navbar minimal />
       <div className="container mx-auto px-6 py-8 max-w-4xl">
+        <PageBreadcrumb segments={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Grupos", href: "/shared-environments" },
+          { label: isNewEnvironment ? "Novo Grupo" : "Editar Grupo" },
+        ]} />
         <h1 className="text-3xl font-bold text-foreground mb-8">{isNewEnvironment ? "Novo Grupo de Trabalho" : "Editar Grupo"}</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card>

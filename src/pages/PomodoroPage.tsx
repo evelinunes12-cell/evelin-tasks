@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import { FocusTimer } from "@/components/FocusTimer";
 import { Flame, Target, Zap } from "lucide-react";
+import PageBreadcrumb from "@/components/PageBreadcrumb";
 
 const motivationalTips = [
   { icon: Flame, text: "Mantenha o foco por 25 minutos e descanse. Seu cérebro agradece!" },
@@ -13,6 +14,12 @@ const PomodoroPage = () => {
     <div className="min-h-screen bg-background">
       <Navbar minimal />
       <div className="flex flex-col items-center justify-center px-4 py-12 md:py-20">
+        <div className="w-full max-w-2xl mb-6">
+          <PageBreadcrumb segments={[
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Modo Foco" },
+          ]} />
+        </div>
         <h1 className="text-3xl font-bold text-foreground mb-2">Modo Foco</h1>
         <p className="text-muted-foreground mb-10 text-center max-w-md">
           Use o timer Pomodoro para manter a concentração e aumentar sua produtividade.
