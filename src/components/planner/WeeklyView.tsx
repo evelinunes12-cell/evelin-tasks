@@ -135,7 +135,7 @@ export function WeeklyView({
                         }}
                       >
                         {goal.completed ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                         ) : (
                           <Target className="h-3.5 w-3.5 text-primary" />
                         )}

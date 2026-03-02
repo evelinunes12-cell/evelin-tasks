@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, BookOpen } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -140,8 +140,20 @@ export default function Subjects() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-muted-foreground">Carregando...</p>
+      <div className="min-h-screen bg-background">
+        <header className="border-b">
+          <div className="container flex h-16 items-center gap-4 px-4">
+            <SidebarTrigger className="md:hidden" />
+            <h1 className="text-2xl font-bold">Disciplinas</h1>
+          </div>
+        </header>
+        <main className="container py-8 px-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
+            ))}
+          </div>
+        </main>
       </div>
     );
   }
@@ -180,6 +192,7 @@ export default function Subjects() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleOpenDialog(subject)}
+                      aria-label={`Editar ${subject.name}`}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -187,6 +200,7 @@ export default function Subjects() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteSubject(subject.id)}
+                      aria-label={`Excluir ${subject.name}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -197,11 +211,20 @@ export default function Subjects() {
           ))}
         </div>
 
-        {subjects.length === 0 && (
-          <p className="text-center text-muted-foreground mt-8">
-            Nenhuma disciplina cadastrada. Clique em "Nova Disciplina" para
-            começar.
-          </p>
+        {subjects.length === 0 && !loading && (
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
+              <BookOpen className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">Nenhuma disciplina ainda</h3>
+            <p className="text-muted-foreground max-w-sm mb-6">
+              Crie sua primeira disciplina para organizar suas tarefas por matéria.
+            </p>
+            <Button onClick={() => handleOpenDialog()} size="lg" className="gap-2">
+              <Plus className="w-4 h-4" />
+              Nova Disciplina
+            </Button>
+          </div>
         )}
       </main>
 

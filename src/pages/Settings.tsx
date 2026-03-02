@@ -47,17 +47,7 @@ import { cn } from "@/lib/utils";
 import qrCodePix from "@/assets/qrcode-pix.jpeg";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { AchievementsList } from "@/components/AchievementsList";
-
-const EDUCATION_LEVELS = [
-  { value: "Ensino Fundamental", label: "Ensino Fundamental" },
-  { value: "Ensino Médio", label: "Ensino Médio" },
-  { value: "Cursos Livres", label: "Cursos Livres" },
-  { value: "Curso Técnico", label: "Curso Técnico" },
-  { value: "Ensino Superior", label: "Ensino Superior" },
-  { value: "Pós-graduação", label: "Pós-graduação" },
-  { value: "Mestrado/Doutorado", label: "Mestrado/Doutorado" },
-  { value: "Outros", label: "Outros" },
-];
+import { EDUCATION_LEVELS } from "@/lib/constants";
 
 interface ProfileData {
   full_name: string;

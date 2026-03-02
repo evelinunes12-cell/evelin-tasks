@@ -17,18 +17,9 @@ import { CitySearchInput } from "@/components/CitySearchInput";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-type AuthMode = "login" | "signup" | "forgot" | "reset";
+import { EDUCATION_LEVELS } from "@/lib/constants";
 
-const EDUCATION_LEVELS = [
-  { value: "Ensino Fundamental", label: "Ensino Fundamental" },
-  { value: "Ensino Médio", label: "Ensino Médio" },
-  { value: "Cursos Livres", label: "Cursos Livres" },
-  { value: "Curso Técnico", label: "Curso Técnico" },
-  { value: "Ensino Superior", label: "Ensino Superior" },
-  { value: "Pós-graduação", label: "Pós-graduação" },
-  { value: "Mestrado/Doutorado", label: "Mestrado/Doutorado" },
-  { value: "Outros", label: "Outros" },
-];
+type AuthMode = "login" | "signup" | "forgot" | "reset";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
