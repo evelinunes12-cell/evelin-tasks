@@ -423,7 +423,7 @@ const Reports = () => {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl md:text-3xl font-bold text-green-600">
+              <div className="text-2xl md:text-3xl font-bold text-success">
                 {analytics.completionRate}%
               </div>
               <p className="text-xs text-muted-foreground">{analytics.completedInRange} concluídas</p>
@@ -467,7 +467,7 @@ const Reports = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                <CheckCircle2 className="h-5 w-5 text-success" />
                 Tarefas Concluídas
               </CardTitle>
             </CardHeader>
@@ -734,8 +734,8 @@ const Reports = () => {
                           <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                         </linearGradient>
                         <linearGradient id="colorConcluidas" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#22C55E" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#22C55E" stopOpacity={0} />
+                          <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -762,7 +762,7 @@ const Reports = () => {
                                 <p className="text-sm text-primary">
                                   {payload[0].value} tarefa(s) criada(s)
                                 </p>
-                                <p className="text-sm text-green-600">
+                                <p className="text-sm text-success">
                                   {payload[1]?.value || 0} tarefa(s) concluída(s)
                                 </p>
                               </div>
@@ -783,7 +783,7 @@ const Reports = () => {
                       <Area
                         type="monotone"
                         dataKey="concluidas"
-                        stroke="#22C55E"
+                        stroke="hsl(var(--success))"
                         strokeWidth={2}
                         fillOpacity={1}
                         fill="url(#colorConcluidas)"
@@ -797,7 +797,7 @@ const Reports = () => {
                       <span className="text-sm text-muted-foreground">Criadas</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-green-500" />
+                      <div className="w-3 h-3 rounded-full bg-success" />
                       <span className="text-sm text-muted-foreground">Concluídas</span>
                     </div>
                   </div>

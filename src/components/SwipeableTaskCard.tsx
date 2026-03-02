@@ -108,25 +108,25 @@ const SwipeableTaskCard = ({
   return (
     <>
       <div className="relative overflow-hidden rounded-lg">
-        {/* Right swipe background (green - complete) */}
+        {/* Right swipe background (success - complete) */}
         <motion.div
-          className="absolute inset-0 bg-green-500 flex items-center justify-start pl-6 rounded-lg"
+          className="absolute inset-0 bg-success flex items-center justify-start pl-6 rounded-lg"
           style={{ opacity: rightOpacity }}
         >
           <motion.div style={{ scale: rightScale }}>
-            <Check className="w-8 h-8 text-white" />
+            <Check className="w-8 h-8 text-success-foreground" />
           </motion.div>
-          <span className="text-white font-medium ml-2">Concluir</span>
+          <span className="text-success-foreground font-medium ml-2">Concluir</span>
         </motion.div>
 
-        {/* Left swipe background (red - delete) */}
+        {/* Left swipe background (destructive - delete) */}
         <motion.div
           className="absolute inset-0 bg-destructive flex items-center justify-end pr-6 rounded-lg"
           style={{ opacity: leftOpacity }}
         >
-          <span className="text-white font-medium mr-2">Excluir</span>
+          <span className="text-destructive-foreground font-medium mr-2">Excluir</span>
           <motion.div style={{ scale: leftScale }}>
-            <Trash2 className="w-8 h-8 text-white" />
+            <Trash2 className="w-8 h-8 text-destructive-foreground" />
           </motion.div>
         </motion.div>
 

@@ -170,7 +170,7 @@ const TaskCard = ({
                   value={checklistProgress} 
                   className={cn(
                     "h-2 w-16",
-                    checklistProgress === 100 && "[&>div]:bg-green-500"
+                    checklistProgress === 100 && "[&>div]:bg-success"
                   )} 
                 />
                 <Badge 
@@ -178,7 +178,7 @@ const TaskCard = ({
                   className={cn(
                     "text-xs px-1.5 py-0",
                     checklistProgress === 100 
-                      ? "bg-green-500/10 text-green-600 border-green-500/30" 
+                      ? "bg-success/10 text-success border-success/30" 
                       : "bg-muted text-muted-foreground"
                   )}
                 >
