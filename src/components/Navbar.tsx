@@ -59,7 +59,7 @@ const Navbar = ({ minimal = false }: NavbarProps) => {
               <div className="flex items-center gap-1.5 sm:gap-3">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div><ShortcutsHelpDialog /></div>
+                    <div className="hidden sm:block"><ShortcutsHelpDialog /></div>
                   </TooltipTrigger>
                   <TooltipContent>Atalhos do teclado</TooltipContent>
                 </Tooltip>
