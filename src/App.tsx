@@ -34,6 +34,7 @@ const PomodoroPage = lazy(() => import("./pages/PomodoroPage"));
 const StudyCyclePage = lazy(() => import("./pages/StudyCyclePage"));
 const StudyAnalyticsPage = lazy(() => import("./pages/StudyAnalyticsPage"));
 const StudySchedulePage = lazy(() => import("./pages/StudySchedulePage"));
+const RankingPage = lazy(() => import("./pages/RankingPage"));
 import ZenitCommand from "./components/ZenitCommand";
 import { AdminRoute } from "./components/AdminRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -55,6 +56,7 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
     pathname === "/reports" ||
     pathname === "/archived" ||
     pathname === "/planner" ||
+    pathname === "/ranking" ||
     pathname === "/task/new" ||
     pathname === "/estudos/pomodoro" ||
     pathname === "/estudos/ciclo" ||
@@ -103,6 +105,7 @@ const App = () => (
                     <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
                     <Route path="/archived" element={<ProtectedRoute><ArchivedTasks /></ProtectedRoute>} />
                     <Route path="/planner" element={<ProtectedRoute><Planner /></ProtectedRoute>} />
+                    <Route path="/ranking" element={<ProtectedRoute><RankingPage /></ProtectedRoute>} />
                     <Route path="/environment/new" element={<ProtectedRoute><EnvironmentForm /></ProtectedRoute>} />
                     <Route path="/environment/:id/edit" element={<ProtectedRoute><EnvironmentForm /></ProtectedRoute>} />
                     <Route path="/environment/:id" element={<ProtectedRoute><EnvironmentDetail /></ProtectedRoute>} />

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat, Sparkles, CalendarDays } from "lucide-react";
+import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat, Sparkles, CalendarDays, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAdminRole } from "@/hooks/useAdminRole";
@@ -22,6 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: Home, description: "Painel principal com suas tarefas" },
   { title: "Planner", url: "/planner", icon: NotebookPen, description: "Planeje metas e anotações" },
+  { title: "Ranking", url: "/ranking", icon: Trophy, description: "Veja o ranking de XP da comunidade" },
   { title: "Grupos de Trabalho", url: "/shared-environments", icon: Users, description: "Colabore com colegas em tarefas compartilhadas" },
   { title: "Relatórios", url: "/reports", icon: BarChart3, description: "Veja estatísticas e sua constância" },
   { title: "Arquivadas", url: "/archived", icon: Archive, description: "Tarefas que foram arquivadas" },

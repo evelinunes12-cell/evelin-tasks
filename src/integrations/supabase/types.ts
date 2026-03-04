@@ -1052,6 +1052,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_xp_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          points: number
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          id?: string
+          points?: number
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          points?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_xp_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1089,6 +1121,15 @@ export type Database = {
           environment_id: string
           id: string
           permissions: string[]
+          user_id: string
+        }[]
+      }
+      get_leaderboard: {
+        Args: { period_type: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          total_xp: number
           user_id: string
         }[]
       }

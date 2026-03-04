@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Task } from "@/services/tasks";
 import { archiveTask } from "@/services/archive";
 import { registerActivity } from "@/services/activity";
+import { logXP, XP } from "@/services/scoring";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
 
@@ -37,11 +38,14 @@ export const useDashboardMutations = () => {
     },
     onSuccess: async (_data, variables) => {
       toast.success("Status atualizado", { duration: 2000 });
-      if (variables.newStatus.toLowerCase().includes("conclu")) {
-        triggerConfetti();
-        if (user?.id) {
+      if (user?.id) {
+        if (variables.newStatus.toLowerCase().includes("conclu")) {
+          triggerConfetti();
           await registerActivity(user.id);
           queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
+          logXP(user.id, "task_completed", XP.TASK_COMPLETED);
+        } else {
+          logXP(user.id, "status_change", XP.STATUS_CHANGE);
         }
       }
     },

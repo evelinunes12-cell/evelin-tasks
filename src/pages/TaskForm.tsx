@@ -27,6 +27,7 @@ import HierarchicalStatusSelect, { HierarchicalStatus } from "@/components/Hiera
 import { logError } from "@/lib/logger";
 import { taskFormSchema, linkSchema, checklistSchema } from "@/lib/validation";
 import { registerActivity } from "@/services/activity";
+import { logXP, XP } from "@/services/scoring";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 
 const TaskForm = () => {
@@ -680,6 +681,7 @@ const TaskForm = () => {
       // Registra atividade para a ofensiva
       if (user) {
         registerActivity(user.id);
+        logXP(user.id, isEditing ? "edit_basic" : "create_task", isEditing ? XP.EDIT_BASIC : XP.CREATE_ITEM);
       }
 
       // Invalida o cache de tarefas para forçar atualização na Dashboard

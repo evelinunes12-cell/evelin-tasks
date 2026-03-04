@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { registerActivity, incrementPomodoroCount } from "@/services/activity";
 import { createFocusSession } from "@/services/focusSessions";
+import { logXP, XP } from "@/services/scoring";
 import { toast } from "sonner";
 
 interface FocusTimerContextType {
@@ -113,6 +114,7 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       queryClient.invalidateQueries({ queryKey: ['onboarding-status', user.id] });
       queryClient.invalidateQueries({ queryKey: ['focus-sessions', user.id] });
       toast.success("🍅 Ciclo Pomodoro concluído! +1 para sua ofensiva.");
+      logXP(user.id, "pomodoro_completed", XP.POMODORO_COMPLETED);
     }
 
     // Alterna para pausa ou foco

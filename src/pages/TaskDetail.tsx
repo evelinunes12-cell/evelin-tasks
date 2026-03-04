@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { logError } from "@/lib/logger";
 import { registerActivity } from "@/services/activity";
+import { logXP, XP } from "@/services/scoring";
 import { uploadTaskFile } from "@/services/attachments";
 import { archiveTask } from "@/services/archive";
 import ChecklistManager from "@/components/ChecklistManager";
@@ -438,6 +439,7 @@ const TaskDetail = () => {
       // Se marcou algum item novo como concluído, registra atividade
       if (newCompletedCount > previousCompletedCount && user?.id) {
         await registerActivity(user.id);
+        logXP(user.id, "checklist_update", XP.CHECKLIST_UPDATE);
         queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
       }
 
