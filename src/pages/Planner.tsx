@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { registerActivity } from "@/services/activity";
+import { logXP, XP } from "@/services/scoring";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -93,7 +94,10 @@ const Planner = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planner-notes"] });
       queryClient.invalidateQueries({ queryKey: ["planner-notes-week"] });
-      if (user) registerActivity(user.id);
+      if (user) {
+        registerActivity(user.id);
+        logXP(user.id, "create_note", XP.CREATE_ITEM);
+      }
       queryClient.invalidateQueries({ queryKey: ["user-streak"] });
       toast.success("Anotação criada!");
     },
@@ -105,7 +109,10 @@ const Planner = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planner-notes"] });
       queryClient.invalidateQueries({ queryKey: ["planner-notes-week"] });
-      if (user) registerActivity(user.id);
+      if (user) {
+        registerActivity(user.id);
+        logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+      }
       queryClient.invalidateQueries({ queryKey: ["user-streak"] });
       toast.success("Anotação atualizada!");
     },
@@ -136,7 +143,10 @@ const Planner = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planner-goals"] });
       queryClient.invalidateQueries({ queryKey: ["planner-goals-week"] });
-      if (user) registerActivity(user.id);
+      if (user) {
+        registerActivity(user.id);
+        logXP(user.id, "create_goal", XP.CREATE_ITEM);
+      }
       queryClient.invalidateQueries({ queryKey: ["user-streak"] });
       toast.success("Meta criada!");
     },
@@ -148,7 +158,10 @@ const Planner = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planner-goals"] });
       queryClient.invalidateQueries({ queryKey: ["planner-goals-week"] });
-      if (user) registerActivity(user.id);
+      if (user) {
+        registerActivity(user.id);
+        logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+      }
       queryClient.invalidateQueries({ queryKey: ["user-streak"] });
       toast.success("Meta atualizada!");
     },

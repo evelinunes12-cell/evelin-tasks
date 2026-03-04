@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { StudyCycle, saveCycleProgress } from "@/services/studyCycles";
 import { createFocusSession } from "@/services/focusSessions";
 import { registerActivity } from "@/services/activity";
+import { logXP, XP } from "@/services/scoring";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -115,6 +116,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
 
     if (user) {
       await registerActivity(user.id);
+      logXP(user.id, "study_block_completed", XP.STUDY_BLOCK_COMPLETED);
       // Register focus session with subject
       const block = blocks[currentIndex];
       if (block) {
