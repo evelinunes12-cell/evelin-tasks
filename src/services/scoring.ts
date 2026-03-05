@@ -27,4 +27,5 @@ export const XP = {
   CHECKLIST_UPDATE: 5,
   STATUS_CHANGE: 2,
   EDIT_BASIC: 2,
+  LOGIN: 1,
 } as const;

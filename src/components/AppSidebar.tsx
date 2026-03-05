@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat, Sparkles, CalendarDays, Trophy } from "lucide-react";
+import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat, Sparkles, CalendarDays, Trophy, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAdminRole } from "@/hooks/useAdminRole";
@@ -23,11 +23,14 @@ const menuItems = [
   { title: "Início", url: "/dashboard", icon: Home, description: "Painel principal com suas tarefas" },
   { title: "Planner", url: "/planner", icon: NotebookPen, description: "Planeje metas e anotações" },
   { title: "Grupos de Trabalho", url: "/shared-environments", icon: Users, description: "Colabore com colegas em tarefas compartilhadas" },
-  { title: "Relatórios", url: "/reports", icon: BarChart3, description: "Veja estatísticas e sua constância" },
-  { title: "Ranking", url: "/ranking", icon: Trophy, description: "Veja o ranking de XP da comunidade" },
   { title: "Arquivadas", url: "/archived", icon: Archive, description: "Tarefas que foram arquivadas" },
   { title: "Disciplinas", url: "/subjects", icon: BookOpen, description: "Gerencie suas disciplinas/matérias" },
   { title: "Status", url: "/task-statuses", icon: ListChecks, description: "Personalize os status das tarefas" },
+];
+
+const analyticsSubItems = [
+  { title: "Relatórios", url: "/reports", icon: BarChart3, description: "Veja estatísticas e sua constância" },
+  { title: "Ranking", url: "/ranking", icon: Trophy, description: "Veja o ranking de XP da comunidade" },
 ];
 
 const bottomMenuItems = [
@@ -55,8 +58,10 @@ export function AppSidebar() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isStudyRoute = location.pathname.startsWith("/estudos");
+  const isAnalyticsRoute = location.pathname === "/reports" || location.pathname === "/ranking";
   const [adminOpen, setAdminOpen] = useState(isAdminRoute);
   const [studyOpen, setStudyOpen] = useState(isStudyRoute);
+  const [analyticsOpen, setAnalyticsOpen] = useState(isAnalyticsRoute);
 
   const handleLinkClick = () => {
     if (isMobile) {
@@ -108,6 +113,31 @@ export function AppSidebar() {
               </TooltipProvider>
             </SidebarMenu>
           </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <Collapsible open={analyticsOpen} onOpenChange={setAnalyticsOpen}>
+            <CollapsibleTrigger className="w-full">
+              <SidebarGroupLabel className="cursor-pointer flex items-center justify-between pr-2">
+                <span className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  {open && "Análises"}
+                </span>
+                {open && (
+                  <ChevronDown className={`h-4 w-4 transition-transform ${analyticsOpen ? "rotate-180" : ""}`} />
+                )}
+              </SidebarGroupLabel>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <TooltipProvider delayDuration={300}>
+                    {analyticsSubItems.map(renderMenuItem)}
+                  </TooltipProvider>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </Collapsible>
         </SidebarGroup>
 
         <SidebarGroup>
