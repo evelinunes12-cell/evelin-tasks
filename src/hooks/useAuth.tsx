@@ -21,7 +21,21 @@ export const useAuth = () => {
 
       if (event === "SIGNED_IN" && session?.user && !loginXpLogged.current) {
         loginXpLogged.current = true;
-        logXP(session.user.id, "login", XP.LOGIN);
+        // Only grant 1 XP per day for login
+        const today = new Date().toISOString().slice(0, 10);
+        supabase
+          .from("user_xp_logs")
+          .select("id")
+          .eq("user_id", session.user.id)
+          .eq("action_type", "login")
+          .gte("created_at", `${today}T00:00:00`)
+          .lt("created_at", `${today}T23:59:59.999`)
+          .limit(1)
+          .then(({ data }) => {
+            if (!data || data.length === 0) {
+              logXP(session.user.id, "login", XP.LOGIN);
+            }
+          });
       }
     });
 
