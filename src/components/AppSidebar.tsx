@@ -23,7 +23,7 @@ const menuItems = [
   { title: "Início", url: "/dashboard", icon: Home, description: "Painel principal com suas tarefas" },
   { title: "Planner", url: "/planner", icon: NotebookPen, description: "Planeje metas e anotações" },
   { title: "Grupos de Trabalho", url: "/shared-environments", icon: Users, description: "Colabore com colegas em tarefas compartilhadas" },
-  { title: "Arquivadas", url: "/archived", icon: Archive, description: "Tarefas que foram arquivadas" },
+  { title: "Tarefas Arquivadas", url: "/archived", icon: Archive, description: "Tarefas que foram arquivadas" },
   { title: "Disciplinas", url: "/subjects", icon: BookOpen, description: "Gerencie suas disciplinas/matérias" },
   { title: "Status", url: "/task-statuses", icon: ListChecks, description: "Personalize os status das tarefas" },
 ];
