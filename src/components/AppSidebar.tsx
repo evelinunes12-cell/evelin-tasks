@@ -22,12 +22,15 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: Home, description: "Painel principal com suas tarefas" },
   { title: "Planner", url: "/planner", icon: NotebookPen, description: "Planeje metas e anotações" },
-  { title: "Ranking", url: "/ranking", icon: Trophy, description: "Veja o ranking de XP da comunidade" },
   { title: "Grupos de Trabalho", url: "/shared-environments", icon: Users, description: "Colabore com colegas em tarefas compartilhadas" },
   { title: "Relatórios", url: "/reports", icon: BarChart3, description: "Veja estatísticas e sua constância" },
+  { title: "Ranking", url: "/ranking", icon: Trophy, description: "Veja o ranking de XP da comunidade" },
   { title: "Arquivadas", url: "/archived", icon: Archive, description: "Tarefas que foram arquivadas" },
   { title: "Disciplinas", url: "/subjects", icon: BookOpen, description: "Gerencie suas disciplinas/matérias" },
   { title: "Status", url: "/task-statuses", icon: ListChecks, description: "Personalize os status das tarefas" },
+];
+
+const bottomMenuItems = [
   { title: "Configurações", url: "/settings", icon: Settings, description: "Perfil, tema e preferências" },
 ];
 
@@ -138,6 +141,16 @@ export function AppSidebar() {
               </SidebarGroupContent>
             </CollapsibleContent>
           </Collapsible>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <TooltipProvider delayDuration={300}>
+                {bottomMenuItems.map(renderMenuItem)}
+              </TooltipProvider>
+            </SidebarMenu>
+          </SidebarGroupContent>
         </SidebarGroup>
 
         {isAdmin && (
