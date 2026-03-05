@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { logError } from "@/lib/logger";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { logXP, XP } from "@/services/scoring";
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const loginXpLogged = useRef(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -16,6 +18,11 @@ export const useAuth = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      if (event === "SIGNED_IN" && session?.user && !loginXpLogged.current) {
+        loginXpLogged.current = true;
+        logXP(session.user.id, "login", XP.LOGIN);
+      }
     });
 
     // THEN check for existing session
