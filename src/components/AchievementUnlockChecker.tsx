@@ -6,6 +6,8 @@ import { AchievementShareCard } from "./AchievementShareCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useConfetti } from "@/hooks/useConfetti";
 
+const SESSION_KEY = "achievement_checked_session";
+
 export const AchievementUnlockChecker = () => {
   const { user } = useAuth();
   const { data: streakData } = useUserStreak();
@@ -36,6 +38,11 @@ export const AchievementUnlockChecker = () => {
     const currentStreak = streakData.streak;
     const unlockedIds = new Set(unlocked.map((u) => u.achievement_id));
 
+    // Already shown this session
+    const shownRaw = sessionStorage.getItem(SESSION_KEY);
+    const shownIds: string[] = shownRaw ? JSON.parse(shownRaw) : [];
+    const shownSet = new Set(shownIds);
+
     // Find achievements that should be unlocked but aren't yet
     const toUnlock = achievements.filter(
       (a) => a.required_value <= currentStreak && !unlockedIds.has(a.id)
@@ -43,25 +50,27 @@ export const AchievementUnlockChecker = () => {
 
     if (toUnlock.length === 0) return;
 
-    // Unlock all eligible, show the highest one
     const unlockAll = async () => {
       for (const a of toUnlock) {
         await unlock(a.id);
       }
-      // Show the highest newly unlocked
-      const highest = toUnlock[toUnlock.length - 1];
-      setNewlyUnlocked(highest);
-      setShareOpen(true);
-      triggerConfetti();
+
+      // Only show popup for ones not already shown this session
+      const toShow = toUnlock.filter((a) => !shownSet.has(a.id));
+      if (toShow.length > 0) {
+        const highest = toShow[toShow.length - 1];
+        setNewlyUnlocked(highest);
+        setShareOpen(true);
+        triggerConfetti();
+
+        // Mark all as shown this session
+        const updated = [...shownIds, ...toUnlock.map((a) => a.id)];
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(updated));
+      }
     };
 
     unlockAll();
   }, [user, streakData, achievements, unlocked, unlock, triggerConfetti]);
-
-  // Reset checker when streak changes
-  useEffect(() => {
-    checkedRef.current = false;
-  }, [streakData?.streak]);
 
   return (
     <AchievementShareCard
