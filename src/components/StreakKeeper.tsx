@@ -26,15 +26,21 @@ export const StreakKeeper = () => {
           description: "Você ficou mais de um dia sem praticar. Sua ofensiva foi reiniciada.",
         });
 
-        // 2. Atualizar o banco para 0 para não avisar de novo no próximo F5
+        // 2. Resetar conquistas desbloqueadas
+        await supabase
+          .from("user_achievements")
+          .delete()
+          .eq("user_id", user.id);
+
+        // 3. Atualizar o banco para 0 para não avisar de novo no próximo F5
         const { error } = await supabase
           .from("profiles")
           .update({ current_streak: 0 })
           .eq("id", user.id);
           
         if (!error) {
-          // Atualiza o cache para alinhar tudo
           queryClient.invalidateQueries({ queryKey: ["user-streak"] });
+          queryClient.invalidateQueries({ queryKey: ["user-achievements"] });
         }
       };
 
