@@ -3,8 +3,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Navbar from "@/components/Navbar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -189,8 +189,8 @@ function RankingContent() {
 
   return (
     <>
-      <Navbar />
       <div className="container max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
+        <div className="md:hidden mb-2"><SidebarTrigger /></div>
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
