@@ -23,7 +23,7 @@ import { ptBR } from "date-fns/locale";
 import { useMemo, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/DateRangePicker";
-import { ActivityHeatmap } from "@/components/ActivityHeatmap";
+
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const COLORS = [
@@ -701,19 +701,6 @@ const Reports = () => {
             </CardContent>
           </Card>
 
-          {/* Activity Heatmap - Full Width */}
-          <div className="lg:col-span-2">
-            <ActivityHeatmap
-              completedTasks={completedTasksInRange}
-              focusSessions={focusSessions || []}
-              createdTasks={tasks || []}
-              updatedTasks={allTasks?.filter(t => t.updated_at && !t.status?.toLowerCase().includes("conclu")) || []}
-              plannerNotes={plannerNotes || []}
-              plannerGoals={plannerGoals || []}
-              fromDate={fromDate}
-              toDate={toDate}
-            />
-          </div>
 
           {/* Monthly Evolution */}
           <Card className="lg:col-span-2">
