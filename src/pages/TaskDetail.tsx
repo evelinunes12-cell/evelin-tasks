@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useConfetti } from "@/hooks/useConfetti";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate as useNav } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Task, ChecklistItem } from "@/services/tasks";
 import Navbar from "@/components/Navbar";
