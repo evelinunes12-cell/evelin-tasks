@@ -203,8 +203,25 @@ const TaskDetail = () => {
       fetchTask();
       fetchAttachments();
       fetchSteps();
+      fetchLinkedNotes();
     }
   }, [user, authLoading, id, navigate]);
+
+  const fetchLinkedNotes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("planner_notes")
+        .select("id, title, planned_date")
+        .eq("task_id", id)
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        setLinkedNotes(data);
+      }
+    } catch (error) {
+      logError("Error fetching linked notes", error);
+    }
+  };
 
   // Função para garantir que itens do checklist tenham IDs
   const ensureChecklistIds = (checklist: any[]): ChecklistItem[] => {
