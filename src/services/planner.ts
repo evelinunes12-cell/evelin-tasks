@@ -88,6 +88,7 @@ export const createNote = async (
     title: string;
     content: string;
     subject_id?: string | null;
+    task_id?: string | null;
     color?: string | null;
     planned_date?: string | null;
     pinned?: boolean;
