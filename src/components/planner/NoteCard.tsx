@@ -99,6 +99,15 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleComplete
           {note.pinned && (
             <Pin className="h-3 w-3 text-primary" />
           )}
+          {note.task_id && (
+            <button
+              onClick={() => navigate(`/task/${note.task_id}`)}
+              className="text-[10px] text-primary flex items-center gap-0.5 hover:underline"
+            >
+              <LinkIcon className="h-3 w-3" />
+              Ver tarefa
+            </button>
+          )}
         </div>
       </CardContent>
     </Card>
