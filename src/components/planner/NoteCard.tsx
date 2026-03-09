@@ -2,10 +2,11 @@ import { PlannerNote } from "@/services/planner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pin, PinOff, Pencil, Trash2, Calendar, Check, RotateCcw } from "lucide-react";
+import { Pin, PinOff, Pencil, Trash2, Calendar, Check, RotateCcw, LinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface NoteCardProps {
   note: PlannerNote;
@@ -16,6 +17,8 @@ interface NoteCardProps {
 }
 
 export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleComplete }: NoteCardProps) {
+  const navigate = useNavigate();
+
   return (
     <Card
       className={cn(
@@ -95,6 +98,15 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleComplete
           )}
           {note.pinned && (
             <Pin className="h-3 w-3 text-primary" />
+          )}
+          {note.task_id && (
+            <button
+              onClick={() => navigate(`/task/${note.task_id}`)}
+              className="text-[10px] text-primary flex items-center gap-0.5 hover:underline"
+            >
+              <LinkIcon className="h-3 w-3" />
+              Ver tarefa
+            </button>
           )}
         </div>
       </CardContent>
