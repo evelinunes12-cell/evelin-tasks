@@ -17,6 +17,8 @@ interface NoteCardProps {
 }
 
 export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleComplete }: NoteCardProps) {
+  const navigate = useNavigate();
+
   return (
     <Card
       className={cn(
