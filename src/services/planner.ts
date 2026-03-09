@@ -5,6 +5,7 @@ export interface PlannerNote {
   id: string;
   user_id: string;
   subject_id: string | null;
+  task_id: string | null;
   title: string;
   content: string;
   color: string | null;
