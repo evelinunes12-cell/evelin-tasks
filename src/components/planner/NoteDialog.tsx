@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { PlannerNote } from "@/services/planner";
 import { Subject } from "@/services/subjects";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -25,10 +26,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, X } from "lucide-react";
+import { CalendarIcon, X, LinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+
+interface TaskOption {
+  id: string;
+  subject_name: string;
+  description: string | null;
+}
 
 interface NoteDialogProps {
   open: boolean;
@@ -39,6 +46,7 @@ interface NoteDialogProps {
     title: string;
     content: string;
     subject_id: string | null;
+    task_id: string | null;
     planned_date: string | null;
   }) => void;
 }
@@ -47,22 +55,70 @@ export function NoteDialog({ open, onOpenChange, note, subjects, onSave }: NoteD
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [subjectId, setSubjectId] = useState<string | null>(null);
+  const [taskId, setTaskId] = useState<string | null>(null);
   const [plannedDate, setPlannedDate] = useState<Date | undefined>();
+  const [tasks, setTasks] = useState<TaskOption[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
 
   useEffect(() => {
     if (open) {
       setTitle(note?.title || "");
       setContent(note?.content || "");
       setSubjectId(note?.subject_id || null);
+      setTaskId(note?.task_id || null);
       setPlannedDate(note?.planned_date ? new Date(note.planned_date + "T12:00:00") : undefined);
     }
   }, [open, note]);
+
+  // Fetch open tasks when subject changes
+  useEffect(() => {
+    if (!open || !subjectId) {
+      setTasks([]);
+      if (!subjectId) setTaskId(null);
+      return;
+    }
+
+    const selectedSubject = subjects.find((s) => s.id === subjectId);
+    if (!selectedSubject) {
+      setTasks([]);
+      return;
+    }
+
+    const fetchTasks = async () => {
+      setLoadingTasks(true);
+      try {
+        const { data, error } = await supabase
+          .from("tasks")
+          .select("id, subject_name, description")
+          .eq("subject_name", selectedSubject.name)
+          .eq("is_archived", false)
+          .not("status", "ilike", "%conclu%")
+          .order("due_date", { ascending: true, nullsFirst: false });
+
+        if (!error && data) {
+          setTasks(data as TaskOption[]);
+        }
+      } finally {
+        setLoadingTasks(false);
+      }
+    };
+
+    fetchTasks();
+  }, [open, subjectId, subjects]);
+
+  // Clear task when subject changes and task doesn't match
+  useEffect(() => {
+    if (taskId && tasks.length > 0 && !tasks.find((t) => t.id === taskId)) {
+      setTaskId(null);
+    }
+  }, [tasks, taskId]);
 
   const handleSave = () => {
     onSave({
       title,
       content,
       subject_id: subjectId,
+      task_id: taskId,
       planned_date: plannedDate ? format(plannedDate, "yyyy-MM-dd") : null,
     });
     onOpenChange(false);
@@ -146,6 +202,38 @@ export function NoteDialog({ open, onOpenChange, note, subjects, onSave }: NoteD
               </div>
             </div>
           </div>
+
+          {subjectId && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <LinkIcon className="h-3.5 w-3.5" />
+                Vincular a uma tarefa
+              </Label>
+              <Select
+                value={taskId || "none"}
+                onValueChange={(v) => setTaskId(v === "none" ? null : v)}
+                disabled={loadingTasks}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingTasks ? "Carregando..." : "Nenhuma tarefa"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma tarefa</SelectItem>
+                  {tasks.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.subject_name}
+                      {t.description ? ` — ${t.description.substring(0, 40)}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {tasks.length === 0 && !loadingTasks && (
+                <p className="text-xs text-muted-foreground">
+                  Nenhuma tarefa em aberto para esta disciplina.
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter>
