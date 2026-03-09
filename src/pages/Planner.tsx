@@ -178,7 +178,7 @@ const Planner = () => {
     onError: () => toast.error("Erro ao remover meta"),
   });
 
-  const handleSaveNote = (data: { title: string; content: string; subject_id: string | null; planned_date: string | null }) => {
+  const handleSaveNote = (data: { title: string; content: string; subject_id: string | null; task_id: string | null; planned_date: string | null }) => {
     if (editingNote) {
       updateNoteMut.mutate({ id: editingNote.id, ...data });
     } else {
