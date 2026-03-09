@@ -2,10 +2,11 @@ import { PlannerNote } from "@/services/planner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pin, PinOff, Pencil, Trash2, Calendar, Check, RotateCcw } from "lucide-react";
+import { Pin, PinOff, Pencil, Trash2, Calendar, Check, RotateCcw, LinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface NoteCardProps {
   note: PlannerNote;
