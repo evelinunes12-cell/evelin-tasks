@@ -43,6 +43,7 @@ import {
   Eye,
   Archive,
   MoreVertical,
+  StickyNote,
 } from "lucide-react";
 import {
   Tooltip,
