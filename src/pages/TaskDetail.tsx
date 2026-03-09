@@ -636,6 +636,38 @@ const TaskDetail = () => {
             </Card>
           )}
 
+          {linkedNotes.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <StickyNote className="w-5 h-5" />
+                  Anotações Vinculadas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {linkedNotes.map((note) => (
+                  <button
+                    key={note.id}
+                    onClick={() => navigate("/planner")}
+                    className="flex items-center justify-between w-full rounded-md border p-3 text-left hover:bg-accent transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <StickyNote className="h-4 w-4 text-primary shrink-0" />
+                      <span className="text-sm font-medium truncate">
+                        {note.title || "Sem título"}
+                      </span>
+                    </div>
+                    {note.planned_date && (
+                      <span className="text-xs text-muted-foreground shrink-0 ml-2">
+                        {format(new Date(note.planned_date + "T12:00:00"), "dd/MM", { locale: ptBR })}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
