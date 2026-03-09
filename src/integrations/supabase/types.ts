@@ -436,6 +436,7 @@ export type Database = {
           pinned: boolean
           planned_date: string | null
           subject_id: string | null
+          task_id: string | null
           title: string
           updated_at: string
           user_id: string
@@ -449,6 +450,7 @@ export type Database = {
           pinned?: boolean
           planned_date?: string | null
           subject_id?: string | null
+          task_id?: string | null
           title?: string
           updated_at?: string
           user_id: string
@@ -462,6 +464,7 @@ export type Database = {
           pinned?: boolean
           planned_date?: string | null
           subject_id?: string | null
+          task_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -472,6 +475,13 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planner_notes_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
