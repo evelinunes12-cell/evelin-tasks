@@ -43,7 +43,7 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isCompleted, setIsCompleted] = useState(false);
   const [endTime, setEndTime] = useState<number | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasCompletedRef = useRef(false);
 
   // Load state from sessionStorage on mount
