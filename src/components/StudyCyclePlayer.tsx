@@ -37,7 +37,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     return set;
   });
   const [mode, setMode] = useState<"study" | "break">("study");
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const endTimeRef = useRef<number | null>(null);
 
   const currentBlock = blocks[currentIndex];
