@@ -8,7 +8,7 @@ interface DashboardKanbanProps {
   tasks: Task[];
   filteredTasks: Task[];
   tasksLoading: boolean;
-  viewMode: string;
+  viewMode: "list" | "board";
   availableStatuses: string[];
   kanbanStatuses: KanbanStatus[];
   onStatusChange: (taskId: string, newStatus: string) => void;
