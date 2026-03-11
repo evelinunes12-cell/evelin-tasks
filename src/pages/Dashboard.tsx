@@ -15,8 +15,6 @@ import { AchievementUnlockChecker } from "@/components/AchievementUnlockChecker"
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { IncompleteProfileAlert } from "@/components/IncompleteProfileAlert";
 import DashboardBannerCarousel from "@/components/DashboardBannerCarousel";
-import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
 
 import { TodaySummary } from "@/components/dashboard/TodaySummary";
 import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
@@ -89,14 +87,6 @@ const Dashboard = () => {
             <p className="text-muted-foreground">Gerencie seus trabalhos e projetos de forma organizada</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              onClick={() => navigate("/estudos/ciclo")}
-              className="gap-2 bg-primary hover:bg-primary/90 shadow-md"
-              size="lg"
-            >
-              <Play className="w-4 h-4" />
-              Modo Foco
-            </Button>
             <StreakCard streak={currentStreak} completedToday={completedToday} />
           </div>
         </div>

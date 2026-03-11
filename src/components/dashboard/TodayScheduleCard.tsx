@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, CalendarClock } from "lucide-react";
@@ -6,6 +7,7 @@ import { fetchStudySchedules } from "@/services/studySchedules";
 
 export function TodayScheduleCard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const todayDow = new Date().getDay();
 
   const { data: schedules = [], isLoading } = useQuery({
@@ -24,7 +26,7 @@ export function TodayScheduleCard() {
   const formatTime = (t: string) => t.slice(0, 5);
 
   return (
-    <Card className="h-full">
+    <Card className="h-full cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate("/estudos/grade")}>
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <CalendarClock className="h-4 w-4 text-primary" />
