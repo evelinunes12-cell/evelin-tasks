@@ -7,6 +7,7 @@ import { fetchStudySchedules } from "@/services/studySchedules";
 
 export function TodayScheduleCard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const todayDow = new Date().getDay();
 
   const { data: schedules = [], isLoading } = useQuery({
