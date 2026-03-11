@@ -15,8 +15,6 @@ import { AchievementUnlockChecker } from "@/components/AchievementUnlockChecker"
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { IncompleteProfileAlert } from "@/components/IncompleteProfileAlert";
 import DashboardBannerCarousel from "@/components/DashboardBannerCarousel";
-import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
 
 import { TodaySummary } from "@/components/dashboard/TodaySummary";
 import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
