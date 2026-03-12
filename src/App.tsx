@@ -61,7 +61,7 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
     pathname === "/estudos/pomodoro" ||
     pathname === "/estudos/ciclo" ||
     pathname === "/estudos/desempenho" ||
-    pathname === "/estudos/grade" ||
+    
     pathname === "/admin" ||
     pathname === "/admin/users" ||
     pathname === "/admin/banners" ||

@@ -270,6 +270,10 @@ const Planner = () => {
             )}
           </div>
 
+          <TabsContent value="timetable" className="mt-4">
+            <TimetableView />
+          </TabsContent>
+
           <TabsContent value="notes" className="mt-4">
             {notes.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
