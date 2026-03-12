@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Plus, StickyNote, CalendarDays, Target } from "lucide-react";
+import { Plus, StickyNote, CalendarDays, Target, Clock } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { startOfWeek, format, addWeeks, subWeeks } from "date-fns";
