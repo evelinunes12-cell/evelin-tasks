@@ -33,7 +33,7 @@ const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications")
 const PomodoroPage = lazy(() => import("./pages/PomodoroPage"));
 const StudyCyclePage = lazy(() => import("./pages/StudyCyclePage"));
 const StudyAnalyticsPage = lazy(() => import("./pages/StudyAnalyticsPage"));
-const StudySchedulePage = lazy(() => import("./pages/StudySchedulePage"));
+
 const RankingPage = lazy(() => import("./pages/RankingPage"));
 import ZenitCommand from "./components/ZenitCommand";
 import { AdminRoute } from "./components/AdminRoute";
