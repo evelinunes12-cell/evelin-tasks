@@ -40,7 +40,7 @@ const Planner = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
-  const [tab, setTab] = useState("notes");
+  const [tab, setTab] = useState("timetable");
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<PlannerNote | null>(null);
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
