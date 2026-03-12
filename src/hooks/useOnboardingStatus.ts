@@ -74,7 +74,7 @@ export const useOnboardingStatus = () => {
         { id: 5, label: "Completar um ciclo Pomodoro", completed: hasUsedPomodoro, link: "/estudos/pomodoro" },
         { id: 6, label: "Concluir uma tarefa", completed: hasCompletedTask, link: "/dashboard" },
         { id: 7, label: "Criar uma nota no Planner", completed: hasPlannerNotes, link: "/planner" },
-        { id: 8, label: "Montar sua Grade Horária", completed: hasStudySchedule, link: "/estudos/grade" },
+        { id: 8, label: "Montar sua Grade Horária", completed: hasStudySchedule, link: "/planner" },
         { id: 9, label: "Criar um Ciclo de Estudos", completed: hasStudyCycle, link: "/estudos/ciclo" },
       ];
 

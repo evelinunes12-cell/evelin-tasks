@@ -26,7 +26,7 @@ export function TodayScheduleCard() {
   const formatTime = (t: string) => t.slice(0, 5);
 
   return (
-    <Card className="h-full cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate("/estudos/grade")}>
+    <Card className="h-full cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate("/planner")}>
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <CalendarClock className="h-4 w-4 text-primary" />
