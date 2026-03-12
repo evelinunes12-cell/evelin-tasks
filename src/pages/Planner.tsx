@@ -32,6 +32,7 @@ import { NoteDialog } from "@/components/planner/NoteDialog";
 import { GoalCard } from "@/components/planner/GoalCard";
 import { GoalDialog } from "@/components/planner/GoalDialog";
 import { WeeklyView } from "@/components/planner/WeeklyView";
+import { TimetableView } from "@/components/planner/TimetableView";
 
 const Planner = () => {
   const { user, loading } = useAuth();
