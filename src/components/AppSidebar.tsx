@@ -40,7 +40,7 @@ const bottomMenuItems = [
 const studySubItems = [
   { title: "Pomodoro", url: "/estudos/pomodoro", icon: Timer, description: "Timer de foco Pomodoro" },
   { title: "Ciclo de Estudos", url: "/estudos/ciclo", icon: Repeat, description: "Configure seu ciclo ideal de estudos" },
-  { title: "Grade Horária", url: "/estudos/grade", icon: CalendarDays, description: "Monte sua grade semanal de aulas e estudos" },
+  
   { title: "Desempenho", url: "/estudos/desempenho", icon: BarChart3, description: "Métricas e relatórios de estudo" },
 ];
 

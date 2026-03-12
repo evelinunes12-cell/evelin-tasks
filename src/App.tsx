@@ -33,7 +33,7 @@ const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications")
 const PomodoroPage = lazy(() => import("./pages/PomodoroPage"));
 const StudyCyclePage = lazy(() => import("./pages/StudyCyclePage"));
 const StudyAnalyticsPage = lazy(() => import("./pages/StudyAnalyticsPage"));
-const StudySchedulePage = lazy(() => import("./pages/StudySchedulePage"));
+
 const RankingPage = lazy(() => import("./pages/RankingPage"));
 import ZenitCommand from "./components/ZenitCommand";
 import { AdminRoute } from "./components/AdminRoute";
@@ -61,7 +61,7 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
     pathname === "/estudos/pomodoro" ||
     pathname === "/estudos/ciclo" ||
     pathname === "/estudos/desempenho" ||
-    pathname === "/estudos/grade" ||
+    
     pathname === "/admin" ||
     pathname === "/admin/users" ||
     pathname === "/admin/banners" ||
@@ -115,7 +115,7 @@ const App = () => (
                     <Route path="/estudos/pomodoro" element={<ProtectedRoute><PomodoroPage /></ProtectedRoute>} />
                     <Route path="/estudos/ciclo" element={<ProtectedRoute><StudyCyclePage /></ProtectedRoute>} />
                     <Route path="/estudos/desempenho" element={<ProtectedRoute><StudyAnalyticsPage /></ProtectedRoute>} />
-                    <Route path="/estudos/grade" element={<ProtectedRoute><StudySchedulePage /></ProtectedRoute>} />
+                    
                     {/* Admin routes */}
                     <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                     <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />

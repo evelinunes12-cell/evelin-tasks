@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Pencil, Trash2, CalendarDays, Clock } from "lucide-react";
+import { Plus, Pencil, Trash2, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScheduleBlockDialog } from "@/components/ScheduleBlockDialog";
@@ -35,16 +33,13 @@ const DAYS = [
 
 const formatTime = (t: string) => t.slice(0, 5);
 
-function StudyScheduleContent() {
+export function TimetableView() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<StudySchedule | null>(null);
-  const [selectedDay, setSelectedDay] = useState(() => {
-    const today = new Date().getDay();
-    return today;
-  });
+  const [selectedDay, setSelectedDay] = useState(() => new Date().getDay());
 
   const { data: schedules = [], isLoading } = useQuery({
     queryKey: ["study-schedules", user?.id],
@@ -115,9 +110,7 @@ function StudyScheduleContent() {
       <div
         key={block.id}
         className={`group relative rounded-lg p-3 transition-all ${
-          isFixed
-            ? "border-2 border-transparent"
-            : "border-2 border-dashed"
+          isFixed ? "border-2 border-transparent" : "border-2 border-dashed"
         }`}
         style={{
           backgroundColor: isFixed ? `${block.color || "#3B82F6"}20` : `${block.color || "#3B82F6"}08`,
@@ -191,55 +184,48 @@ function StudyScheduleContent() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar minimal />
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <CalendarDays className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Minha Grade Horária</h1>
-          </div>
-          <Button onClick={openNew} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Novo Horário
-          </Button>
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-7 gap-2">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="h-40 bg-muted animate-pulse rounded-lg" />
-            ))}
-          </div>
-        ) : isMobile ? (
-          <div>
-            <Tabs value={String(selectedDay)} onValueChange={(v) => setSelectedDay(Number(v))}>
-              <TabsList className="w-full flex overflow-x-auto">
-                {DAYS.map((day) => (
-                  <TabsTrigger key={day.value} value={String(day.value)} className="flex-1 text-xs px-1">
-                    {day.short}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-            <div className="mt-4 space-y-2">
-              {byDay(selectedDay).length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    Nenhum horário para {DAYS[selectedDay]?.label}.
-                  </CardContent>
-                </Card>
-              ) : (
-                byDay(selectedDay).map(renderBlock)
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-7 gap-2">
-            {DAYS.map(renderDayColumn)}
-          </div>
-        )}
+    <div>
+      <div className="flex items-center justify-end mb-4">
+        <Button onClick={openNew} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Novo Horário
+        </Button>
       </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-7 gap-2">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="h-40 bg-muted animate-pulse rounded-lg" />
+          ))}
+        </div>
+      ) : isMobile ? (
+        <div>
+          <Tabs value={String(selectedDay)} onValueChange={(v) => setSelectedDay(Number(v))}>
+            <TabsList className="w-full flex overflow-x-auto">
+              {DAYS.map((day) => (
+                <TabsTrigger key={day.value} value={String(day.value)} className="flex-1 text-xs px-1">
+                  {day.short}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          <div className="mt-4 space-y-2">
+            {byDay(selectedDay).length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  Nenhum horário para {DAYS[selectedDay]?.label}.
+                </CardContent>
+              </Card>
+            ) : (
+              byDay(selectedDay).map(renderBlock)
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-7 gap-2">
+          {DAYS.map(renderDayColumn)}
+        </div>
+      )}
 
       <ScheduleBlockDialog
         open={dialogOpen}
@@ -252,13 +238,5 @@ function StudyScheduleContent() {
         onUpdate={(id, data) => updateMutation.mutate({ id, ...data })}
       />
     </div>
-  );
-}
-
-export default function StudySchedulePage() {
-  return (
-    <ProtectedRoute>
-      <StudyScheduleContent />
-    </ProtectedRoute>
   );
 }

@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Plus, StickyNote, CalendarDays, Target } from "lucide-react";
+import { Plus, StickyNote, CalendarDays, Target, Clock } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { startOfWeek, format, addWeeks, subWeeks } from "date-fns";
@@ -32,6 +32,7 @@ import { NoteDialog } from "@/components/planner/NoteDialog";
 import { GoalCard } from "@/components/planner/GoalCard";
 import { GoalDialog } from "@/components/planner/GoalDialog";
 import { WeeklyView } from "@/components/planner/WeeklyView";
+import { TimetableView } from "@/components/planner/TimetableView";
 
 const Planner = () => {
   const { user, loading } = useAuth();
@@ -39,7 +40,7 @@ const Planner = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
-  const [tab, setTab] = useState("notes");
+  const [tab, setTab] = useState("timetable");
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<PlannerNote | null>(null);
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
@@ -237,13 +238,17 @@ const Planner = () => {
         <Tabs value={tab} onValueChange={setTab}>
           <div className="flex items-center justify-between">
             <TabsList>
-              <TabsTrigger value="notes" className="gap-1.5">
-                <StickyNote className="h-4 w-4" />
-                {!isMobile && "Notas"}
+              <TabsTrigger value="timetable" className="gap-1.5">
+                <Clock className="h-4 w-4" />
+                {!isMobile && "Grade Horária"}
               </TabsTrigger>
               <TabsTrigger value="weekly" className="gap-1.5">
                 <CalendarDays className="h-4 w-4" />
                 {!isMobile && "Semanal"}
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="gap-1.5">
+                <StickyNote className="h-4 w-4" />
+                {!isMobile && "Notas"}
               </TabsTrigger>
               <TabsTrigger value="goals" className="gap-1.5">
                 <Target className="h-4 w-4" />
@@ -251,17 +256,23 @@ const Planner = () => {
               </TabsTrigger>
             </TabsList>
 
-            <Button
-              size="sm"
-              onClick={() => {
-                if (tab === "goals") openNewGoal();
-                else openNewNote();
-              }}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              {tab === "goals" ? "Nova Meta" : "Nova Nota"}
-            </Button>
+            {tab !== "timetable" && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (tab === "goals") openNewGoal();
+                  else openNewNote();
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                {tab === "goals" ? "Nova Meta" : "Nova Nota"}
+              </Button>
+            )}
           </div>
+
+          <TabsContent value="timetable" className="mt-4">
+            <TimetableView />
+          </TabsContent>
 
           <TabsContent value="notes" className="mt-4">
             {notes.length === 0 ? (
