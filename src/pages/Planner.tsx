@@ -238,13 +238,17 @@ const Planner = () => {
         <Tabs value={tab} onValueChange={setTab}>
           <div className="flex items-center justify-between">
             <TabsList>
-              <TabsTrigger value="notes" className="gap-1.5">
-                <StickyNote className="h-4 w-4" />
-                {!isMobile && "Notas"}
+              <TabsTrigger value="timetable" className="gap-1.5">
+                <Clock className="h-4 w-4" />
+                {!isMobile && "Grade Horária"}
               </TabsTrigger>
               <TabsTrigger value="weekly" className="gap-1.5">
                 <CalendarDays className="h-4 w-4" />
                 {!isMobile && "Semanal"}
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="gap-1.5">
+                <StickyNote className="h-4 w-4" />
+                {!isMobile && "Notas"}
               </TabsTrigger>
               <TabsTrigger value="goals" className="gap-1.5">
                 <Target className="h-4 w-4" />
@@ -252,16 +256,18 @@ const Planner = () => {
               </TabsTrigger>
             </TabsList>
 
-            <Button
-              size="sm"
-              onClick={() => {
-                if (tab === "goals") openNewGoal();
-                else openNewNote();
-              }}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              {tab === "goals" ? "Nova Meta" : "Nova Nota"}
-            </Button>
+            {tab !== "timetable" && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (tab === "goals") openNewGoal();
+                  else openNewNote();
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                {tab === "goals" ? "Nova Meta" : "Nova Nota"}
+              </Button>
+            )}
           </div>
 
           <TabsContent value="notes" className="mt-4">
