@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ImagePlus, Trash2, GripVertical, ShieldCheck, Link as LinkIcon } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface Banner {
   id: string;
