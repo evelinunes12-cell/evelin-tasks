@@ -45,8 +45,8 @@ const AdminDashboard = () => {
   const fetchStats = useCallback(async () => {
     setLoading(true);
     const params: Record<string, string> = {};
-    if (dateRange?.from) params.p_start_date = dateRange.from.toISOString();
-    if (dateRange?.to) params.p_end_date = dateRange.to.toISOString();
+    if (dateRange?.from) params.p_start_date = startOfDay(dateRange.from).toISOString();
+    if (dateRange?.to) params.p_end_date = endOfDay(dateRange.to).toISOString();
 
     const { data, error } = await supabase.rpc("get_admin_stats", params);
     if (!error && data) {
