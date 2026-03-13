@@ -132,10 +132,6 @@ const StudyCyclePage = () => {
     <div className="min-h-screen bg-background">
       <Navbar minimal />
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <PageBreadcrumb segments={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Ciclo de Estudos" },
-        ]} />
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">

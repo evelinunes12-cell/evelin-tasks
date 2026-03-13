@@ -194,11 +194,6 @@ const EnvironmentDetail = () => {
     <div className="min-h-screen bg-background">
       <Navbar minimal />
       <div className="container mx-auto px-6 py-8">
-        <PageBreadcrumb segments={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Grupos", href: "/shared-environments" },
-          { label: environment.environment_name },
-        ]} />
         <div className="flex justify-between items-start mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">{environment.environment_name}</h1>
