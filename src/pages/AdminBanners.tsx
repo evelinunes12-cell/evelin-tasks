@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ImagePlus, Trash2, GripVertical, ShieldCheck, Link as LinkIcon } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface Banner {
   id: string;
@@ -146,6 +147,7 @@ const AdminBanners = () => {
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
+        <SidebarTrigger className="md:hidden" />
         <ShieldCheck className="h-7 w-7 text-primary" />
         <h1 className="text-2xl font-bold">Gerenciar Banners</h1>
       </div>
