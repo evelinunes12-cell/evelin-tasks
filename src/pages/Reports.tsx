@@ -154,7 +154,7 @@ const Reports = () => {
     return allTasks.filter((t) => {
       if (!t.status?.toLowerCase().includes("conclu") || !t.updated_at) return false;
       const updatedDate = parseISO(t.updated_at);
-      return isWithinInterval(updatedDate, { start: startOfDay(fromDate), end: toDate });
+      return isWithinInterval(updatedDate, { start: fromDate, end: toDate });
     });
   }, [allTasks, fromDate, toDate]);
 
