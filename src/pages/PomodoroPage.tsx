@@ -1,7 +1,7 @@
 import Navbar from "@/components/Navbar";
 import { FocusTimer } from "@/components/FocusTimer";
 import { Flame, Target, Zap } from "lucide-react";
-import PageBreadcrumb from "@/components/PageBreadcrumb";
+
 
 const motivationalTips = [
   { icon: Flame, text: "Mantenha o foco por 25 minutos e descanse. Seu cérebro agradece!" },
