@@ -176,7 +176,13 @@ const Reports = () => {
 
     const totalTasks = tasks.length;
     const completedInRange = completedTasksInRange.length;
-    const completionRate = totalTasks > 0 ? Math.round((completedInRange / totalTasks) * 100) : 0;
+    // Completion rate: tasks completed in range vs total tasks that exist in range (created before or during range)
+    const allTasksInScope = allTasks?.filter((t) => {
+      if (!t.created_at) return false;
+      const createdDate = parseISO(t.created_at);
+      return createdDate <= toDate;
+    }).length || totalTasks;
+    const completionRate = allTasksInScope > 0 ? Math.round((completedInRange / allTasksInScope) * 100) : 0;
 
     // Focus stats
     const totalFocusMinutes = focusSessions?.reduce((acc, s) => acc + s.duration_minutes, 0) || 0;
