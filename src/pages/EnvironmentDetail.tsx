@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History } from "lucide-react";
 import EnvironmentActivityTimeline from "@/components/EnvironmentActivityTimeline";
-import PageBreadcrumb from "@/components/PageBreadcrumb";
+import InviteManager from "@/components/InviteManager";
 import InviteManager from "@/components/InviteManager";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
