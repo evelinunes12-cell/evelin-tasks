@@ -96,35 +96,35 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<Navigate to="/auth" replace />} />
                     <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
-                    <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-                    <Route path="/invite/:token" element={<InvitePage />} />
+                    <Route path="/onboarding" element={<ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>} />
+                    <Route path="/invite/:token" element={<PageTransition><InvitePage /></PageTransition>} />
                     {/* Protected routes */}
-                    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                    <Route path="/subjects" element={<ProtectedRoute><Subjects /></ProtectedRoute>} />
-                    <Route path="/task-statuses" element={<ProtectedRoute><TaskStatuses /></ProtectedRoute>} />
-                    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                    <Route path="/shared-environments" element={<ProtectedRoute><SharedEnvironments /></ProtectedRoute>} />
-                    <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-                    <Route path="/archived" element={<ProtectedRoute><ArchivedTasks /></ProtectedRoute>} />
-                    <Route path="/planner" element={<ProtectedRoute><Planner /></ProtectedRoute>} />
-                    <Route path="/ranking" element={<ProtectedRoute><RankingPage /></ProtectedRoute>} />
-                    <Route path="/environment/new" element={<ProtectedRoute><EnvironmentForm /></ProtectedRoute>} />
-                    <Route path="/environment/:id/edit" element={<ProtectedRoute><EnvironmentForm /></ProtectedRoute>} />
-                    <Route path="/environment/:id" element={<ProtectedRoute><EnvironmentDetail /></ProtectedRoute>} />
-                    <Route path="/task/new" element={<ProtectedRoute><TaskForm /></ProtectedRoute>} />
-                    <Route path="/task/edit/:id" element={<ProtectedRoute><TaskForm /></ProtectedRoute>} />
-                    <Route path="/task/:id" element={<ProtectedRoute><TaskDetail /></ProtectedRoute>} />
-                    <Route path="/estudos/pomodoro" element={<ProtectedRoute><PomodoroPage /></ProtectedRoute>} />
-                    <Route path="/estudos/ciclo" element={<ProtectedRoute><StudyCyclePage /></ProtectedRoute>} />
-                    <Route path="/estudos/desempenho" element={<ProtectedRoute><StudyAnalyticsPage /></ProtectedRoute>} />
+                    <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
+                    <Route path="/subjects" element={<ProtectedRoute><PageTransition><Subjects /></PageTransition></ProtectedRoute>} />
+                    <Route path="/task-statuses" element={<ProtectedRoute><PageTransition><TaskStatuses /></PageTransition></ProtectedRoute>} />
+                    <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
+                    <Route path="/shared-environments" element={<ProtectedRoute><PageTransition><SharedEnvironments /></PageTransition></ProtectedRoute>} />
+                    <Route path="/reports" element={<ProtectedRoute><PageTransition><Reports /></PageTransition></ProtectedRoute>} />
+                    <Route path="/archived" element={<ProtectedRoute><PageTransition><ArchivedTasks /></PageTransition></ProtectedRoute>} />
+                    <Route path="/planner" element={<ProtectedRoute><PageTransition><Planner /></PageTransition></ProtectedRoute>} />
+                    <Route path="/ranking" element={<ProtectedRoute><PageTransition><RankingPage /></PageTransition></ProtectedRoute>} />
+                    <Route path="/environment/new" element={<ProtectedRoute><PageTransition><EnvironmentForm /></PageTransition></ProtectedRoute>} />
+                    <Route path="/environment/:id/edit" element={<ProtectedRoute><PageTransition><EnvironmentForm /></PageTransition></ProtectedRoute>} />
+                    <Route path="/environment/:id" element={<ProtectedRoute><PageTransition><EnvironmentDetail /></PageTransition></ProtectedRoute>} />
+                    <Route path="/task/new" element={<ProtectedRoute><PageTransition><TaskForm /></PageTransition></ProtectedRoute>} />
+                    <Route path="/task/edit/:id" element={<ProtectedRoute><PageTransition><TaskForm /></PageTransition></ProtectedRoute>} />
+                    <Route path="/task/:id" element={<ProtectedRoute><PageTransition><TaskDetail /></PageTransition></ProtectedRoute>} />
+                    <Route path="/estudos/pomodoro" element={<ProtectedRoute><PageTransition><PomodoroPage /></PageTransition></ProtectedRoute>} />
+                    <Route path="/estudos/ciclo" element={<ProtectedRoute><PageTransition><StudyCyclePage /></PageTransition></ProtectedRoute>} />
+                    <Route path="/estudos/desempenho" element={<ProtectedRoute><PageTransition><StudyAnalyticsPage /></PageTransition></ProtectedRoute>} />
                     
                     {/* Admin routes */}
-                    <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-                    <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-                    <Route path="/admin/banners" element={<AdminRoute><AdminBanners /></AdminRoute>} />
-                    <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
+                    <Route path="/admin" element={<AdminRoute><PageTransition><AdminDashboard /></PageTransition></AdminRoute>} />
+                    <Route path="/admin/users" element={<AdminRoute><PageTransition><AdminUsers /></PageTransition></AdminRoute>} />
+                    <Route path="/admin/banners" element={<AdminRoute><PageTransition><AdminBanners /></PageTransition></AdminRoute>} />
+                    <Route path="/admin/notifications" element={<AdminRoute><PageTransition><AdminNotifications /></PageTransition></AdminRoute>} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
+                    <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
                   </Routes>
                 </SidebarShell>
               </Suspense>
