@@ -15,10 +15,6 @@ const PomodoroPage = () => {
       <Navbar minimal />
       <div className="flex flex-col items-center justify-center px-4 py-12 md:py-20">
         <div className="w-full max-w-2xl mb-6">
-          <PageBreadcrumb segments={[
-            { label: "Dashboard", href: "/dashboard" },
-            { label: "Modo Foco" },
-          ]} />
         </div>
         <h1 className="text-3xl font-bold text-foreground mb-2">Modo Foco</h1>
         <p className="text-muted-foreground mb-10 text-center max-w-md">
