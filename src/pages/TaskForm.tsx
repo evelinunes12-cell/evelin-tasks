@@ -28,7 +28,7 @@ import { logError } from "@/lib/logger";
 import { taskFormSchema, linkSchema, checklistSchema } from "@/lib/validation";
 import { registerActivity } from "@/services/activity";
 import { logXP, XP } from "@/services/scoring";
-import PageBreadcrumb from "@/components/PageBreadcrumb";
+
 
 const TaskForm = () => {
   const { id } = useParams();
@@ -717,10 +717,6 @@ const TaskForm = () => {
     <div className="min-h-screen bg-background">
       <Navbar minimal />
       <main className="container mx-auto px-4 py-8 max-w-3xl">
-        <PageBreadcrumb segments={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: isEditing ? "Editar Tarefa" : "Nova Tarefa" },
-        ]} />
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">
