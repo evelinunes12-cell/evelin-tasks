@@ -46,8 +46,8 @@ const Reports = () => {
     to: new Date(),
   });
 
-  const fromDate = dateRange?.from || subDays(new Date(), 30);
-  const toDate = dateRange?.to || new Date();
+  const fromDate = startOfDay(dateRange?.from || subDays(new Date(), 30));
+  const toDate = endOfDay(dateRange?.to || new Date());
 
   // Fetch tasks filtered by date range
   const { data: tasks, isLoading: tasksLoading } = useQuery({
