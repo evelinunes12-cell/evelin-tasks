@@ -18,7 +18,7 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import { format, subDays, startOfDay, isWithinInterval, parseISO, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
+import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useMemo, useState } from "react";
 import { DateRange } from "react-day-picker";
@@ -46,8 +46,8 @@ const Reports = () => {
     to: new Date(),
   });
 
-  const fromDate = dateRange?.from || subDays(new Date(), 30);
-  const toDate = dateRange?.to || new Date();
+  const fromDate = startOfDay(dateRange?.from || subDays(new Date(), 30));
+  const toDate = endOfDay(dateRange?.to || new Date());
 
   // Fetch tasks filtered by date range
   const { data: tasks, isLoading: tasksLoading } = useQuery({
@@ -154,7 +154,7 @@ const Reports = () => {
     return allTasks.filter((t) => {
       if (!t.status?.toLowerCase().includes("conclu") || !t.updated_at) return false;
       const updatedDate = parseISO(t.updated_at);
-      return isWithinInterval(updatedDate, { start: startOfDay(fromDate), end: toDate });
+      return isWithinInterval(updatedDate, { start: fromDate, end: toDate });
     });
   }, [allTasks, fromDate, toDate]);
 
@@ -176,7 +176,13 @@ const Reports = () => {
 
     const totalTasks = tasks.length;
     const completedInRange = completedTasksInRange.length;
-    const completionRate = totalTasks > 0 ? Math.round((completedInRange / totalTasks) * 100) : 0;
+    // Completion rate: tasks completed in range vs total tasks that exist in range (created before or during range)
+    const allTasksInScope = allTasks?.filter((t) => {
+      if (!t.created_at) return false;
+      const createdDate = parseISO(t.created_at);
+      return createdDate <= toDate;
+    }).length || totalTasks;
+    const completionRate = allTasksInScope > 0 ? Math.round((completedInRange / allTasksInScope) * 100) : 0;
 
     // Focus stats
     const totalFocusMinutes = focusSessions?.reduce((acc, s) => acc + s.duration_minutes, 0) || 0;
@@ -268,24 +274,21 @@ const Reports = () => {
       };
     });
 
-    // Monthly evolution (within date range or last 6 months)
+    // Monthly evolution - uses allTasks to show accurate monthly data regardless of date range filter
     const monthlyData = [];
     for (let i = 5; i >= 0; i--) {
       const monthDate = subMonths(new Date(), i);
       const monthStart = startOfMonth(monthDate);
       const monthEnd = endOfMonth(monthDate);
 
-      // Only include if month overlaps with date range
-      if (monthEnd < fromDate || monthStart > toDate) continue;
-
-      const createdCount = tasks.filter((t) => {
+      const createdCount = (allTasks || []).filter((t) => {
         if (!t.created_at) return false;
         const createdDate = parseISO(t.created_at);
         return isWithinInterval(createdDate, { start: monthStart, end: monthEnd });
       }).length;
 
-      const completedCount = completedTasksInRange.filter((t) => {
-        if (!t.updated_at) return false;
+      const completedCount = (allTasks || []).filter((t) => {
+        if (!t.status?.toLowerCase().includes("conclu") || !t.updated_at) return false;
         const updatedDate = parseISO(t.updated_at);
         return isWithinInterval(updatedDate, { start: monthStart, end: monthEnd });
       }).length;
