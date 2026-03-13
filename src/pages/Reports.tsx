@@ -18,7 +18,7 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import { format, subDays, startOfDay, isWithinInterval, parseISO, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
+import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useMemo, useState } from "react";
 import { DateRange } from "react-day-picker";
