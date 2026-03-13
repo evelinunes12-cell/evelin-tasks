@@ -103,6 +103,7 @@ const AdminUsers = () => {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
+        <SidebarTrigger className="md:hidden" />
         <ShieldCheck className="h-7 w-7 text-primary" />
         <h1 className="text-2xl font-bold">Painel Administrativo</h1>
       </div>

@@ -75,7 +75,10 @@ const AdminDashboard = () => {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold">Visão Geral</h1>
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="md:hidden" />
+          <h1 className="text-2xl font-bold">Visão Geral</h1>
+        </div>
         <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
       </div>
 

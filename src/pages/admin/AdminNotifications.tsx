@@ -132,7 +132,10 @@ const AdminNotifications = () => {
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">Notificações</h1>
+      <div className="flex items-center gap-3">
+        <SidebarTrigger className="md:hidden" />
+        <h1 className="text-2xl font-bold">Notificações</h1>
+      </div>
 
       <Tabs defaultValue="broadcast">
         <TabsList className="grid w-full grid-cols-2">
