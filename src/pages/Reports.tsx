@@ -274,24 +274,21 @@ const Reports = () => {
       };
     });
 
-    // Monthly evolution (within date range or last 6 months)
+    // Monthly evolution - uses allTasks to show accurate monthly data regardless of date range filter
     const monthlyData = [];
     for (let i = 5; i >= 0; i--) {
       const monthDate = subMonths(new Date(), i);
       const monthStart = startOfMonth(monthDate);
       const monthEnd = endOfMonth(monthDate);
 
-      // Only include if month overlaps with date range
-      if (monthEnd < fromDate || monthStart > toDate) continue;
-
-      const createdCount = tasks.filter((t) => {
+      const createdCount = (allTasks || []).filter((t) => {
         if (!t.created_at) return false;
         const createdDate = parseISO(t.created_at);
         return isWithinInterval(createdDate, { start: monthStart, end: monthEnd });
       }).length;
 
-      const completedCount = completedTasksInRange.filter((t) => {
-        if (!t.updated_at) return false;
+      const completedCount = (allTasks || []).filter((t) => {
+        if (!t.status?.toLowerCase().includes("conclu") || !t.updated_at) return false;
         const updatedDate = parseISO(t.updated_at);
         return isWithinInterval(updatedDate, { start: monthStart, end: monthEnd });
       }).length;

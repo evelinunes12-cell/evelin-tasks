@@ -33,7 +33,10 @@ export const fetchFocusSessionsWithDetails = async (
       query = query.gte("started_at", fromDate.toISOString());
     }
     if (toDate) {
-      query = query.lte("started_at", toDate.toISOString());
+      // Use end of day to include all sessions on the selected date
+      const endOfToDate = new Date(toDate);
+      endOfToDate.setHours(23, 59, 59, 999);
+      query = query.lte("started_at", endOfToDate.toISOString());
     }
 
     const { data, error } = await query;
