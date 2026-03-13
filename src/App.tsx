@@ -9,6 +9,8 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ConfettiProvider } from "@/hooks/useConfetti";
 import { FocusTimerProvider } from "@/contexts/FocusTimerContext";
 import { lazy, Suspense } from "react";
+import PageTransition from "./components/PageTransition";
+import PageLoadingFallback from "./components/PageLoadingFallback";
 
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
