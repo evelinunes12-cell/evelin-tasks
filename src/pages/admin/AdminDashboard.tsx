@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CheckCircle2, Activity, Filter, ListTodo, Percent, UserX, Trophy, Mail } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { format, parseISO, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
