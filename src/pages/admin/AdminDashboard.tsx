@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CheckCircle2, Activity, Filter, ListTodo, Percent, UserX, Trophy, Mail } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { format, parseISO, subDays } from "date-fns";
+import { format, parseISO, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateRangePicker } from "@/components/DateRangePicker";
@@ -45,8 +45,8 @@ const AdminDashboard = () => {
   const fetchStats = useCallback(async () => {
     setLoading(true);
     const params: Record<string, string> = {};
-    if (dateRange?.from) params.p_start_date = dateRange.from.toISOString();
-    if (dateRange?.to) params.p_end_date = dateRange.to.toISOString();
+    if (dateRange?.from) params.p_start_date = startOfDay(dateRange.from).toISOString();
+    if (dateRange?.to) params.p_end_date = endOfDay(dateRange.to).toISOString();
 
     const { data, error } = await supabase.rpc("get_admin_stats", params);
     if (!error && data) {
