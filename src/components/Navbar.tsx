@@ -38,7 +38,7 @@ const Navbar = ({ minimal = false }: NavbarProps) => {
           <div className="flex items-center gap-2">
             {!minimal && <SidebarTrigger className="md:hidden" />}
             
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/dashboard")}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => minimal ? navigate(-1) : navigate("/dashboard")}>
               {minimal ? (
                 <Button variant="ghost" size="sm" className="gap-2">
                   <ArrowLeft className="w-5 h-5" />
