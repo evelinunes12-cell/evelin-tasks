@@ -28,7 +28,7 @@ import { logError } from "@/lib/logger";
 import { taskFormSchema, linkSchema, checklistSchema } from "@/lib/validation";
 import { registerActivity } from "@/services/activity";
 import { logXP, XP } from "@/services/scoring";
-import PageBreadcrumb from "@/components/PageBreadcrumb";
+
 
 const TaskForm = () => {
   const { id } = useParams();
