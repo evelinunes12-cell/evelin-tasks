@@ -91,11 +91,11 @@ const App = () => (
           <BrowserRouter>
             <ZenitCommand />
             <FocusTimerProvider>
-              <Suspense fallback={<div className="flex min-h-screen w-full" />}>
+              <Suspense fallback={<PageLoadingFallback />}>
                 <SidebarShell>
                   <Routes>
                     <Route path="/" element={<Navigate to="/auth" replace />} />
-                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
                     <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
                     <Route path="/invite/:token" element={<InvitePage />} />
                     {/* Protected routes */}
