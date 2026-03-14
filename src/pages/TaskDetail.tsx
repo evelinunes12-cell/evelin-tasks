@@ -54,6 +54,9 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import TaskStepDisplay from "@/components/TaskStepDisplay";
+import { NoteDialog } from "@/components/planner/NoteDialog";
+import { createNote } from "@/services/planner";
+import { fetchSubjects, Subject } from "@/services/subjects";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -100,6 +103,9 @@ const TaskDetail = () => {
   const [linkedNotes, setLinkedNotes] = useState<{ id: string; title: string; planned_date: string | null }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [taskSubjectId, setTaskSubjectId] = useState<string | null>(null);
   
   // Tipos de arquivo suportados para preview
   const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
@@ -204,6 +210,9 @@ const TaskDetail = () => {
       fetchAttachments();
       fetchSteps();
       fetchLinkedNotes();
+      fetchSubjects().then((subs) => {
+        setSubjects(subs);
+      }).catch(() => {});
     }
   }, [user, authLoading, id, navigate]);
 
@@ -479,6 +488,39 @@ const TaskDetail = () => {
     }
   };
 
+  // Resolve subject_id from subject_name
+  useEffect(() => {
+    if (task && subjects.length > 0) {
+      const match = subjects.find((s) => s.name === task.subject_name);
+      setTaskSubjectId(match?.id || null);
+    }
+  }, [task, subjects]);
+
+  const handleSaveNote = async (data: {
+    title: string;
+    content: string;
+    subject_id: string | null;
+    task_id: string | null;
+    planned_date: string | null;
+  }) => {
+    if (!user?.id) return;
+    try {
+      await createNote(user.id, {
+        title: data.title,
+        content: data.content,
+        subject_id: data.subject_id,
+        task_id: data.task_id,
+        planned_date: data.planned_date,
+      });
+      queryClient.invalidateQueries({ queryKey: ["planner-notes"] });
+      fetchLinkedNotes();
+      toast({ title: "Anotação criada", description: "Vinculada a esta tarefa." });
+    } catch (error) {
+      logError("Error creating note from task", error);
+      toast({ variant: "destructive", title: "Erro ao criar anotação" });
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -537,6 +579,14 @@ const TaskDetail = () => {
                 >
                   <Archive className="w-4 h-4" />
                   Arquivar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setIsNoteDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <StickyNote className="w-4 h-4" />
+                  Criar Anotação
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -843,6 +893,16 @@ const TaskDetail = () => {
         fileName={previewModal.fileName}
         fileType={previewModal.fileType}
         onDownload={previewModal.attachment ? () => downloadAttachment(previewModal.attachment!) : undefined}
+      />
+
+      {/* Modal de Criar Anotação vinculada */}
+      <NoteDialog
+        open={isNoteDialogOpen}
+        onOpenChange={setIsNoteDialogOpen}
+        subjects={subjects}
+        prefilledTaskId={id}
+        prefilledSubjectId={taskSubjectId}
+        onSave={handleSaveNote}
       />
     </div>
   );

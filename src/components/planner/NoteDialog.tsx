@@ -42,6 +42,8 @@ interface NoteDialogProps {
   onOpenChange: (open: boolean) => void;
   note?: PlannerNote | null;
   subjects: Subject[];
+  prefilledTaskId?: string | null;
+  prefilledSubjectId?: string | null;
   onSave: (data: {
     title: string;
     content: string;
@@ -51,7 +53,7 @@ interface NoteDialogProps {
   }) => void;
 }
 
-export function NoteDialog({ open, onOpenChange, note, subjects, onSave }: NoteDialogProps) {
+export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId, prefilledSubjectId, onSave }: NoteDialogProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [subjectId, setSubjectId] = useState<string | null>(null);
@@ -64,11 +66,11 @@ export function NoteDialog({ open, onOpenChange, note, subjects, onSave }: NoteD
     if (open) {
       setTitle(note?.title || "");
       setContent(note?.content || "");
-      setSubjectId(note?.subject_id || null);
-      setTaskId(note?.task_id || null);
+      setSubjectId(note?.subject_id || prefilledSubjectId || null);
+      setTaskId(note?.task_id || prefilledTaskId || null);
       setPlannedDate(note?.planned_date ? new Date(note.planned_date + "T12:00:00") : undefined);
     }
-  }, [open, note]);
+  }, [open, note, prefilledTaskId, prefilledSubjectId]);
 
   // Fetch open tasks when subject changes
   useEffect(() => {
