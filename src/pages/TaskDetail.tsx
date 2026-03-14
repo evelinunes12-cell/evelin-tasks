@@ -894,6 +894,16 @@ const TaskDetail = () => {
         fileType={previewModal.fileType}
         onDownload={previewModal.attachment ? () => downloadAttachment(previewModal.attachment!) : undefined}
       />
+
+      {/* Modal de Criar Anotação vinculada */}
+      <NoteDialog
+        open={isNoteDialogOpen}
+        onOpenChange={setIsNoteDialogOpen}
+        subjects={subjects}
+        prefilledTaskId={id}
+        prefilledSubjectId={taskSubjectId}
+        onSave={handleSaveNote}
+      />
     </div>
   );
 };
