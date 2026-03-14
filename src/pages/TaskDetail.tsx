@@ -580,6 +580,14 @@ const TaskDetail = () => {
                   <Archive className="w-4 h-4" />
                   Arquivar
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setIsNoteDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <StickyNote className="w-4 h-4" />
+                  Criar Anotação
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
