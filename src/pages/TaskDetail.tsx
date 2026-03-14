@@ -488,6 +488,39 @@ const TaskDetail = () => {
     }
   };
 
+  // Resolve subject_id from subject_name
+  useEffect(() => {
+    if (task && subjects.length > 0) {
+      const match = subjects.find((s) => s.name === task.subject_name);
+      setTaskSubjectId(match?.id || null);
+    }
+  }, [task, subjects]);
+
+  const handleSaveNote = async (data: {
+    title: string;
+    content: string;
+    subject_id: string | null;
+    task_id: string | null;
+    planned_date: string | null;
+  }) => {
+    if (!user?.id) return;
+    try {
+      await createNote(user.id, {
+        title: data.title,
+        content: data.content,
+        subject_id: data.subject_id,
+        task_id: data.task_id,
+        planned_date: data.planned_date,
+      });
+      queryClient.invalidateQueries({ queryKey: ["planner-notes"] });
+      fetchLinkedNotes();
+      toast({ title: "Anotação criada", description: "Vinculada a esta tarefa." });
+    } catch (error) {
+      logError("Error creating note from task", error);
+      toast({ variant: "destructive", title: "Erro ao criar anotação" });
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
