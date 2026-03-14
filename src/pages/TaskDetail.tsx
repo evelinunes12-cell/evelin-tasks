@@ -551,6 +551,10 @@ const TaskDetail = () => {
               <Edit className="w-4 h-4" />
               Editar
             </Button>
+            <Button variant="outline" onClick={() => setIsNoteDialogOpen(true)} className="gap-2">
+              <StickyNote className="w-4 h-4" />
+              Criar Anotação
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
@@ -579,14 +583,6 @@ const TaskDetail = () => {
                 >
                   <Archive className="w-4 h-4" />
                   Arquivar
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setIsNoteDialogOpen(true)}
-                  className="gap-2"
-                >
-                  <StickyNote className="w-4 h-4" />
-                  Criar Anotação
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
