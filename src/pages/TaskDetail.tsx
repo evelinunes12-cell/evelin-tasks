@@ -210,6 +210,9 @@ const TaskDetail = () => {
       fetchAttachments();
       fetchSteps();
       fetchLinkedNotes();
+      fetchSubjects().then((subs) => {
+        setSubjects(subs);
+      }).catch(() => {});
     }
   }, [user, authLoading, id, navigate]);
 
