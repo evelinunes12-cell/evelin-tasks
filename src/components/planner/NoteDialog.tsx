@@ -42,6 +42,8 @@ interface NoteDialogProps {
   onOpenChange: (open: boolean) => void;
   note?: PlannerNote | null;
   subjects: Subject[];
+  prefilledTaskId?: string | null;
+  prefilledSubjectId?: string | null;
   onSave: (data: {
     title: string;
     content: string;
