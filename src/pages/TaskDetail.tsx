@@ -103,6 +103,9 @@ const TaskDetail = () => {
   const [linkedNotes, setLinkedNotes] = useState<{ id: string; title: string; planned_date: string | null }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [taskSubjectId, setTaskSubjectId] = useState<string | null>(null);
   
   // Tipos de arquivo suportados para preview
   const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
