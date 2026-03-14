@@ -53,7 +53,7 @@ interface NoteDialogProps {
   }) => void;
 }
 
-export function NoteDialog({ open, onOpenChange, note, subjects, onSave }: NoteDialogProps) {
+export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId, prefilledSubjectId, onSave }: NoteDialogProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [subjectId, setSubjectId] = useState<string | null>(null);
