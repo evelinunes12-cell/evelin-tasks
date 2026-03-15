@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { X, Plus, GripVertical, ChevronLeft, ChevronRight, Settings } from "lucide-react";
+import { X, Plus, GripVertical, ChevronLeft, ChevronRight, Settings, ArrowUpDown } from "lucide-react";
 import {
   Select,
   SelectContent,
