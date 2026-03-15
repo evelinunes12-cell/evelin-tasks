@@ -269,9 +269,9 @@ const ChecklistManager = ({
           onDragEnd={handleDragEnd}
           modifiers={[restrictToVerticalAxis, restrictToParentElement]}
         >
-          <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={paginatedItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
             <div className="mt-3 space-y-2">
-              {items.map((item) => (
+              {paginatedItems.map((item) => (
                 <SortableItem
                   key={item.id}
                   item={item}
@@ -283,6 +283,34 @@ const ChecklistManager = ({
             </div>
           </SortableContext>
         </DndContext>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(p => p - 1)}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {currentPage} / {totalPages}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(p => p + 1)}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
       )}
     </div>
   );
