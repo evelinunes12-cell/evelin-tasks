@@ -2,11 +2,13 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { AlertTriangle, CheckCircle2, StickyNote, Target } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, StickyNote, Target } from "lucide-react";
 import { Task } from "@/services/tasks";
-import { isToday, isPast, parseISO } from "date-fns";
+import { isToday, isPast, isSameDay, parseISO, addDays, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -32,6 +34,7 @@ export function TodayTasksCard({ tasks, onStatusChange, completedStatusName }: T
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [goalProgress, setGoalProgress] = useState<Record<string, number>>({});
 
   const { data: notes = [] } = useQuery({
@@ -91,6 +94,15 @@ export function TodayTasksCard({ tasks, onStatusChange, completedStatusName }: T
     }
   };
 
+  const goToPrevDay = () => setSelectedDate(prev => addDays(prev, -1));
+  const goToNextDay = () => setSelectedDate(prev => addDays(prev, 1));
+
+  const isSelectedToday = isToday(selectedDate);
+
+  const dayLabel = isSelectedToday
+    ? "Hoje"
+    : format(selectedDate, "dd/MM", { locale: ptBR });
+
   const urgentItems = useMemo(() => {
     const items: UrgentItem[] = [];
 
@@ -99,7 +111,9 @@ export function TodayTasksCard({ tasks, onStatusChange, completedStatusName }: T
       const isCompleted = t.status.toLowerCase().includes("conclu");
       if (isCompleted) return;
       const d = parseISO(t.due_date);
-      if (!isToday(d) && !isPast(d)) return;
+      const matchesDay = isSameDay(d, selectedDate);
+      const isOverdueForSelected = isSelectedToday && isPast(d) && !isToday(d);
+      if (!matchesDay && !isOverdueForSelected) return;
       items.push({
         id: t.id,
         type: "task",
@@ -114,7 +128,9 @@ export function TodayTasksCard({ tasks, onStatusChange, completedStatusName }: T
     notes.forEach(n => {
       if (!n.planned_date) return;
       const d = parseISO(n.planned_date);
-      if (!isToday(d) && !isPast(d)) return;
+      const matchesDay = isSameDay(d, selectedDate);
+      const isOverdueForSelected = isSelectedToday && isPast(d) && !isToday(d);
+      if (!matchesDay && !isOverdueForSelected) return;
       items.push({
         id: n.id,
         type: "note",
@@ -128,7 +144,9 @@ export function TodayTasksCard({ tasks, onStatusChange, completedStatusName }: T
     goals.forEach(g => {
       if (!g.target_date) return;
       const d = parseISO(g.target_date);
-      if (!isToday(d) && !isPast(d)) return;
+      const matchesDay = isSameDay(d, selectedDate);
+      const isOverdueForSelected = isSelectedToday && isPast(d) && !isToday(d);
+      if (!matchesDay && !isOverdueForSelected) return;
       items.push({
         id: g.id,
         type: "goal",
@@ -141,7 +159,7 @@ export function TodayTasksCard({ tasks, onStatusChange, completedStatusName }: T
     });
 
     return items.sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime());
-  }, [tasks, notes, goals]);
+  }, [tasks, notes, goals, selectedDate, isSelectedToday]);
 
   const typeLabel = (type: UrgentItem["type"]) => {
     if (type === "note") return "Anotação";
@@ -149,25 +167,43 @@ export function TodayTasksCard({ tasks, onStatusChange, completedStatusName }: T
     return null;
   };
 
+  const DOW_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
   return (
     <Card className="h-full">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-destructive" />
-          Prioridades & Entregas
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            Prioridades & Entregas
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goToPrevDay}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-xs font-medium text-muted-foreground min-w-[60px] text-center">
+              {dayLabel} · {DOW_LABELS[selectedDate.getDay()]}
+            </span>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goToNextDay}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {urgentItems.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-4 text-center">
             <CheckCircle2 className="h-8 w-8 text-primary/50" />
-            <p className="text-sm text-muted-foreground">Nenhuma entrega urgente. Bom trabalho! 🎉</p>
+            <p className="text-sm text-muted-foreground">
+              {isSelectedToday
+                ? "Nenhuma entrega urgente. Bom trabalho! 🎉"
+                : `Nenhuma entrega para ${format(selectedDate, "dd/MM")}.`}
+            </p>
           </div>
         ) : (
           <ul className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
             {urgentItems.slice(0, 10).map(item => (
               <li key={`${item.type}-${item.id}`} className="flex items-start gap-2 group">
-                {/* Checkbox / icon */}
                 {item.type === "task" ? (
                   <Checkbox
                     className="mt-0.5"
@@ -184,7 +220,6 @@ export function TodayTasksCard({ tasks, onStatusChange, completedStatusName }: T
                   </span>
                 )}
 
-                {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
                     {item.type === "note" && <StickyNote className="h-3 w-3 text-muted-foreground shrink-0" />}
@@ -210,7 +245,6 @@ export function TodayTasksCard({ tasks, onStatusChange, completedStatusName }: T
                     <p className="text-[10px] text-muted-foreground">{typeLabel(item.type)}</p>
                   )}
 
-                  {/* Goal progress slider */}
                   {item.type === "goal" && (
                     <div className="flex items-center gap-2 mt-1">
                       <Slider
