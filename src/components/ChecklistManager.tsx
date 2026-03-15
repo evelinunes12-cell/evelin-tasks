@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { X, Plus, GripVertical, ChevronLeft, ChevronRight, Settings } from "lucide-react";
+import { X, Plus, GripVertical, ChevronLeft, ChevronRight, Settings, ArrowUpDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -154,6 +154,33 @@ const SortableItem = ({ item, onToggle, onRemove, onEdit }: SortableItemProps) =
 
 const ITEMS_PER_PAGE_OPTIONS = [5, 8, 10, 15, 20, 50];
 
+type SortMode = "custom" | "pending_first" | "completed_first" | "alphabetical_asc" | "alphabetical_desc";
+
+const SORT_OPTIONS: { value: SortMode; label: string }[] = [
+  { value: "custom", label: "Ordem manual" },
+  { value: "pending_first", label: "Não concluídos primeiro" },
+  { value: "completed_first", label: "Concluídos primeiro" },
+  { value: "alphabetical_asc", label: "A → Z" },
+  { value: "alphabetical_desc", label: "Z → A" },
+];
+
+const sortItems = (items: ChecklistItem[], mode: SortMode): ChecklistItem[] => {
+  if (mode === "custom") return items;
+  const sorted = [...items];
+  switch (mode) {
+    case "pending_first":
+      return sorted.sort((a, b) => Number(a.completed) - Number(b.completed));
+    case "completed_first":
+      return sorted.sort((a, b) => Number(b.completed) - Number(a.completed));
+    case "alphabetical_asc":
+      return sorted.sort((a, b) => a.text.localeCompare(b.text, "pt-BR"));
+    case "alphabetical_desc":
+      return sorted.sort((a, b) => b.text.localeCompare(a.text, "pt-BR"));
+    default:
+      return sorted;
+  }
+};
+
 const ChecklistManager = ({ 
   items, 
   onItemsChange, 
@@ -164,11 +191,13 @@ const ChecklistManager = ({
   const [newItemText, setNewItemText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
+  const [sortMode, setSortMode] = useState<SortMode>("custom");
 
-  const totalPages = Math.ceil(items.length / itemsPerPage);
-  const paginatedItems = items.length > itemsPerPage
-    ? items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-    : items;
+  const sortedItems = sortItems(items, sortMode);
+  const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+  const paginatedItems = sortedItems.length > itemsPerPage
+    ? sortedItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : sortedItems;
 
   // Reset to last page if current page exceeds total after deletion
   useEffect(() => {
@@ -261,6 +290,7 @@ const ChecklistManager = ({
           value={newItemText}
           onChange={(e) => setNewItemText(e.target.value)}
           onKeyPress={handleKeyPress}
+          className="flex-1"
         />
         <Button
           type="button"
@@ -271,6 +301,24 @@ const ChecklistManager = ({
           <Plus className="w-4 h-4" />
         </Button>
       </div>
+
+      {items.length > 1 && (
+        <div className="flex items-center gap-2">
+          <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <Select value={sortMode} onValueChange={(v) => { setSortMode(v as SortMode); setCurrentPage(1); }}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       
       {items.length > 0 && (
         <DndContext
