@@ -42,6 +42,7 @@ interface ChecklistManagerProps {
   onItemsChange: (items: ChecklistItem[]) => void;
   label?: string;
   showProgress?: boolean;
+  defaultItemsPerPage?: number;
 }
 
 interface SortableItemProps {
