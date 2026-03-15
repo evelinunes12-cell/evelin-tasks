@@ -144,6 +144,8 @@ const SortableItem = ({ item, onToggle, onRemove, onEdit }: SortableItemProps) =
   );
 };
 
+const ITEMS_PER_PAGE = 8;
+
 const ChecklistManager = ({ 
   items, 
   onItemsChange, 
@@ -151,6 +153,19 @@ const ChecklistManager = ({
   showProgress = true 
 }: ChecklistManagerProps) => {
   const [newItemText, setNewItemText] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+  const paginatedItems = items.length > ITEMS_PER_PAGE
+    ? items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+    : items;
+
+  // Reset to last page if current page exceeds total after deletion
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
