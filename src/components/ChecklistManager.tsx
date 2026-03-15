@@ -290,6 +290,7 @@ const ChecklistManager = ({
           value={newItemText}
           onChange={(e) => setNewItemText(e.target.value)}
           onKeyPress={handleKeyPress}
+          className="flex-1"
         />
         <Button
           type="button"
@@ -300,6 +301,24 @@ const ChecklistManager = ({
           <Plus className="w-4 h-4" />
         </Button>
       </div>
+
+      {items.length > 1 && (
+        <div className="flex items-center gap-2">
+          <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <Select value={sortMode} onValueChange={(v) => { setSortMode(v as SortMode); setCurrentPage(1); }}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       
       {items.length > 0 && (
         <DndContext
