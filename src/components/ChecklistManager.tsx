@@ -320,6 +320,30 @@ const ChecklistManager = ({
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
+          
+          <div className="flex items-center gap-1 ml-2 pl-2 border-l border-border">
+            <Settings className="w-3 h-3 text-muted-foreground" />
+            <Select
+              value={itemsPerPage.toString()}
+              onValueChange={(value) => {
+                const newItemsPerPage = parseInt(value, 10);
+                setItemsPerPage(newItemsPerPage);
+                // Reset to page 1 when changing items per page
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="h-7 w-[70px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option.toString()} className="text-xs">
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       )}
     </div>
