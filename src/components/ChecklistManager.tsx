@@ -154,6 +154,33 @@ const SortableItem = ({ item, onToggle, onRemove, onEdit }: SortableItemProps) =
 
 const ITEMS_PER_PAGE_OPTIONS = [5, 8, 10, 15, 20, 50];
 
+type SortMode = "custom" | "pending_first" | "completed_first" | "alphabetical_asc" | "alphabetical_desc";
+
+const SORT_OPTIONS: { value: SortMode; label: string }[] = [
+  { value: "custom", label: "Ordem manual" },
+  { value: "pending_first", label: "Não concluídos primeiro" },
+  { value: "completed_first", label: "Concluídos primeiro" },
+  { value: "alphabetical_asc", label: "A → Z" },
+  { value: "alphabetical_desc", label: "Z → A" },
+];
+
+const sortItems = (items: ChecklistItem[], mode: SortMode): ChecklistItem[] => {
+  if (mode === "custom") return items;
+  const sorted = [...items];
+  switch (mode) {
+    case "pending_first":
+      return sorted.sort((a, b) => Number(a.completed) - Number(b.completed));
+    case "completed_first":
+      return sorted.sort((a, b) => Number(b.completed) - Number(a.completed));
+    case "alphabetical_asc":
+      return sorted.sort((a, b) => a.text.localeCompare(b.text, "pt-BR"));
+    case "alphabetical_desc":
+      return sorted.sort((a, b) => b.text.localeCompare(a.text, "pt-BR"));
+    default:
+      return sorted;
+  }
+};
+
 const ChecklistManager = ({ 
   items, 
   onItemsChange, 
