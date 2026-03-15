@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { X, Plus, GripVertical } from "lucide-react";
+import { X, Plus, GripVertical, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -144,6 +144,8 @@ const SortableItem = ({ item, onToggle, onRemove, onEdit }: SortableItemProps) =
   );
 };
 
+const ITEMS_PER_PAGE = 8;
+
 const ChecklistManager = ({ 
   items, 
   onItemsChange, 
@@ -151,6 +153,19 @@ const ChecklistManager = ({
   showProgress = true 
 }: ChecklistManagerProps) => {
   const [newItemText, setNewItemText] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+  const paginatedItems = items.length > ITEMS_PER_PAGE
+    ? items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+    : items;
+
+  // Reset to last page if current page exceeds total after deletion
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -254,9 +269,9 @@ const ChecklistManager = ({
           onDragEnd={handleDragEnd}
           modifiers={[restrictToVerticalAxis, restrictToParentElement]}
         >
-          <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={paginatedItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
             <div className="mt-3 space-y-2">
-              {items.map((item) => (
+              {paginatedItems.map((item) => (
                 <SortableItem
                   key={item.id}
                   item={item}
@@ -268,6 +283,34 @@ const ChecklistManager = ({
             </div>
           </SortableContext>
         </DndContext>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(p => p - 1)}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {currentPage} / {totalPages}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(p => p + 1)}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
       )}
     </div>
   );
