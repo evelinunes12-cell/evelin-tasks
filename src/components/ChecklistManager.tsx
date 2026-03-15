@@ -4,7 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { X, Plus, GripVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Plus, GripVertical, ChevronLeft, ChevronRight, Settings } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DndContext,
   closestCenter,
@@ -35,6 +42,7 @@ interface ChecklistManagerProps {
   onItemsChange: (items: ChecklistItem[]) => void;
   label?: string;
   showProgress?: boolean;
+  defaultItemsPerPage?: number;
 }
 
 interface SortableItemProps {
@@ -144,20 +152,22 @@ const SortableItem = ({ item, onToggle, onRemove, onEdit }: SortableItemProps) =
   );
 };
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE_OPTIONS = [5, 8, 10, 15, 20, 50];
 
 const ChecklistManager = ({ 
   items, 
   onItemsChange, 
   label = "Checklist",
-  showProgress = true 
+  showProgress = true,
+  defaultItemsPerPage = 8
 }: ChecklistManagerProps) => {
   const [newItemText, setNewItemText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
 
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-  const paginatedItems = items.length > ITEMS_PER_PAGE
-    ? items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(items.length / itemsPerPage);
+  const paginatedItems = items.length > itemsPerPage
+    ? items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
     : items;
 
   // Reset to last page if current page exceeds total after deletion
@@ -310,6 +320,30 @@ const ChecklistManager = ({
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
+          
+          <div className="flex items-center gap-1 ml-2 pl-2 border-l border-border">
+            <Settings className="w-3 h-3 text-muted-foreground" />
+            <Select
+              value={itemsPerPage.toString()}
+              onValueChange={(value) => {
+                const newItemsPerPage = parseInt(value, 10);
+                setItemsPerPage(newItemsPerPage);
+                // Reset to page 1 when changing items per page
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="h-7 w-[70px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option.toString()} className="text-xs">
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       )}
     </div>
