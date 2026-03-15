@@ -191,11 +191,13 @@ const ChecklistManager = ({
   const [newItemText, setNewItemText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
+  const [sortMode, setSortMode] = useState<SortMode>("custom");
 
-  const totalPages = Math.ceil(items.length / itemsPerPage);
-  const paginatedItems = items.length > itemsPerPage
-    ? items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-    : items;
+  const sortedItems = sortItems(items, sortMode);
+  const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+  const paginatedItems = sortedItems.length > itemsPerPage
+    ? sortedItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : sortedItems;
 
   // Reset to last page if current page exceeds total after deletion
   useEffect(() => {
