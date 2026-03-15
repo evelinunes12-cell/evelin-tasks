@@ -1,22 +1,29 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, CalendarClock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Clock, CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchStudySchedules } from "@/services/studySchedules";
+import { addDays, format, isToday } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+const DAY_LABELS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 export function TodayScheduleCard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const todayDow = new Date().getDay();
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const selectedDow = selectedDate.getDay();
 
   const { data: schedules = [], isLoading } = useQuery({
-    queryKey: ["study-schedules-today", user?.id, todayDow],
+    queryKey: ["study-schedules-today", user?.id, selectedDow],
     queryFn: async () => {
       if (!user) return [];
       const all = await fetchStudySchedules(user.id);
       return all
-        .filter(s => s.day_of_week === todayDow)
+        .filter(s => s.day_of_week === selectedDow)
         .sort((a, b) => a.start_time.localeCompare(b.start_time));
     },
     enabled: !!user,
@@ -25,13 +32,50 @@ export function TodayScheduleCard() {
 
   const formatTime = (t: string) => t.slice(0, 5);
 
+  const goToPrevDay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedDate(prev => addDays(prev, -1));
+  };
+
+  const goToNextDay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedDate(prev => addDays(prev, 1));
+  };
+
+  const dayLabel = isToday(selectedDate)
+    ? "Hoje"
+    : format(selectedDate, "dd/MM", { locale: ptBR });
+
   return (
     <Card className="h-full cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate("/planner")}>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <CalendarClock className="h-4 w-4 text-primary" />
-          Agenda do Dia
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <CalendarClock className="h-4 w-4 text-primary" />
+            Agenda
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={goToPrevDay}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-xs font-medium text-muted-foreground min-w-[60px] text-center">
+              {dayLabel} · {DAY_LABELS[selectedDow].slice(0, 3)}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={goToNextDay}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -41,7 +85,7 @@ export function TodayScheduleCard() {
             ))}
           </div>
         ) : schedules.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhum horário fixo para hoje.</p>
+          <p className="text-sm text-muted-foreground">Nenhum horário fixo para {isToday(selectedDate) ? "hoje" : DAY_LABELS[selectedDow].toLowerCase()}.</p>
         ) : (
           <ul className="space-y-2">
             {schedules.map(s => (
