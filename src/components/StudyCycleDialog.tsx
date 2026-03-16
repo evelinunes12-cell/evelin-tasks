@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, GripVertical, Music } from "lucide-react";
+import { Plus, Trash2, GripVertical, Music, Check, ChevronsUpDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Subject } from "@/services/subjects";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Subject, createSubject } from "@/services/subjects";
 import { NewBlock, StudyCycle } from "@/services/studyCycles";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   DndContext,
   closestCenter,
@@ -34,6 +36,8 @@ interface StudyCycleDialogProps {
   subjects: Subject[];
   onSave: (name: string, blocks: NewBlock[]) => Promise<void>;
   cycleToEdit?: StudyCycle | null;
+  userId?: string;
+  onSubjectsChanged?: () => void;
 }
 
 interface BlockRow {
@@ -44,6 +48,135 @@ interface BlockRow {
 
 const generateId = () => Math.random().toString(36).slice(2, 9);
 
+// --- Subject Combobox ---
+interface SubjectComboboxProps {
+  subjects: Subject[];
+  value: string;
+  usedSubjectIds: string[];
+  onChange: (subjectId: string) => void;
+  userId?: string;
+  onSubjectCreated?: (subject: Subject) => void;
+}
+
+const SubjectCombobox = ({ subjects, value, usedSubjectIds, onChange, userId, onSubjectCreated }: SubjectComboboxProps) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  const selectedSubject = subjects.find((s) => s.id === value);
+
+  const filteredSubjects = subjects.filter((s) =>
+    s.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const exactMatch = subjects.some((s) => s.name.toLowerCase() === search.trim().toLowerCase());
+  const canCreate = search.trim().length > 0 && !exactMatch && userId;
+
+  const handleCreateSubject = async () => {
+    if (!userId || !search.trim()) return;
+    setCreating(true);
+    try {
+      const newSubject = await createSubject(search.trim(), userId);
+      onSubjectCreated?.(newSubject);
+      onChange(newSubject.id);
+      setSearch("");
+      setOpen(false);
+      toast.success(`Disciplina "${newSubject.name}" criada!`);
+    } catch {
+      toast.error("Erro ao criar disciplina.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="flex-1 min-w-0 justify-between font-normal"
+        >
+          {selectedSubject ? (
+            <span className="flex items-center gap-2 truncate">
+              {selectedSubject.color && (
+                <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: selectedSubject.color }} />
+              )}
+              {selectedSubject.name}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">Selecione a matéria</span>
+          )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[250px] p-0" align="start">
+        <Command>
+          <CommandInput
+            placeholder="Pesquisar ou criar..."
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            <CommandEmpty>
+              <div className="p-2 text-sm">
+                {canCreate ? (
+                  <button
+                    type="button"
+                    disabled={creating}
+                    onClick={handleCreateSubject}
+                    className="w-full text-left hover:bg-accent rounded p-2 flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4 text-primary" />
+                    {creating ? "Criando..." : `Criar "${search.trim()}"`}
+                  </button>
+                ) : (
+                  "Nenhuma disciplina encontrada"
+                )}
+              </div>
+            </CommandEmpty>
+            <CommandGroup>
+              {filteredSubjects.map((s) => {
+                const isUsed = usedSubjectIds.includes(s.id) && s.id !== value;
+                return (
+                  <CommandItem
+                    key={s.id}
+                    value={s.name}
+                    disabled={isUsed}
+                    onSelect={() => {
+                      onChange(s.id);
+                      setSearch("");
+                      setOpen(false);
+                    }}
+                    className={isUsed ? "opacity-50" : ""}
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", value === s.id ? "opacity-100" : "opacity-0")} />
+                    <span className="flex items-center gap-2">
+                      {s.color && (
+                        <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                      )}
+                      {s.name}
+                    </span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+            {canCreate && filteredSubjects.length > 0 && (
+              <CommandGroup>
+                <CommandItem onSelect={handleCreateSubject} disabled={creating}>
+                  <Plus className="mr-2 h-4 w-4 text-primary" />
+                  {creating ? "Criando..." : `Criar "${search.trim()}"`}
+                </CommandItem>
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 // --- Sortable Block Item ---
 interface SortableBlockProps {
   block: BlockRow;
@@ -53,6 +186,8 @@ interface SortableBlockProps {
   onUpdate: (id: string, field: keyof BlockRow, value: string | number) => void;
   onRemove: (id: string) => void;
   canRemove: boolean;
+  userId?: string;
+  onSubjectCreated?: (subject: Subject) => void;
 }
 
 const SortableBlockItem = ({
@@ -63,6 +198,8 @@ const SortableBlockItem = ({
   onUpdate,
   onRemove,
   canRemove,
+  userId,
+  onSubjectCreated,
 }: SortableBlockProps) => {
   const {
     attributes,
@@ -98,33 +235,14 @@ const SortableBlockItem = ({
         {index + 1}.
       </span>
 
-      <Select
+      <SubjectCombobox
+        subjects={subjects}
         value={block.subject_id}
-        onValueChange={(val) => onUpdate(block.id, "subject_id", val)}
-      >
-        <SelectTrigger className="flex-1 min-w-0">
-          <SelectValue placeholder="Selecione a matéria" />
-        </SelectTrigger>
-        <SelectContent>
-          {subjects.map((s) => (
-            <SelectItem
-              key={s.id}
-              value={s.id}
-              disabled={usedSubjectIds.includes(s.id) && block.subject_id !== s.id}
-            >
-              <span className="flex items-center gap-2">
-                {s.color && (
-                  <span
-                    className="h-2.5 w-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: s.color }}
-                  />
-                )}
-                {s.name}
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        usedSubjectIds={usedSubjectIds}
+        onChange={(val) => onUpdate(block.id, "subject_id", val)}
+        userId={userId}
+        onSubjectCreated={onSubjectCreated}
+      />
 
       <div className="flex items-center gap-1 shrink-0">
         <Input
@@ -154,11 +272,17 @@ const SortableBlockItem = ({
 };
 
 // --- Main Dialog ---
-const StudyCycleDialog = ({ open, onOpenChange, subjects, onSave, cycleToEdit }: StudyCycleDialogProps) => {
+const StudyCycleDialog = ({ open, onOpenChange, subjects: initialSubjects, onSave, cycleToEdit, userId, onSubjectsChanged }: StudyCycleDialogProps) => {
   const [name, setName] = useState("");
   const [blocks, setBlocks] = useState<BlockRow[]>([]);
   const [saving, setSaving] = useState(false);
+  const [localSubjects, setLocalSubjects] = useState<Subject[]>(initialSubjects);
   const isEditing = !!cycleToEdit;
+
+  // Sync subjects from props
+  useEffect(() => {
+    setLocalSubjects(initialSubjects);
+  }, [initialSubjects]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -183,6 +307,11 @@ const StudyCycleDialog = ({ open, onOpenChange, subjects, onSave, cycleToEdit }:
       }
     }
   }, [open, cycleToEdit]);
+
+  const handleSubjectCreated = (newSubject: Subject) => {
+    setLocalSubjects((prev) => [...prev, newSubject].sort((a, b) => a.name.localeCompare(b.name)));
+    onSubjectsChanged?.();
+  };
 
   const addBlock = () => {
     setBlocks((prev) => [...prev, { id: generateId(), subject_id: "", allocated_minutes: 60 }]);
@@ -283,11 +412,13 @@ const StudyCycleDialog = ({ open, onOpenChange, subjects, onSave, cycleToEdit }:
                       key={block.id}
                       block={block}
                       index={index}
-                      subjects={subjects}
+                      subjects={localSubjects}
                       usedSubjectIds={usedSubjectIds}
                       onUpdate={updateBlock}
                       onRemove={removeBlock}
                       canRemove={blocks.length > 1}
+                      userId={userId}
+                      onSubjectCreated={handleSubjectCreated}
                     />
                   ))}
                 </div>
