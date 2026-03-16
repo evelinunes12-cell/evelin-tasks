@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, CheckCircle2, Activity, Filter, ListTodo, Percent, UserX, Trophy, Mail } from "lucide-react";
+import { Users, CheckCircle2, Activity, Filter, ListTodo, Percent, UserX, Trophy, Mail, Clock, TrendingDown, UserCheck } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { format, parseISO, subDays, startOfDay, endOfDay } from "date-fns";
@@ -25,6 +25,9 @@ interface AdminStats {
   active_users_list: { email: string; full_name: string | null; last_seen: string }[];
   usage_ranking: { full_name: string | null; email: string; tasks_created: number; tasks_completed: number; focus_sessions: number; score: number }[];
   tasks_created_chart: { date: string; count: number }[];
+  cohort_retention: { cohort_week: string; cohort_size: number; retention_d1: number; retention_d7: number; retention_d30: number }[];
+  usage_heatmap: { day_of_week: number; hour: number; activity_count: number }[];
+  churn_rate: { week_date: string; inactive_7d: number; inactive_14d: number; inactive_30d: number }[];
 }
 
 const statCards = [
@@ -34,6 +37,15 @@ const statCards = [
   { key: "active_users_today" as const, label: "Ativos Hoje", icon: Activity, color: "text-warning" },
   { key: "inactive_users" as const, label: "Inativos (7d)", icon: UserX, color: "text-destructive" },
 ];
+
+const DAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+const tooltipStyle = {
+  backgroundColor: 'hsl(var(--card))',
+  border: '1px solid hsl(var(--border))',
+  borderRadius: '8px',
+  color: 'hsl(var(--foreground))',
+};
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -69,6 +81,31 @@ const AdminDashboard = () => {
     ...d,
     label: format(parseISO(d.date), "dd/MM", { locale: ptBR }),
   })) ?? [];
+
+  const churnChartData = stats?.churn_rate?.map((d) => ({
+    ...d,
+    label: format(parseISO(d.week_date), "dd/MM", { locale: ptBR }),
+  })) ?? [];
+
+  // Build heatmap grid: 7 days x 24 hours
+  const heatmapData = useMemo(() => {
+    const grid: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+    let maxVal = 1;
+    stats?.usage_heatmap?.forEach((h) => {
+      grid[h.day_of_week][h.hour] = h.activity_count;
+      if (h.activity_count > maxVal) maxVal = h.activity_count;
+    });
+    return { grid, maxVal };
+  }, [stats?.usage_heatmap]);
+
+  const getHeatColor = (value: number, max: number) => {
+    if (value === 0) return 'hsl(var(--muted))';
+    const intensity = value / max;
+    if (intensity < 0.25) return 'hsl(var(--primary) / 0.2)';
+    if (intensity < 0.5) return 'hsl(var(--primary) / 0.4)';
+    if (intensity < 0.75) return 'hsl(var(--primary) / 0.65)';
+    return 'hsl(var(--primary) / 0.9)';
+  };
 
   const isFiltering = !!(dateRange?.from || dateRange?.to);
 
@@ -151,14 +188,7 @@ const AdminDashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis dataKey="label" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                   <YAxis allowDecimals={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      color: 'hsl(var(--foreground))',
-                    }}
-                  />
+                  <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="count" name="Novos usuários" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -178,15 +208,154 @@ const AdminDashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis dataKey="label" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                   <YAxis allowDecimals={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      color: 'hsl(var(--foreground))',
-                    }}
-                  />
+                  <Tooltip contentStyle={tooltipStyle} />
                   <Line type="monotone" dataKey="count" name="Tarefas criadas" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ===== NEW REPORTS ===== */}
+
+      {/* Cohort Retention */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <UserCheck className="h-5 w-5 text-primary" />
+            Cohort de Retenção
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <Skeleton className="h-48 w-full" />
+          ) : !stats?.cohort_retention?.length ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Sem dados de retenção no período</p>
+          ) : (
+            <div className="rounded-lg border bg-card overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Semana do Cadastro</TableHead>
+                    <TableHead className="text-center">Tamanho</TableHead>
+                    <TableHead className="text-center">D+1</TableHead>
+                    <TableHead className="text-center">D+7</TableHead>
+                    <TableHead className="text-center">D+30</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stats.cohort_retention.map((c, i) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-medium text-sm">
+                        {format(parseISO(c.cohort_week), "dd/MM/yyyy", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell className="text-center text-sm">{c.cohort_size}</TableCell>
+                      <TableCell className="text-center">
+                        <RetentionBadge value={c.retention_d1} />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <RetentionBadge value={c.retention_d7} />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <RetentionBadge value={c.retention_d30} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Heatmap + Churn Rate */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Usage Heatmap */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Clock className="h-5 w-5 text-primary" />
+              Heatmap de Uso
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-48 w-full" />
+            ) : (
+              <div className="space-y-2">
+                {/* Hour labels */}
+                <div className="flex items-center gap-0.5 ml-10">
+                  {[0, 3, 6, 9, 12, 15, 18, 21].map((h) => (
+                    <span
+                      key={h}
+                      className="text-[10px] text-muted-foreground"
+                      style={{ width: `${(3 / 24) * 100}%`, minWidth: 0 }}
+                    >
+                      {h}h
+                    </span>
+                  ))}
+                </div>
+                {/* Grid */}
+                {DAY_LABELS.map((day, dayIdx) => (
+                  <div key={dayIdx} className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground w-9 text-right shrink-0">{day}</span>
+                    <div className="flex gap-0.5 flex-1">
+                      {Array.from({ length: 24 }, (_, hour) => (
+                        <div
+                          key={hour}
+                          className="flex-1 aspect-square rounded-sm min-w-0 cursor-default"
+                          style={{ backgroundColor: getHeatColor(heatmapData.grid[dayIdx][hour], heatmapData.maxVal) }}
+                          title={`${day} ${hour}h — ${heatmapData.grid[dayIdx][hour]} atividades`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {/* Legend */}
+                <div className="flex items-center justify-end gap-1 pt-2">
+                  <span className="text-[10px] text-muted-foreground mr-1">Menos</span>
+                  {[0, 0.2, 0.4, 0.65, 0.9].map((opacity, i) => (
+                    <div
+                      key={i}
+                      className="w-3 h-3 rounded-sm"
+                      style={{
+                        backgroundColor: i === 0
+                          ? 'hsl(var(--muted))'
+                          : `hsl(var(--primary) / ${opacity})`,
+                      }}
+                    />
+                  ))}
+                  <span className="text-[10px] text-muted-foreground ml-1">Mais</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Churn Rate Chart */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <TrendingDown className="h-5 w-5 text-destructive" />
+              Evolução de Churn
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-48 w-full" />
+            ) : !churnChartData.length ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Sem dados de churn no período</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={churnChartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="label" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <YAxis allowDecimals={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Line type="monotone" dataKey="inactive_7d" name="Inativos 7d" stroke="hsl(var(--warning))" strokeWidth={2} dot={{ r: 2 }} />
+                  <Line type="monotone" dataKey="inactive_14d" name="Inativos 14d" stroke="hsl(38 92% 50%)" strokeWidth={2} dot={{ r: 2 }} />
+                  <Line type="monotone" dataKey="inactive_30d" name="Inativos 30d" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 2 }} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -290,5 +459,18 @@ const AdminDashboard = () => {
     </div>
   );
 };
+
+function RetentionBadge({ value }: { value: number | null }) {
+  const v = value ?? 0;
+  let variant: "default" | "secondary" | "destructive" | "outline" = "secondary";
+  if (v >= 50) variant = "default";
+  else if (v > 0 && v < 25) variant = "destructive";
+
+  return (
+    <Badge variant={variant} className="text-xs font-mono min-w-[3rem] justify-center">
+      {v}%
+    </Badge>
+  );
+}
 
 export default AdminDashboard;
