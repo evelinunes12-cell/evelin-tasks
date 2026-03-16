@@ -17,6 +17,110 @@ interface StudyCyclePlayerProps {
 
 const BREAK_SECONDS = 300; // 5 min
 
+// ─── Animated Donut Ring ───────────────────────────────────────────
+const RING_SIZE = 300;
+const RING_STROKE = 14;
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+interface DonutRingProps {
+  progress: number; // 0-100
+  color: string;
+  isRunning: boolean;
+}
+
+const DonutRing = ({ progress, color, isRunning }: DonutRingProps) => {
+  const offset = RING_CIRCUMFERENCE * (1 - progress / 100);
+  const glowId = "ring-glow";
+
+  return (
+    <svg
+      width={RING_SIZE}
+      height={RING_SIZE}
+      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+      className="transform -rotate-90"
+    >
+      <defs>
+        <filter id={glowId} x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="6" result="blur" />
+          <feFlood floodColor={color} floodOpacity="0.45" result="color" />
+          <feComposite in="color" in2="blur" operator="in" result="glow" />
+          <feMerge>
+            <feMergeNode in="glow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {/* Track */}
+      <circle
+        cx={RING_SIZE / 2}
+        cy={RING_SIZE / 2}
+        r={RING_RADIUS}
+        fill="none"
+        stroke="hsl(var(--muted))"
+        strokeWidth={RING_STROKE}
+        className="opacity-40"
+      />
+
+      {/* Progress */}
+      <circle
+        cx={RING_SIZE / 2}
+        cy={RING_SIZE / 2}
+        r={RING_RADIUS}
+        fill="none"
+        stroke={color}
+        strokeWidth={RING_STROKE}
+        strokeLinecap="round"
+        strokeDasharray={RING_CIRCUMFERENCE}
+        strokeDashoffset={offset}
+        filter={isRunning ? `url(#${glowId})` : undefined}
+        className="transition-all duration-1000 linear"
+      />
+    </svg>
+  );
+};
+
+// ─── Queue Block Chip ──────────────────────────────────────────────
+interface QueueChipProps {
+  name: string;
+  color: string | null;
+  minutes: number;
+  isDone: boolean;
+  isCurrent?: boolean;
+  onClick?: () => void;
+  disabled?: boolean;
+}
+
+const QueueChip = ({ name, color, minutes, isDone, isCurrent, onClick, disabled }: QueueChipProps) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    className={cn(
+      "flex items-center gap-2.5 px-4 py-2.5 rounded-xl transition-all duration-200 text-left w-full",
+      isCurrent
+        ? "bg-primary/10 border border-primary/20 shadow-sm"
+        : "bg-card/60 backdrop-blur-sm border border-border/40 hover:bg-card/80 hover:border-border/60",
+      isDone && "opacity-35",
+      disabled && "cursor-default"
+    )}
+  >
+    <span
+      className={cn("h-2.5 w-2.5 rounded-full shrink-0", isCurrent && "ring-2 ring-primary/30 ring-offset-1 ring-offset-background")}
+      style={{ backgroundColor: color || "hsl(var(--muted-foreground))" }}
+    />
+    <span className={cn("text-sm truncate flex-1", isCurrent ? "font-semibold text-foreground" : "text-muted-foreground", isDone && "line-through")}>
+      {name || "—"}
+    </span>
+    <span className="text-xs text-muted-foreground/70 tabular-nums shrink-0">{minutes}min</span>
+    {isCurrent && (
+      <Badge variant="default" className="text-[10px] h-4 px-1.5 shrink-0">Agora</Badge>
+    )}
+    {isDone && !isCurrent && <span className="text-xs text-primary shrink-0">✓</span>}
+  </button>
+);
+
+// ─── Main Player ───────────────────────────────────────────────────
 const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
   const { user } = useAuth();
   const blocks = cycle.blocks || [];
@@ -48,7 +152,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     ? currentBlock.allocated_minutes * 60
     : 0;
 
-  // Save progress to DB
+  // ── Persistence ──────────────────────────────────────────────────
   const persistProgress = useCallback(
     async (blockIdx: number, remaining: number | null) => {
       try {
@@ -60,7 +164,6 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     [cycle.id]
   );
 
-  // Save on unmount / close
   useEffect(() => {
     return () => {
       if (mode === "study") {
@@ -111,33 +214,26 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     setIsRunning(false);
     setIsPaused(false);
     setCompletedBlocks((prev) => new Set(prev).add(currentIndex));
-
     playAlarm();
-
     if (user) {
       await registerActivity(user.id);
       logXP(user.id, "study_block_completed", XP.STUDY_BLOCK_COMPLETED);
-      // Register focus session with subject
       const block = blocks[currentIndex];
       if (block) {
         const startedAt = new Date(Date.now() - block.allocated_minutes * 60 * 1000);
         await createFocusSession(user.id, startedAt, block.allocated_minutes, block.subject_id, cycle.id);
       }
     }
-
     toast.success(`✅ ${currentBlock?.subject?.name || "Bloco"} concluído!`);
-
-    // Start break
     setMode("break");
     setTimeRemaining(BREAK_SECONDS);
-  }, [currentIndex, currentBlock, blocks, user, clearTimer, playAlarm]);
+  }, [currentIndex, currentBlock, blocks, user, clearTimer, playAlarm, cycle.id]);
 
   const handleBreakComplete = useCallback(() => {
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
     playAlarm();
-
     const allDone = completedBlocks.size + 1 >= blocks.length;
     if (allDone && completedBlocks.has(currentIndex)) {
       toast.success("🎉 Ciclo completo! Parabéns!");
@@ -245,6 +341,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     onClose();
   };
 
+  // ── Derived UI values ────────────────────────────────────────────
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
   const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
@@ -261,17 +358,22 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     if (idx !== currentIndex) upcomingBlocks.push({ ...blocks[idx], _idx: idx });
   }
 
+  const statusLabel = isBreak
+    ? isRunning ? "Descansando..." : "Intervalo"
+    : isRunning
+    ? "Estudando..."
+    : isPaused
+    ? "Pausado"
+    : allDone
+    ? "Concluído!"
+    : "Pronto";
+
   return (
-    <div
-      className={cn(
-        "fixed inset-0 z-50 flex flex-col transition-colors duration-500",
-        isBreak ? "bg-muted" : "bg-background"
-      )}
-    >
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm font-medium text-muted-foreground truncate">
+    <div className="fixed inset-0 z-50 flex flex-col bg-background transition-colors duration-500">
+      {/* ── Top bar ────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-border/50 backdrop-blur-sm bg-background/80">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="text-sm font-medium text-muted-foreground truncate tracking-wide">
             {cycle.name}
           </span>
           {isBreak ? (
@@ -279,74 +381,29 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
               <Coffee className="h-3 w-3" /> Intervalo
             </Badge>
           ) : (
-            <span className="text-xs text-muted-foreground">
-              {currentIndex + 1}/{blocks.length}
+            <span className="text-[11px] text-muted-foreground/60 tabular-nums font-medium">
+              {currentIndex + 1} / {blocks.length}
             </span>
           )}
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClose}>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={handleClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
-        {/* Subject / break info */}
-        <div className="text-center space-y-2">
-          {isBreak ? (
-            <>
-              <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl mx-auto mb-2 bg-primary/10">
-                <Coffee className="h-8 w-8 text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold text-foreground">Hora do Intervalo</h2>
-              <p className="text-sm text-muted-foreground">Descanse um pouco antes de continuar</p>
-            </>
-          ) : (
-            <>
-              <div
-                className="inline-flex h-16 w-16 items-center justify-center rounded-2xl mx-auto mb-2"
-                style={{ backgroundColor: subjectColor + "22" }}
-              >
-                <div
-                  className="h-8 w-8 rounded-full"
-                  style={{ backgroundColor: subjectColor }}
-                />
-              </div>
-              <h2 className="text-2xl font-bold text-foreground">
-                {currentBlock?.subject?.name || "Disciplina"}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {currentBlock?.allocated_minutes} minutos alocados
-              </p>
-            </>
-          )}
-        </div>
+      {/* ── Main content ───────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8 max-w-lg mx-auto w-full">
 
-        {/* Timer circle */}
-        <div className="relative">
-          <svg className="w-52 h-52 transform -rotate-90" viewBox="0 0 120 120">
-            <circle
-              cx="60" cy="60" r="54"
-              stroke="hsl(var(--muted))"
-              strokeWidth="6"
-              fill="none"
-              className="opacity-30"
-            />
-            <circle
-              cx="60" cy="60" r="54"
-              stroke={isBreak ? "hsl(var(--primary))" : subjectColor}
-              strokeWidth="6"
-              fill="none"
-              strokeDasharray={2 * Math.PI * 54}
-              strokeDashoffset={2 * Math.PI * 54 * (1 - progress / 100)}
-              strokeLinecap="round"
-              className="transition-all duration-300"
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
+        {/* Donut ring + center info */}
+        <div className="relative flex items-center justify-center">
+          <DonutRing progress={progress} color={subjectColor} isRunning={isRunning} />
+
+          {/* Center overlay */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            {/* Time */}
             <span
               className={cn(
-                "text-4xl font-mono font-bold tracking-tight",
+                "text-5xl font-mono font-bold tracking-tighter tabular-nums transition-colors duration-300",
                 isRunning && "text-foreground",
                 isPaused && "text-destructive",
                 !isRunning && !isPaused && "text-muted-foreground"
@@ -354,37 +411,48 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
             >
               {formattedTime}
             </span>
-            <span className="text-xs text-muted-foreground mt-1">
-              {isBreak
-                ? isRunning
-                  ? "Descansando..."
-                  : "Intervalo"
-                : isRunning
-                ? "Estudando..."
-                : isPaused
-                ? "Pausado"
-                : allDone
-                ? "Concluído!"
-                : "Pronto"}
+
+            {/* Mode label */}
+            <span className="text-sm text-muted-foreground mt-1.5 font-medium">
+              {statusLabel}
             </span>
+
+            {/* Subject / break icon */}
+            <div className="mt-3 flex items-center gap-2">
+              {isBreak ? (
+                <Coffee className="h-4 w-4 text-primary" />
+              ) : (
+                <span
+                  className="h-3 w-3 rounded-full"
+                  style={{ backgroundColor: subjectColor }}
+                />
+              )}
+              <span className="text-xs font-semibold text-foreground/80 truncate max-w-[140px]">
+                {isBreak ? "Hora do Intervalo" : currentBlock?.subject?.name || "Disciplina"}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center gap-4">
+        {/* ── Controls ───────────────────────────────────────────── */}
+        <div className="flex items-center gap-5">
           <Button
             variant="outline"
             size="icon"
-            className="h-12 w-12 rounded-full"
+            className="h-12 w-12 rounded-full border-border/50"
             onClick={handleRestart}
             disabled={allDone && !isBreak}
           >
             <RotateCcw className="h-5 w-5" />
           </Button>
+
           <Button
             size="icon"
-            className="h-16 w-16 rounded-full shadow-lg"
-            style={{ backgroundColor: isBreak ? "hsl(var(--primary))" : subjectColor }}
+            className="h-16 w-16 rounded-full shadow-lg transition-shadow duration-300"
+            style={{
+              backgroundColor: subjectColor,
+              boxShadow: isRunning ? `0 0 30px ${subjectColor}44, 0 4px 20px ${subjectColor}33` : undefined,
+            }}
             onClick={handlePlayPause}
             disabled={allDone && !isBreak}
           >
@@ -394,10 +462,11 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
               <Play className="h-7 w-7 text-white ml-0.5" />
             )}
           </Button>
+
           <Button
             variant="outline"
             size="icon"
-            className="h-12 w-12 rounded-full"
+            className="h-12 w-12 rounded-full border-border/50"
             onClick={handleSkip}
             disabled={allDone && !isBreak}
           >
@@ -407,73 +476,40 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
 
         {/* Skip break shortcut */}
         {isBreak && (
-          <Button variant="ghost" size="sm" onClick={handleSkip} className="text-xs text-muted-foreground">
+          <Button variant="ghost" size="sm" onClick={handleSkip} className="text-xs text-muted-foreground hover:text-foreground">
             Pular intervalo e ir para a próxima matéria →
           </Button>
         )}
       </div>
 
-      {/* Queue / upcoming blocks (bottom) */}
-      <div className="border-t border-border px-4 py-3">
-        <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+      {/* ── Queue ──────────────────────────────────────────────────── */}
+      <div className="border-t border-border/40 px-5 py-4 bg-muted/30 backdrop-blur-sm">
+        <p className="text-[11px] font-semibold text-muted-foreground/60 mb-2.5 uppercase tracking-widest">
           {isBreak ? "Próxima" : "Fila"}
         </p>
-        <div className="space-y-1 max-h-40 overflow-y-auto">
+        <div className="space-y-1.5 max-h-36 overflow-y-auto">
           {!isBreak && (
-            <div
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-accent"
-            >
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                {currentBlock?.subject?.color && (
-                  <span
-                    className="h-3 w-3 rounded-full shrink-0 ring-2 ring-primary/30"
-                    style={{ backgroundColor: currentBlock.subject.color }}
-                  />
-                )}
-                <span className="text-sm font-semibold text-foreground truncate">
-                  {currentBlock?.subject?.name || "—"}
-                </span>
-              </div>
-              <span className="text-xs text-muted-foreground shrink-0">
-                {currentBlock?.allocated_minutes}min
-              </span>
-              <Badge variant="default" className="text-[10px] h-4 px-1.5">Agora</Badge>
-            </div>
+            <QueueChip
+              name={currentBlock?.subject?.name || "—"}
+              color={currentBlock?.subject?.color || null}
+              minutes={currentBlock?.allocated_minutes || 0}
+              isDone={false}
+              isCurrent
+              disabled
+            />
           )}
           {upcomingBlocks.map((block, i) => {
             const isDone = completedBlocks.has(block._idx);
             return (
-              <button
+              <QueueChip
                 key={`${block.id}-${i}`}
+                name={block.subject?.name || "—"}
+                color={block.subject?.color || null}
+                minutes={block.allocated_minutes}
+                isDone={isDone}
                 onClick={() => !isBreak && goToBlock(block._idx)}
                 disabled={isBreak}
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors",
-                  !isBreak && "hover:bg-accent/50",
-                  isDone && "opacity-40"
-                )}
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {block.subject?.color && (
-                    <span
-                      className={cn("h-3 w-3 rounded-full shrink-0", isDone && "opacity-50")}
-                      style={{ backgroundColor: block.subject.color }}
-                    />
-                  )}
-                  <span
-                    className={cn(
-                      "text-sm truncate text-muted-foreground",
-                      isDone && "line-through"
-                    )}
-                  >
-                    {block.subject?.name || "—"}
-                  </span>
-                </div>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {block.allocated_minutes}min
-                </span>
-                {isDone && <span className="text-xs text-primary shrink-0">✓</span>}
-              </button>
+              />
             );
           })}
         </div>
