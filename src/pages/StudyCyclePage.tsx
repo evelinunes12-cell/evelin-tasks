@@ -298,6 +298,11 @@ const StudyCyclePage = () => {
         subjects={subjects}
         onSave={handleSave}
         cycleToEdit={editingCycle}
+        userId={user?.id}
+        onSubjectsChanged={async () => {
+          const updated = await fetchSubjects();
+          setSubjects(updated);
+        }}
       />
 
       {/* Delete Confirmation */}
