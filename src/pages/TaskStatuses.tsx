@@ -473,9 +473,9 @@ export default function TaskStatuses() {
       <main className="container py-8 px-4">
         <div className="mb-6 flex flex-col gap-2">
           <div className="flex gap-2 flex-wrap">
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Status Pai
+            <Button onClick={() => handleOpenDialog()} size="sm">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Novo Status Pai</span>
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
