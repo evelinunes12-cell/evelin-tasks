@@ -316,7 +316,7 @@ const ChecklistManager = ({
       {items.length > 1 && (
         <div className="flex items-center gap-2">
           <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <Select value={sortMode} onValueChange={(v) => { setSortMode(v as SortMode); setCurrentPage(1); }}>
+          <Select value={sortMode} onValueChange={handleSortChange}>
             <SelectTrigger className="h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
