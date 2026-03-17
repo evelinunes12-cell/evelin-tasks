@@ -104,9 +104,9 @@ const SharedEnvironments = () => {
               </p>
             </div>
           </div>
-          <Button onClick={() => navigate("/environment/new")} size="lg" className="gap-2">
-            <Plus className="w-5 h-5" />
-            Novo Grupo
+          <Button onClick={() => navigate("/environment/new")} size="sm" className="gap-2">
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Novo Grupo</span>
           </Button>
         </div>
 
