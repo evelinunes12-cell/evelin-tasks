@@ -191,7 +191,18 @@ const ChecklistManager = ({
   const [newItemText, setNewItemText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
-  const [sortMode, setSortMode] = useState<SortMode>("custom");
+  const [sortMode, setSortMode] = useState<SortMode>(() => {
+    const saved = localStorage.getItem("checklist-sort-mode");
+    if (saved && SORT_OPTIONS.some(o => o.value === saved)) return saved as SortMode;
+    return "pending_first";
+  });
+
+  const handleSortChange = (v: string) => {
+    const mode = v as SortMode;
+    setSortMode(mode);
+    localStorage.setItem("checklist-sort-mode", mode);
+    setCurrentPage(1);
+  };
 
   const sortedItems = sortItems(items, sortMode);
   const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
