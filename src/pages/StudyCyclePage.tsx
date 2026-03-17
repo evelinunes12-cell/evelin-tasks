@@ -143,9 +143,9 @@ const StudyCyclePage = () => {
               <p className="text-sm text-muted-foreground">Monte seu ciclo como uma playlist</p>
             </div>
           </div>
-          <Button onClick={handleOpenCreate} className="gap-1.5">
+          <Button onClick={handleOpenCreate} size="sm" className="gap-1.5">
             <Plus className="h-4 w-4" />
-            Criar Ciclo
+            <span className="hidden sm:inline">Criar Ciclo</span>
           </Button>
         </div>
 
