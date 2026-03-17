@@ -191,7 +191,18 @@ const ChecklistManager = ({
   const [newItemText, setNewItemText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
-  const [sortMode, setSortMode] = useState<SortMode>("custom");
+  const [sortMode, setSortMode] = useState<SortMode>(() => {
+    const saved = localStorage.getItem("checklist-sort-mode");
+    if (saved && SORT_OPTIONS.some(o => o.value === saved)) return saved as SortMode;
+    return "pending_first";
+  });
+
+  const handleSortChange = (v: string) => {
+    const mode = v as SortMode;
+    setSortMode(mode);
+    localStorage.setItem("checklist-sort-mode", mode);
+    setCurrentPage(1);
+  };
 
   const sortedItems = sortItems(items, sortMode);
   const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
@@ -305,7 +316,7 @@ const ChecklistManager = ({
       {items.length > 1 && (
         <div className="flex items-center gap-2">
           <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <Select value={sortMode} onValueChange={(v) => { setSortMode(v as SortMode); setCurrentPage(1); }}>
+          <Select value={sortMode} onValueChange={handleSortChange}>
             <SelectTrigger className="h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
