@@ -169,9 +169,9 @@ export default function Subjects() {
 
       <main className="container py-8 px-4">
         <div className="mb-6">
-          <Button onClick={() => handleOpenDialog()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Disciplina
+          <Button onClick={() => handleOpenDialog()} size="sm">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nova Disciplina</span>
           </Button>
         </div>
 

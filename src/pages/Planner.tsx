@@ -256,7 +256,7 @@ const Planner = () => {
               </TabsTrigger>
             </TabsList>
 
-            {tab !== "timetable" && (
+            {tab !== "timetable" && tab !== "weekly" && (
               <Button
                 size="sm"
                 onClick={() => {
@@ -264,8 +264,8 @@ const Planner = () => {
                   else openNewNote();
                 }}
               >
-                <Plus className="h-4 w-4 mr-1" />
-                {tab === "goals" ? "Nova Meta" : "Nova Nota"}
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">{tab === "goals" ? "Nova Meta" : "Nova Nota"}</span>
               </Button>
             )}
           </div>
