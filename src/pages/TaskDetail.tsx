@@ -543,20 +543,20 @@ const TaskDetail = () => {
     <div className="min-h-screen bg-background">
       <Navbar minimal />
       <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-foreground">{task.subject_name}</h1>
-          <div className="flex items-center gap-2">
-            <Button onClick={() => navigate(`/task/edit/${id}`)} className="gap-2">
+        <div className="flex items-center justify-between mb-6 gap-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">{task.subject_name}</h1>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button onClick={() => navigate(`/task/edit/${id}`)} size="sm" className="gap-2">
               <Edit className="w-4 h-4" />
-              Editar
+              <span className="hidden sm:inline">Editar</span>
             </Button>
-            <Button variant="outline" onClick={() => setIsNoteDialogOpen(true)} className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsNoteDialogOpen(true)} className="gap-2">
               <StickyNote className="w-4 h-4" />
-              Criar Anotação
+              <span className="hidden sm:inline">Criar Anotação</span>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                   <MoreVertical className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
