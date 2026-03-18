@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Repeat, Plus, BookOpen, Clock, Trash2, Power, PowerOff, Play, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
