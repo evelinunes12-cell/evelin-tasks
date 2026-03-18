@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Repeat, Plus, BookOpen, Clock, Trash2, Power, PowerOff, Play, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,7 +130,10 @@ const StudyCyclePage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar minimal />
+      <header className="border-b border-border px-4 py-3 flex items-center gap-3">
+        <SidebarTrigger className="md:hidden" />
+        <h1 className="text-lg font-bold text-foreground">Ciclo de Estudos</h1>
+      </header>
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
