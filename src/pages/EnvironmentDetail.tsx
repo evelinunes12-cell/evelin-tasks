@@ -437,9 +437,9 @@ const EnvironmentDetail = () => {
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Membros do Grupo</h2>
               {isOwner && (
-                <Button onClick={() => navigate(`/environment/${id}/edit`)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Membro
+                <Button size="sm" onClick={() => navigate(`/environment/${id}/edit`)}>
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-2">Adicionar Membro</span>
                 </Button>
               )}
             </div>
