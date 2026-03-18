@@ -205,16 +205,17 @@ const EnvironmentDetail = () => {
               <>
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => navigate(`/environment/${id}/edit`)}
                 >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Configurações
+                  <Settings className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-2">Configurações</span>
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Excluir
+                    <Button variant="destructive" size="sm">
+                      <Trash2 className="w-4 h-4" />
+                      <span className="hidden sm:inline ml-2">Excluir</span>
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
