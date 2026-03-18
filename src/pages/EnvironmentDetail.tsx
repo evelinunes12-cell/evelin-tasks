@@ -195,7 +195,7 @@ const EnvironmentDetail = () => {
       <div className="container mx-auto px-6 py-8">
         <div className="flex justify-between items-start mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">{environment.environment_name}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">{environment.environment_name}</h1>
             {environment.description && (
               <p className="text-muted-foreground mt-2">{environment.description}</p>
             )}
