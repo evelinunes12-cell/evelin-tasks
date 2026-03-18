@@ -255,9 +255,9 @@ const EnvironmentForm = () => {
 
           <Tabs defaultValue="members">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="members"><Users className="w-4 h-4 mr-2" />Membros</TabsTrigger>
-              <TabsTrigger value="subjects"><BookOpen className="w-4 h-4 mr-2" />Disciplinas</TabsTrigger>
-              <TabsTrigger value="statuses"><ListTodo className="w-4 h-4 mr-2" />Status</TabsTrigger>
+              <TabsTrigger value="members"><Users className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Membros</span></TabsTrigger>
+              <TabsTrigger value="subjects"><BookOpen className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Disciplinas</span></TabsTrigger>
+              <TabsTrigger value="statuses"><ListTodo className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Status</span></TabsTrigger>
             </TabsList>
 
             <TabsContent value="members">
