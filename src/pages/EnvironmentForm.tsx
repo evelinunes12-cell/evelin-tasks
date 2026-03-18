@@ -243,7 +243,7 @@ const EnvironmentForm = () => {
     <div className="min-h-screen bg-background">
       <Navbar minimal />
       <div className="container mx-auto px-6 py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold text-foreground mb-8">{isNewEnvironment ? "Novo Grupo de Trabalho" : "Editar Grupo"}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-8">{isNewEnvironment ? "Novo Grupo de Trabalho" : "Editar Grupo"}</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card>
             <CardHeader><CardTitle>Informações do Grupo</CardTitle></CardHeader>
@@ -255,9 +255,9 @@ const EnvironmentForm = () => {
 
           <Tabs defaultValue="members">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="members"><Users className="w-4 h-4 mr-2" />Membros</TabsTrigger>
-              <TabsTrigger value="subjects"><BookOpen className="w-4 h-4 mr-2" />Disciplinas</TabsTrigger>
-              <TabsTrigger value="statuses"><ListTodo className="w-4 h-4 mr-2" />Status</TabsTrigger>
+              <TabsTrigger value="members"><Users className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Membros</span></TabsTrigger>
+              <TabsTrigger value="subjects"><BookOpen className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Disciplinas</span></TabsTrigger>
+              <TabsTrigger value="statuses"><ListTodo className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Status</span></TabsTrigger>
             </TabsList>
 
             <TabsContent value="members">

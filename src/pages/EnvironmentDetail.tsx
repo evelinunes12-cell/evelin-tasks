@@ -195,7 +195,7 @@ const EnvironmentDetail = () => {
       <div className="container mx-auto px-6 py-8">
         <div className="flex justify-between items-start mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">{environment.environment_name}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">{environment.environment_name}</h1>
             {environment.description && (
               <p className="text-muted-foreground mt-2">{environment.description}</p>
             )}
@@ -437,9 +437,9 @@ const EnvironmentDetail = () => {
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Membros do Grupo</h2>
               {isOwner && (
-                <Button onClick={() => navigate(`/environment/${id}/edit`)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Membro
+                <Button size="sm" onClick={() => navigate(`/environment/${id}/edit`)}>
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-2">Adicionar Membro</span>
                 </Button>
               )}
             </div>
@@ -467,11 +467,11 @@ const EnvironmentDetail = () => {
               {members.map((member) => (
                 <Card key={member.id}>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Users className="w-5 h-5" />
-                        <div>
-                          <CardTitle className="text-base">{member.email}</CardTitle>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Users className="w-5 h-5 shrink-0" />
+                        <div className="min-w-0">
+                          <CardTitle className="text-base truncate">{member.email}</CardTitle>
                           <CardDescription>
                             {member.user_id ? "Membro ativo" : "Convite pendente"}
                           </CardDescription>
