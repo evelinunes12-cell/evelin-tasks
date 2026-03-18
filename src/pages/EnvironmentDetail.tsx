@@ -467,11 +467,11 @@ const EnvironmentDetail = () => {
               {members.map((member) => (
                 <Card key={member.id}>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Users className="w-5 h-5" />
-                        <div>
-                          <CardTitle className="text-base">{member.email}</CardTitle>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Users className="w-5 h-5 shrink-0" />
+                        <div className="min-w-0">
+                          <CardTitle className="text-base truncate">{member.email}</CardTitle>
                           <CardDescription>
                             {member.user_id ? "Membro ativo" : "Convite pendente"}
                           </CardDescription>
