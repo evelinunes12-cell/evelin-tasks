@@ -252,9 +252,9 @@ const EnvironmentDetail = () => {
           <TabsContent value="tasks" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Tarefas do Grupo</h2>
-              <Button onClick={() => navigate(`/task/new?environment=${id}`)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Nova Tarefa
+              <Button size="sm" onClick={() => navigate(`/task/new?environment=${id}`)}>
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline ml-2">Nova Tarefa</span>
               </Button>
             </div>
 
