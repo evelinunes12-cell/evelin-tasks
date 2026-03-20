@@ -662,6 +662,11 @@ export default function Settings() {
             <OnboardingResetCard />
           </TabsContent>
 
+          {/* ACCOUNTS & INTEGRATIONS TAB */}
+          <TabsContent value="accounts" className="space-y-6">
+            <GoogleAccountCard />
+          </TabsContent>
+
           {/* APPEARANCE TAB */}
           <TabsContent value="appearance" className="space-y-6">
             <Card>
