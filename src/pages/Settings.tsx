@@ -32,7 +32,8 @@ import {
   Monitor,
   FileCheck,
   FileX,
-  CalendarIcon
+  CalendarIcon,
+  Link2,
 } from "lucide-react";
 import { logError } from "@/lib/logger";
 import { profileSchema, passwordSchema } from "@/lib/validation";
