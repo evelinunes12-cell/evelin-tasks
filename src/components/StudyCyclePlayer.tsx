@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Pause, SkipForward, RotateCcw, X, Coffee } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DonutTimer } from "@/components/DonutTimer";
 import { StudyCycle, saveCycleProgress } from "@/services/studyCycles";
 import { createFocusSession } from "@/services/focusSessions";
 import { registerActivity } from "@/services/activity";
