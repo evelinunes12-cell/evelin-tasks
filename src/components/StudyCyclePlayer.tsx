@@ -18,69 +18,7 @@ interface StudyCyclePlayerProps {
 
 const BREAK_SECONDS = 300; // 5 min
 
-// ─── Animated Donut Ring ───────────────────────────────────────────
-const RING_SIZE = 300;
-const RING_STROKE = 14;
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
-
-interface DonutRingProps {
-  progress: number; // 0-100
-  color: string;
-  isRunning: boolean;
-}
-
-const DonutRing = ({ progress, color, isRunning }: DonutRingProps) => {
-  const offset = RING_CIRCUMFERENCE * (1 - progress / 100);
-  const glowId = "ring-glow";
-
-  return (
-    <svg
-      width={RING_SIZE}
-      height={RING_SIZE}
-      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-      className="transform -rotate-90"
-    >
-      <defs>
-        <filter id={glowId} x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="6" result="blur" />
-          <feFlood floodColor={color} floodOpacity="0.45" result="color" />
-          <feComposite in="color" in2="blur" operator="in" result="glow" />
-          <feMerge>
-            <feMergeNode in="glow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {/* Track */}
-      <circle
-        cx={RING_SIZE / 2}
-        cy={RING_SIZE / 2}
-        r={RING_RADIUS}
-        fill="none"
-        stroke="hsl(var(--muted))"
-        strokeWidth={RING_STROKE}
-        className="opacity-40"
-      />
-
-      {/* Progress */}
-      <circle
-        cx={RING_SIZE / 2}
-        cy={RING_SIZE / 2}
-        r={RING_RADIUS}
-        fill="none"
-        stroke={color}
-        strokeWidth={RING_STROKE}
-        strokeLinecap="round"
-        strokeDasharray={RING_CIRCUMFERENCE}
-        strokeDashoffset={offset}
-        filter={isRunning ? `url(#${glowId})` : undefined}
-        className="transition-all duration-1000 linear"
-      />
-    </svg>
-  );
-};
+// (DonutTimer is now a separate component)
 
 // ─── Queue Block Chip ──────────────────────────────────────────────
 interface QueueChipProps {
