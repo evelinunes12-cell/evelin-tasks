@@ -49,6 +49,7 @@ import qrCodePix from "@/assets/qrcode-pix.jpeg";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { AchievementsList } from "@/components/AchievementsList";
 import { EDUCATION_LEVELS } from "@/lib/constants";
+import { lovable } from "@/integrations/lovable/index";
 
 interface ProfileData {
   full_name: string;
