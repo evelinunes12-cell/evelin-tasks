@@ -335,15 +335,18 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="profile" className="gap-2">
-              <User className="h-4 w-4" /> Perfil
+              <User className="h-4 w-4" /> <span className="hidden sm:inline">Perfil</span>
+            </TabsTrigger>
+            <TabsTrigger value="accounts" className="gap-2">
+              <Link2 className="h-4 w-4" /> <span className="hidden sm:inline">Contas</span>
             </TabsTrigger>
             <TabsTrigger value="appearance" className="gap-2">
-              <Palette className="h-4 w-4" /> Aparência
+              <Palette className="h-4 w-4" /> <span className="hidden sm:inline">Aparência</span>
             </TabsTrigger>
             <TabsTrigger value="support" className="gap-2">
-              <Heart className="h-4 w-4" /> Apoie
+              <Heart className="h-4 w-4" /> <span className="hidden sm:inline">Apoie</span>
             </TabsTrigger>
           </TabsList>
 
