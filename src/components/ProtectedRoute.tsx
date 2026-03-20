@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingOverlay from "./LoadingOverlay";
@@ -11,6 +11,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [checkingActive, setCheckingActive] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
 
@@ -23,7 +24,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     if (!loading && user) {
       supabase
         .from("profiles")
-        .select("is_active")
+        .select("is_active, onboarding_completed")
         .eq("id", user.id)
         .single()
         .then(({ data }) => {
@@ -31,10 +32,20 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
             setIsBlocked(true);
             signOut();
           }
+
+          // Force onboarding if not completed (skip if already on /onboarding)
+          if (
+            data &&
+            data.onboarding_completed !== true &&
+            location.pathname !== "/onboarding"
+          ) {
+            navigate("/onboarding", { replace: true });
+          }
+
           setCheckingActive(false);
         });
     }
-  }, [user, loading, navigate, signOut]);
+  }, [user, loading, navigate, signOut, location.pathname]);
 
   if (loading || checkingActive) {
     return <LoadingOverlay isLoading={true} message="Verificando autenticação..." />;
