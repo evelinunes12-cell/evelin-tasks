@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Pause, SkipForward, RotateCcw, X, Coffee } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DonutTimer } from "@/components/DonutTimer";
 import { StudyCycle, saveCycleProgress } from "@/services/studyCycles";
 import { createFocusSession } from "@/services/focusSessions";
 import { registerActivity } from "@/services/activity";
@@ -17,69 +18,7 @@ interface StudyCyclePlayerProps {
 
 const BREAK_SECONDS = 300; // 5 min
 
-// ─── Animated Donut Ring ───────────────────────────────────────────
-const RING_SIZE = 300;
-const RING_STROKE = 14;
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
-
-interface DonutRingProps {
-  progress: number; // 0-100
-  color: string;
-  isRunning: boolean;
-}
-
-const DonutRing = ({ progress, color, isRunning }: DonutRingProps) => {
-  const offset = RING_CIRCUMFERENCE * (1 - progress / 100);
-  const glowId = "ring-glow";
-
-  return (
-    <svg
-      width={RING_SIZE}
-      height={RING_SIZE}
-      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-      className="transform -rotate-90"
-    >
-      <defs>
-        <filter id={glowId} x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="6" result="blur" />
-          <feFlood floodColor={color} floodOpacity="0.45" result="color" />
-          <feComposite in="color" in2="blur" operator="in" result="glow" />
-          <feMerge>
-            <feMergeNode in="glow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {/* Track */}
-      <circle
-        cx={RING_SIZE / 2}
-        cy={RING_SIZE / 2}
-        r={RING_RADIUS}
-        fill="none"
-        stroke="hsl(var(--muted))"
-        strokeWidth={RING_STROKE}
-        className="opacity-40"
-      />
-
-      {/* Progress */}
-      <circle
-        cx={RING_SIZE / 2}
-        cy={RING_SIZE / 2}
-        r={RING_RADIUS}
-        fill="none"
-        stroke={color}
-        strokeWidth={RING_STROKE}
-        strokeLinecap="round"
-        strokeDasharray={RING_CIRCUMFERENCE}
-        strokeDashoffset={offset}
-        filter={isRunning ? `url(#${glowId})` : undefined}
-        className="transition-all duration-1000 linear"
-      />
-    </svg>
-  );
-};
+// (DonutTimer is now a separate component)
 
 // ─── Queue Block Chip ──────────────────────────────────────────────
 interface QueueChipProps {
@@ -394,45 +333,16 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
       {/* ── Main content ───────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8 max-w-lg mx-auto w-full">
 
-        {/* Donut ring + center info */}
-        <div className="relative flex items-center justify-center">
-          <DonutRing progress={progress} color={subjectColor} isRunning={isRunning} />
-
-          {/* Center overlay */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            {/* Time */}
-            <span
-              className={cn(
-                "text-5xl font-mono font-bold tracking-tighter tabular-nums transition-colors duration-300",
-                isRunning && "text-foreground",
-                isPaused && "text-destructive",
-                !isRunning && !isPaused && "text-muted-foreground"
-              )}
-            >
-              {formattedTime}
-            </span>
-
-            {/* Mode label */}
-            <span className="text-sm text-muted-foreground mt-1.5 font-medium">
-              {statusLabel}
-            </span>
-
-            {/* Subject / break icon */}
-            <div className="mt-3 flex items-center gap-2">
-              {isBreak ? (
-                <Coffee className="h-4 w-4 text-primary" />
-              ) : (
-                <span
-                  className="h-3 w-3 rounded-full"
-                  style={{ backgroundColor: subjectColor }}
-                />
-              )}
-              <span className="text-xs font-semibold text-foreground/80 truncate max-w-[140px]">
-                {isBreak ? "Hora do Intervalo" : currentBlock?.subject?.name || "Disciplina"}
-              </span>
-            </div>
-          </div>
-        </div>
+        {/* Donut Timer */}
+        <DonutTimer
+          timeLeft={formattedTime}
+          progress={progress}
+          mode={isBreak ? "break" : "study"}
+          label={isBreak ? "Intervalo" : (currentBlock?.subject?.name || "Disciplina")}
+          subjectColor={subjectColor}
+          isRunning={isRunning}
+          isPaused={isPaused}
+        />
 
         {/* ── Controls ───────────────────────────────────────────── */}
         <div className="flex items-center gap-5">
