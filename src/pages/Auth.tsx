@@ -320,8 +320,11 @@ const Auth = () => {
                   onClick={async () => {
                     setLoading(true);
                     try {
+                      // Clear any stale session before starting OAuth to avoid refresh token conflicts
+                      await supabase.auth.signOut({ scope: 'local' });
+
                       const result = await lovable.auth.signInWithOAuth("google", {
-                        redirect_uri: window.location.origin,
+                        redirect_uri: `${window.location.origin}/dashboard`,
                       });
                       if (result?.error) {
                         toast({
