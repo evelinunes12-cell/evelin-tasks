@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Mountain, 
-  CheckCircle2, 
   FolderKanban, 
   Users, 
   Clock, 
@@ -14,7 +13,7 @@ import {
   ArrowLeft,
   Rocket,
   Timer,
-  Flame
+  BookOpen,
 } from "lucide-react";
 
 const features = [
@@ -25,9 +24,9 @@ const features = [
     color: "from-primary/20 to-primary/5"
   },
   {
-    icon: CheckCircle2,
-    title: "Status Personalizados",
-    description: "Defina seus próprios status de tarefa com cores personalizadas. Adapte o fluxo de trabalho ao seu estilo de produtividade.",
+    icon: BookOpen,
+    title: "Disciplinas e Grade Horária",
+    description: "Cadastre suas disciplinas e monte sua grade horária semanal para ter uma visão completa da sua rotina de estudos.",
     color: "from-emerald-500/20 to-emerald-500/5"
   },
   {
@@ -37,24 +36,24 @@ const features = [
     color: "from-blue-500/20 to-blue-500/5"
   },
   {
-    icon: Clock,
-    title: "Notificações Inteligentes",
-    description: "Receba lembretes sobre tarefas próximas do prazo e nunca perca uma deadline importante.",
-    color: "from-amber-500/20 to-amber-500/5"
+    icon: Timer,
+    title: "Ciclos de Estudo & Foco 🔥",
+    description: "Monte ciclos de estudo personalizados e use o Timer Pomodoro para manter o foco. Completar ciclos aumenta sua Ofensiva diária!",
+    color: "from-orange-500/20 to-orange-500/5"
   },
   {
-    icon: Timer,
-    title: "Modo Foco & Ofensiva 🔥",
-    description: "Use o Timer Pomodoro na barra superior para manter o foco. Completar ciclos de 25 minutos ou etapas de tarefas aumenta seu 'Foguinho' (Ofensiva diária).",
-    color: "from-orange-500/20 to-orange-500/5"
-  }
+    icon: Clock,
+    title: "Planner & Anotações",
+    description: "Use o Planner para criar anotações vinculadas a tarefas e disciplinas, definir metas e acompanhar seu progresso.",
+    color: "from-amber-500/20 to-amber-500/5"
+  },
 ];
 
 const Onboarding = () => {
   const navigate = useNavigate();
   const { completeOnboarding } = useOnboarding();
   const [currentStep, setCurrentStep] = useState(0);
-  const totalSteps = features.length + 1; // Features + Welcome
+  const totalSteps = features.length + 1;
 
   const handleNext = () => {
     if (currentStep < totalSteps - 1) {
@@ -110,7 +109,6 @@ const Onboarding = () => {
         <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur">
           <CardContent className="p-8 md:p-12">
             {currentStep === 0 ? (
-              // Welcome Screen
               <div className="text-center space-y-6 py-8">
                 <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground shadow-lg shadow-primary/25">
                   <Mountain className="w-10 h-10" />
@@ -118,20 +116,19 @@ const Onboarding = () => {
                 
                 <div className="space-y-3">
                   <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                    Bem-vindo ao Zenit
+                    Bem-vindo(a) ao Zenit!
                   </h1>
                   <p className="text-xl text-muted-foreground max-w-lg mx-auto">
-                    O ponto máximo da sua produtividade. Vamos conhecer os recursos que vão elevar seu foco.
+                    Para personalizarmos sua experiência, conte-nos um pouco mais sobre você.
                   </p>
                 </div>
 
                 <div className="pt-4 flex items-center justify-center gap-2 text-primary">
                   <Sparkles className="w-5 h-5 animate-pulse" />
-                  <span className="font-medium">Pronto para começar?</span>
+                  <span className="font-medium">Vamos conhecer os recursos do Zenit!</span>
                 </div>
               </div>
             ) : (
-              // Feature Screens
               <div className="grid md:grid-cols-2 gap-8 items-center py-4">
                 <div className={`aspect-square rounded-3xl bg-gradient-to-br ${features[currentStep - 1].color} flex items-center justify-center`}>
                   {(() => {
@@ -168,7 +165,6 @@ const Onboarding = () => {
             Anterior
           </Button>
 
-          {/* Step Indicators */}
           <div className="flex gap-2">
             {Array.from({ length: totalSteps }).map((_, index) => (
               <button
