@@ -1,25 +1,39 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Circle, ChevronDown, ChevronUp, Trophy } from "lucide-react";
+import { CheckCircle2, Circle, ChevronDown, ChevronUp, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useConfetti } from "@/hooks/useConfetti";
 
 export const OnboardingProgress = () => {
   const { data, isLoading } = useOnboardingStatus();
   const [isOpen, setIsOpen] = useState(true);
   const navigate = useNavigate();
+  const { triggerConfetti } = useConfetti();
+  const hasTriggeredConfetti = useRef(false);
 
-  // Recover minimized state from localStorage
   useEffect(() => {
     const savedState = localStorage.getItem("onboarding_open");
     if (savedState !== null) {
       setIsOpen(savedState === "true");
     }
   }, []);
+
+  // Trigger confetti when all steps completed
+  useEffect(() => {
+    if (data?.progress === 100 && !hasTriggeredConfetti.current) {
+      const alreadyCelebrated = localStorage.getItem("quick_start_celebrated");
+      if (!alreadyCelebrated) {
+        hasTriggeredConfetti.current = true;
+        localStorage.setItem("quick_start_celebrated", "true");
+        triggerConfetti();
+      }
+    }
+  }, [data?.progress, triggerConfetti]);
 
   const toggleOpen = () => {
     const newState = !isOpen;
@@ -40,14 +54,14 @@ export const OnboardingProgress = () => {
             <div className="flex items-center gap-4 flex-1">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10">
-                  <Trophy className="h-5 w-5 text-primary" />
+                  <Rocket className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <CardTitle className="text-base">
-                    {data.progress === 100 ? "Você é um mestre do Zenit! 🎉" : "Primeiros Passos"}
+                    {data.progress === 100 ? "Você completou o Guia! 🎉" : "Guia de Início Rápido"}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    {data.completedCount}/{data.total} concluídos
+                    {data.completedCount}/{data.total} missões concluídas
                   </p>
                 </div>
               </div>
