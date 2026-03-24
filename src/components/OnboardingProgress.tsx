@@ -84,6 +84,10 @@ export const OnboardingProgress = () => {
 
   if (isLoading || !data) return null;
 
+  // If user already completed the guide once, never show it again
+  const alreadyCelebrated = localStorage.getItem("quick_start_celebrated");
+  if (alreadyCelebrated) return null;
+
   // If completed everything and minimized, hide
   if (data.progress === 100 && !isOpen) return null;
 
