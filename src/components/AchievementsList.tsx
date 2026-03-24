@@ -89,7 +89,9 @@ export const AchievementsList = ({ userName }: AchievementsListProps) => {
                     />
                   </div>
                   <span className="text-xs font-medium leading-tight">{a.title}</span>
-                  <span className="text-[10px] text-muted-foreground">{a.required_value} dias</span>
+                  {a.required_value > 0 && (
+                    <span className="text-[10px] text-muted-foreground">{a.required_value} dias</span>
+                  )}
                 </button>
               );
             })}

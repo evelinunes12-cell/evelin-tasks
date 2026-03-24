@@ -26,11 +26,24 @@ export const StreakKeeper = () => {
           description: "Você ficou mais de um dia sem praticar. Sua ofensiva e todas as conquistas foram reiniciadas.",
         });
 
-        // 2. Resetar conquistas desbloqueadas
-        await supabase
+        // 2. Resetar conquistas desbloqueadas (exceto Pioneiro, que é permanente)
+        // First, find the Pioneiro achievement ID to exclude it
+        const { data: pioneiroAch } = await supabase
+          .from("achievements")
+          .select("id")
+          .eq("title", "Pioneiro")
+          .maybeSingle();
+
+        let deleteQuery = supabase
           .from("user_achievements")
           .delete()
           .eq("user_id", user.id);
+
+        if (pioneiroAch) {
+          deleteQuery = deleteQuery.neq("achievement_id", pioneiroAch.id);
+        }
+
+        await deleteQuery;
 
         // 3. Atualizar o banco para 0 para não avisar de novo no próximo F5
         const { error } = await supabase
