@@ -1,8 +1,6 @@
-import { useState } from "react";
-import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,12 +8,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Plus, Clock, StickyNote, Target } from "lucide-react";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 
 interface CalendarSidebarProps {
-  selectedDate: Date;
-  onDateSelect: (date: Date) => void;
   filters: {
     schedules: boolean;
     notes: boolean;
@@ -28,8 +22,6 @@ interface CalendarSidebarProps {
 }
 
 export function CalendarSidebar({
-  selectedDate,
-  onDateSelect,
   filters,
   onFilterChange,
   onCreateNote,
@@ -60,38 +52,6 @@ export function CalendarSidebar({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <div className="rounded-lg border bg-card p-1">
-        <Calendar
-          mode="single"
-          selected={selectedDate}
-          onSelect={(d) => d && onDateSelect(d)}
-          locale={ptBR}
-          className={cn("p-2 pointer-events-auto w-full")}
-          classNames={{
-            months: "flex flex-col",
-            month: "space-y-2",
-            caption: "flex justify-center pt-1 relative items-center",
-            caption_label: "text-xs font-medium",
-            nav: "space-x-1 flex items-center",
-            nav_button: "h-6 w-6 bg-transparent p-0 opacity-50 hover:opacity-100 inline-flex items-center justify-center rounded-md border border-input",
-            nav_button_previous: "absolute left-1",
-            nav_button_next: "absolute right-1",
-            table: "w-full border-collapse",
-            head_row: "flex",
-            head_cell: "text-muted-foreground rounded-md w-8 font-normal text-[0.65rem]",
-            row: "flex w-full mt-1",
-            cell: "h-8 w-8 text-center text-xs p-0 relative",
-            day: "h-8 w-8 p-0 font-normal text-xs hover:bg-accent rounded-full inline-flex items-center justify-center",
-            day_range_end: "day-range-end",
-            day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-full",
-            day_today: "bg-accent text-accent-foreground font-semibold",
-            day_outside: "text-muted-foreground opacity-50",
-            day_disabled: "text-muted-foreground opacity-50",
-            day_hidden: "invisible",
-          }}
-        />
-      </div>
 
       <div className="space-y-3">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
