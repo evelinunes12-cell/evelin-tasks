@@ -165,7 +165,7 @@ const Planner = () => {
 
   // Schedule mutations
   const createScheduleMut = useMutation({
-    mutationFn: (data: { title: string; type: "fixed" | "variable"; days: number[]; start_time: string; end_time: string; color: string }) => {
+    mutationFn: async (data: { title: string; type: "fixed" | "variable"; days: number[]; start_time: string; end_time: string; color: string }) => {
       const records = data.days.map((d) => ({
         user_id: user!.id,
         title: data.title,
@@ -175,7 +175,11 @@ const Planner = () => {
         end_time: data.end_time,
         color: data.color,
       }));
-      return records.length === 1 ? createStudySchedule(records[0]) : createMultipleStudySchedules(records);
+      if (records.length === 1) {
+        await createStudySchedule(records[0]);
+      } else {
+        await createMultipleStudySchedules(records);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["study-schedules"] });
