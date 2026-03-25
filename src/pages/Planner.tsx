@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { registerActivity } from "@/services/activity";
 import { logXP, XP } from "@/services/scoring";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,14 +29,16 @@ import { NoteDialog } from "@/components/planner/NoteDialog";
 import { GoalDialog } from "@/components/planner/GoalDialog";
 import { ScheduleBlockDialog } from "@/components/ScheduleBlockDialog";
 import { CalendarSidebar } from "@/components/planner/CalendarSidebar";
-import { CalendarHeader } from "@/components/planner/CalendarHeader";
+import { CalendarHeader, PlannerView } from "@/components/planner/CalendarHeader";
 import { CalendarMonthView } from "@/components/planner/CalendarMonthView";
 import { CalendarWeekView } from "@/components/planner/CalendarWeekView";
+import { DayDetailSheet } from "@/components/planner/DayDetailSheet";
+import { NotesListView } from "@/components/planner/NotesListView";
+import { GoalsListView } from "@/components/planner/GoalsListView";
 import {
   createStudySchedule,
   createMultipleStudySchedules,
   updateStudySchedule,
-  deleteStudySchedule,
 } from "@/services/studySchedules";
 import {
   DropdownMenu,
@@ -58,7 +61,7 @@ const Planner = () => {
   const isMobile = useIsMobile();
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [calendarView, setCalendarView] = useState<"month" | "week">("month");
+  const [calendarView, setCalendarView] = useState<PlannerView>("month");
   const [filters, setFilters] = useState({ schedules: true, notes: true, goals: true });
 
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
@@ -69,6 +72,13 @@ const Planner = () => {
   const [editingSchedule, setEditingSchedule] = useState<StudySchedule | null>(null);
   const [prefillDate, setPrefillDate] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const [dayDetailOpen, setDayDetailOpen] = useState(false);
+  const [dayDetailDate, setDayDetailDate] = useState<Date | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
 
   if (!loading && !user) {
     navigate("/auth");
@@ -199,6 +209,26 @@ const Planner = () => {
     onError: () => toast.error("Erro ao atualizar horário"),
   });
 
+  // Drag and drop handler
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const overData = over.data.current as { dateStr: string } | undefined;
+    if (!overData?.dateStr) return;
+
+    const activeData = active.data.current as { type: string; id: string } | undefined;
+    if (!activeData) return;
+
+    const newDate = overData.dateStr;
+
+    if (activeData.type === "note") {
+      updateNoteMut.mutate({ id: activeData.id, planned_date: newDate });
+    } else if (activeData.type === "goal") {
+      updateGoalMut.mutate({ id: activeData.id, target_date: newDate });
+    }
+  };
+
   // Handlers
   const handleSaveNote = (data: { title: string; content: string; subject_id: string | null; task_id: string | null; planned_date: string | null }) => {
     if (editingNote) {
@@ -252,8 +282,8 @@ const Planner = () => {
   };
 
   const handleClickDay = (date: Date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    openNewNote(dateStr);
+    setDayDetailDate(date);
+    setDayDetailOpen(true);
   };
 
   const handleFilterChange = (key: "schedules" | "notes" | "goals", value: boolean) => {
@@ -261,11 +291,10 @@ const Planner = () => {
   };
 
   const prefillNote = editingNote || (prefillDate ? { planned_date: prefillDate } as PlannerNote : null);
+  const isCalendarView = calendarView === "month" || calendarView === "week";
 
   const sidebarContent = (
     <CalendarSidebar
-      selectedDate={currentDate}
-      onDateSelect={(d) => { setCurrentDate(d); setSidebarOpen(false); }}
       filters={filters}
       onFilterChange={handleFilterChange}
       onCreateNote={() => { openNewNote(); setSidebarOpen(false); }}
@@ -302,35 +331,37 @@ const Planner = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-9 w-9">
-                    <Menu className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[280px] p-4">
-                  <SheetHeader>
-                    <SheetTitle className="text-left">Filtros</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-4">
-                    {sidebarContent}
-                  </div>
-                </SheetContent>
-              </Sheet>
+              {isCalendarView && (
+                <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-9 w-9">
+                      <Menu className="h-4 w-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[280px] p-4">
+                    <SheetHeader>
+                      <SheetTitle className="text-left">Filtros</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-4">
+                      {sidebarContent}
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
             </div>
           )}
         </div>
       </header>
 
       <div className="flex flex-1">
-        {/* Desktop sidebar */}
-        {!isMobile && (
+        {/* Desktop sidebar - only for calendar views */}
+        {!isMobile && isCalendarView && (
           <div className="w-[250px] shrink-0 border-r p-4 hidden md:block">
             {sidebarContent}
           </div>
         )}
 
-        {/* Main calendar area */}
+        {/* Main area */}
         <main className="flex-1 flex flex-col p-4 md:p-5 min-h-0 overflow-auto">
           <CalendarHeader
             currentDate={currentDate}
@@ -340,35 +371,77 @@ const Planner = () => {
             onToday={() => setCurrentDate(new Date())}
           />
 
-          <div className="flex-1 border rounded-lg overflow-hidden bg-card">
-            {calendarView === "month" ? (
-              <CalendarMonthView
-                currentDate={currentDate}
-                schedules={schedules}
-                notes={notes}
-                goals={goals}
-                filters={filters}
-                onClickNote={openEditNote}
-                onClickGoal={openEditGoal}
-                onClickSchedule={openEditSchedule}
-                onClickDay={handleClickDay}
-              />
-            ) : (
-              <CalendarWeekView
-                currentDate={currentDate}
-                schedules={schedules}
-                notes={notes}
-                goals={goals}
-                filters={filters}
-                onClickNote={openEditNote}
-                onClickGoal={openEditGoal}
-                onClickSchedule={openEditSchedule}
-                onClickDay={handleClickDay}
-              />
-            )}
-          </div>
+          {isCalendarView ? (
+            <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+              <div className="flex-1 border rounded-lg overflow-hidden bg-card">
+                {calendarView === "month" ? (
+                  <CalendarMonthView
+                    currentDate={currentDate}
+                    schedules={schedules}
+                    notes={notes}
+                    goals={goals}
+                    filters={filters}
+                    onClickNote={openEditNote}
+                    onClickGoal={openEditGoal}
+                    onClickSchedule={openEditSchedule}
+                    onClickDay={handleClickDay}
+                  />
+                ) : (
+                  <CalendarWeekView
+                    currentDate={currentDate}
+                    schedules={schedules}
+                    notes={notes}
+                    goals={goals}
+                    filters={filters}
+                    onClickNote={openEditNote}
+                    onClickGoal={openEditGoal}
+                    onClickSchedule={openEditSchedule}
+                    onClickDay={handleClickDay}
+                  />
+                )}
+              </div>
+            </DndContext>
+          ) : calendarView === "notes" ? (
+            <NotesListView
+              notes={notes}
+              onEdit={openEditNote}
+              onDelete={(id) => deleteNoteMut.mutate(id)}
+              onTogglePin={(id, pinned) => updateNoteMut.mutate({ id, pinned })}
+              onToggleComplete={(id, completed) => updateNoteMut.mutate({ id, completed })}
+              onCreate={() => openNewNote()}
+            />
+          ) : (
+            <GoalsListView
+              goals={goals}
+              onEdit={openEditGoal}
+              onDelete={(id) => deleteGoalMut.mutate(id)}
+              onToggleComplete={(id, completed) => updateGoalMut.mutate({ id, completed })}
+              onProgressChange={(id, progress) => updateGoalMut.mutate({ id, progress })}
+              onCreate={() => openNewGoal()}
+            />
+          )}
         </main>
       </div>
+
+      {/* Day detail sheet */}
+      <DayDetailSheet
+        open={dayDetailOpen}
+        onOpenChange={setDayDetailOpen}
+        date={dayDetailDate}
+        schedules={schedules}
+        notes={notes}
+        goals={goals}
+        filters={filters}
+        onEditNote={openEditNote}
+        onEditGoal={openEditGoal}
+        onEditSchedule={openEditSchedule}
+        onDeleteNote={(id) => deleteNoteMut.mutate(id)}
+        onDeleteGoal={(id) => deleteGoalMut.mutate(id)}
+        onToggleNoteComplete={(id, completed) => updateNoteMut.mutate({ id, completed })}
+        onToggleGoalComplete={(id, completed) => updateGoalMut.mutate({ id, completed })}
+        onCreateNote={(date) => openNewNote(date)}
+        onCreateGoal={() => openNewGoal()}
+      />
 
       {/* Dialogs */}
       <NoteDialog

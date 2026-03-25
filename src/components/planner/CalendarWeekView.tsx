@@ -10,7 +10,8 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { PlannerNote, PlannerGoal } from "@/services/planner";
 import { StudySchedule } from "@/services/studySchedules";
-import { CalendarEventPill } from "./CalendarEventPill";
+import { DraggableEventPill } from "./DraggableEventPill";
+import { DroppableDayCell } from "./DroppableDayCell";
 
 interface CalendarWeekViewProps {
   currentDate: Date;
@@ -67,22 +68,17 @@ export function CalendarWeekView({
       if (!map.has(s.day_of_week)) map.set(s.day_of_week, []);
       map.get(s.day_of_week)!.push(s);
     });
-    // Sort by start_time
     map.forEach((arr) => arr.sort((a, b) => a.start_time.localeCompare(b.start_time)));
     return map;
   }, [schedules]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Day headers */}
       <div className="grid grid-cols-7 border-b">
         {days.map((day) => {
           const today = isToday(day);
           return (
-            <div
-              key={day.toISOString()}
-              className="py-3 text-center border-r last:border-r-0"
-            >
+            <div key={day.toISOString()} className="py-3 text-center border-r last:border-r-0">
               <div className="text-xs text-muted-foreground uppercase">
                 {format(day, "EEE", { locale: ptBR })}
               </div>
@@ -99,7 +95,6 @@ export function CalendarWeekView({
         })}
       </div>
 
-      {/* Day columns */}
       <div className="grid grid-cols-7 flex-1">
         {days.map((day) => {
           const dateStr = format(day, "yyyy-MM-dd");
@@ -110,14 +105,16 @@ export function CalendarWeekView({
           const daySchedules = filters.schedules ? schedulesByDow.get(dow) || [] : [];
 
           return (
-            <div
+            <DroppableDayCell
               key={dateStr}
+              dateStr={dateStr}
               className="border-r last:border-r-0 p-1.5 space-y-1 min-h-[300px] cursor-pointer hover:bg-accent/20 transition-colors"
               onClick={() => onClickDay(day)}
             >
               {daySchedules.map((s) => (
-                <CalendarEventPill
+                <DraggableEventPill
                   key={s.id}
+                  id={s.id}
                   type="schedule"
                   title={s.title}
                   time={s.start_time?.slice(0, 5)}
@@ -129,8 +126,9 @@ export function CalendarWeekView({
                 />
               ))}
               {dayNotes.map((n) => (
-                <CalendarEventPill
+                <DraggableEventPill
                   key={n.id}
+                  id={n.id}
                   type="note"
                   title={n.title}
                   completed={n.completed}
@@ -141,8 +139,9 @@ export function CalendarWeekView({
                 />
               ))}
               {dayGoals.map((g) => (
-                <CalendarEventPill
+                <DraggableEventPill
                   key={g.id}
+                  id={g.id}
                   type="goal"
                   title={g.title}
                   completed={g.completed}
@@ -152,7 +151,7 @@ export function CalendarWeekView({
                   }}
                 />
               ))}
-            </div>
+            </DroppableDayCell>
           );
         })}
       </div>

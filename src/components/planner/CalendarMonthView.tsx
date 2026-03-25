@@ -10,11 +10,11 @@ import {
   isToday,
   getDay,
 } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { PlannerNote, PlannerGoal } from "@/services/planner";
 import { StudySchedule } from "@/services/studySchedules";
-import { CalendarEventPill } from "./CalendarEventPill";
+import { DraggableEventPill } from "./DraggableEventPill";
+import { DroppableDayCell } from "./DroppableDayCell";
 
 const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -83,7 +83,6 @@ export function CalendarMonthView({
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Weekday headers */}
       <div className="grid grid-cols-7 border-b">
         {WEEKDAY_LABELS.map((d) => (
           <div key={d} className="py-2 text-center text-xs font-medium text-muted-foreground">
@@ -92,7 +91,6 @@ export function CalendarMonthView({
         ))}
       </div>
 
-      {/* Day cells */}
       <div className="grid grid-cols-7 flex-1 auto-rows-fr">
         {days.map((day) => {
           const dateStr = format(day, "yyyy-MM-dd");
@@ -105,7 +103,6 @@ export function CalendarMonthView({
           const daySchedules = filters.schedules ? schedulesByDow.get(dow) || [] : [];
 
           const allEvents: { type: "schedule" | "note" | "goal"; item: any; time?: string }[] = [];
-
           daySchedules.forEach((s) =>
             allEvents.push({ type: "schedule", item: s, time: s.start_time?.slice(0, 5) })
           );
@@ -116,8 +113,9 @@ export function CalendarMonthView({
           const overflow = allEvents.length - MAX_VISIBLE;
 
           return (
-            <div
+            <DroppableDayCell
               key={dateStr}
+              dateStr={dateStr}
               className={cn(
                 "border-b border-r p-1 min-h-[90px] cursor-pointer transition-colors hover:bg-accent/30",
                 !inMonth && "bg-muted/30"
@@ -137,10 +135,11 @@ export function CalendarMonthView({
               </div>
               <div className="space-y-0.5 mt-0.5">
                 {visible.map((ev, i) => (
-                  <CalendarEventPill
-                    key={i}
+                  <DraggableEventPill
+                    key={`${ev.type}-${ev.item.id}-${i}`}
+                    id={ev.item.id}
                     type={ev.type}
-                    title={ev.type === "schedule" ? ev.item.title : ev.type === "note" ? ev.item.title : ev.item.title}
+                    title={ev.item.title}
                     time={ev.time}
                     color={ev.type === "schedule" ? ev.item.color : undefined}
                     completed={ev.type === "goal" ? ev.item.completed : ev.type === "note" ? ev.item.completed : false}
@@ -158,7 +157,7 @@ export function CalendarMonthView({
                   </span>
                 )}
               </div>
-            </div>
+            </DroppableDayCell>
           );
         })}
       </div>
