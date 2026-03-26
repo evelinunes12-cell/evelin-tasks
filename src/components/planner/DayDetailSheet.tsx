@@ -31,6 +31,7 @@ interface DayDetailSheetProps {
   onEditSchedule: (schedule: StudySchedule) => void;
   onDeleteNote: (id: string) => void;
   onDeleteGoal: (id: string) => void;
+  onDeleteSchedule: (id: string) => void;
   onToggleNoteComplete: (id: string, completed: boolean) => void;
   onToggleGoalComplete: (id: string, completed: boolean) => void;
   onCreateNote: (date: string) => void;
@@ -50,6 +51,7 @@ export function DayDetailSheet({
   onEditSchedule,
   onDeleteNote,
   onDeleteGoal,
+  onDeleteSchedule,
   onToggleNoteComplete,
   onToggleGoalComplete,
   onCreateNote,
@@ -115,11 +117,10 @@ export function DayDetailSheet({
                   {daySchedules.map((s) => (
                     <div
                       key={s.id}
-                      className="flex items-center gap-3 p-3 rounded-lg border bg-blue-500/5 hover:bg-blue-500/10 cursor-pointer transition-colors"
-                      onClick={() => { onEditSchedule(s); onOpenChange(false); }}
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-blue-500/5 hover:bg-blue-500/10 transition-colors"
                       style={s.color ? { borderLeftColor: s.color, borderLeftWidth: 3 } : undefined}
                     >
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => { onEditSchedule(s); onOpenChange(false); }}>
                         <p className="text-sm font-medium truncate">{s.title}</p>
                         <p className="text-xs text-muted-foreground">
                           {s.start_time?.slice(0, 5)} - {s.end_time?.slice(0, 5)}
@@ -128,6 +129,23 @@ export function DayDetailSheet({
                       <Badge variant="outline" className="text-[10px] shrink-0">
                         {s.type === "fixed" ? "Fixo" : "Variável"}
                       </Badge>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir horário</AlertDialogTitle>
+                            <AlertDialogDescription>Tem certeza que deseja excluir este horário? Esta ação não pode ser desfeita.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => onDeleteSchedule(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   ))}
                 </div>
