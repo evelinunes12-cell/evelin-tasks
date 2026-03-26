@@ -40,6 +40,7 @@ import {
   createMultipleStudySchedules,
   updateStudySchedule,
 } from "@/services/studySchedules";
+import { deleteStudySchedule } from "@/services/studySchedules";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -207,6 +208,15 @@ const Planner = () => {
       toast.success("Horário atualizado!");
     },
     onError: () => toast.error("Erro ao atualizar horário"),
+  });
+
+  const deleteScheduleMut = useMutation({
+    mutationFn: deleteStudySchedule,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["study-schedules"] });
+      toast.success("Horário removido!");
+    },
+    onError: () => toast.error("Erro ao remover horário"),
   });
 
   // Drag and drop handler
@@ -437,6 +447,7 @@ const Planner = () => {
         onEditSchedule={openEditSchedule}
         onDeleteNote={(id) => deleteNoteMut.mutate(id)}
         onDeleteGoal={(id) => deleteGoalMut.mutate(id)}
+        onDeleteSchedule={(id) => deleteScheduleMut.mutate(id)}
         onToggleNoteComplete={(id, completed) => updateNoteMut.mutate({ id, completed })}
         onToggleGoalComplete={(id, completed) => updateGoalMut.mutate({ id, completed })}
         onCreateNote={(date) => openNewNote(date)}
@@ -470,6 +481,10 @@ const Planner = () => {
         }}
         onUpdate={(id, data) => {
           updateScheduleMut.mutate({ id, ...data });
+          setScheduleDialogOpen(false);
+        }}
+        onDelete={(id) => {
+          deleteScheduleMut.mutate(id);
           setScheduleDialogOpen(false);
         }}
       />
