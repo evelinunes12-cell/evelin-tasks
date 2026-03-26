@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,10 +50,11 @@ interface Props {
     end_time: string;
     color: string;
   }) => void;
+  onDelete?: (id: string) => void;
   editingBlock?: StudySchedule | null;
 }
 
-export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, editingBlock }: Props) {
+export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDelete, editingBlock }: Props) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState<"fixed" | "variable">("fixed");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
@@ -197,11 +202,30 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, edit
             </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSubmit} disabled={!isValid}>
-            {editingBlock ? "Salvar" : "Criar"}
-          </Button>
+        <DialogFooter className="flex-row justify-between sm:justify-between">
+          {editingBlock && onDelete ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">Excluir</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir horário</AlertDialogTitle>
+                  <AlertDialogDescription>Tem certeza que deseja excluir este horário? Esta ação não pode ser desfeita.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(editingBlock.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : <div />}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button onClick={handleSubmit} disabled={!isValid}>
+              {editingBlock ? "Salvar" : "Criar"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
