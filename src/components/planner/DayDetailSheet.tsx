@@ -2,7 +2,8 @@ import { format, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PlannerNote, PlannerGoal } from "@/services/planner";
 import { StudySchedule } from "@/services/studySchedules";
-import { Clock, StickyNote, Target, Pencil, Trash2, Check, RotateCcw, Plus } from "lucide-react";
+import { Task } from "@/services/tasks";
+import { Clock, StickyNote, Target, ClipboardList, Pencil, Trash2, Check, RotateCcw, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,10 +26,12 @@ interface DayDetailSheetProps {
   schedules: StudySchedule[];
   notes: PlannerNote[];
   goals: PlannerGoal[];
-  filters: { schedules: boolean; notes: boolean; goals: boolean };
+  tasks: Task[];
+  filters: { schedules: boolean; notes: boolean; goals: boolean; tasks: boolean };
   onEditNote: (note: PlannerNote) => void;
   onEditGoal: (goal: PlannerGoal) => void;
   onEditSchedule: (schedule: StudySchedule) => void;
+  onClickTask: (task: Task) => void;
   onDeleteNote: (id: string) => void;
   onDeleteGoal: (id: string) => void;
   onDeleteSchedule: (id: string) => void;
@@ -45,10 +48,12 @@ export function DayDetailSheet({
   schedules,
   notes,
   goals,
+  tasks,
   filters,
   onEditNote,
   onEditGoal,
   onEditSchedule,
+  onClickTask,
   onDeleteNote,
   onDeleteGoal,
   onDeleteSchedule,
@@ -71,8 +76,11 @@ export function DayDetailSheet({
   const dayGoals = filters.goals
     ? goals.filter((g) => g.target_date === dateStr)
     : [];
+  const dayTasks = filters.tasks
+    ? tasks.filter((t) => t.due_date === dateStr && !t.is_archived)
+    : [];
 
-  const isEmpty = daySchedules.length === 0 && dayNotes.length === 0 && dayGoals.length === 0;
+  const isEmpty = daySchedules.length === 0 && dayNotes.length === 0 && dayGoals.length === 0 && dayTasks.length === 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -152,7 +160,46 @@ export function DayDetailSheet({
               </section>
             )}
 
-            {daySchedules.length > 0 && (dayNotes.length > 0 || dayGoals.length > 0) && <Separator />}
+            {daySchedules.length > 0 && (dayTasks.length > 0 || dayNotes.length > 0 || dayGoals.length > 0) && <Separator />}
+
+            {/* Tasks */}
+            {dayTasks.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4 text-violet-500" />
+                  <h3 className="text-sm font-semibold">Tarefas</h3>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{dayTasks.length}</Badge>
+                </div>
+                <div className="space-y-2">
+                  {dayTasks.map((t) => {
+                    const isCompleted = t.status === "completed";
+                    return (
+                      <div
+                        key={t.id}
+                        className={`p-3 rounded-lg border bg-violet-500/5 hover:bg-violet-500/10 transition-colors cursor-pointer ${isCompleted ? "opacity-60" : ""}`}
+                        onClick={() => { onClickTask(t); onOpenChange(false); }}
+                      >
+                        <p className={`text-sm font-medium ${isCompleted ? "line-through" : ""}`}>
+                          {t.subject_name}
+                        </p>
+                        {t.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {t.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            {t.status === "completed" ? "Concluída" : t.status === "in_progress" ? "Em andamento" : "Pendente"}
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {dayTasks.length > 0 && (dayNotes.length > 0 || dayGoals.length > 0) && <Separator />}
 
             {/* Notes */}
             {dayNotes.length > 0 && (

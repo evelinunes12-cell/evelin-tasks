@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { PlannerNote, PlannerGoal } from "@/services/planner";
 import { StudySchedule } from "@/services/studySchedules";
+import { Task } from "@/services/tasks";
 import { DraggableEventPill } from "./DraggableEventPill";
 import { DroppableDayCell } from "./DroppableDayCell";
 
@@ -23,10 +24,12 @@ interface CalendarMonthViewProps {
   schedules: StudySchedule[];
   notes: PlannerNote[];
   goals: PlannerGoal[];
-  filters: { schedules: boolean; notes: boolean; goals: boolean };
+  tasks: Task[];
+  filters: { schedules: boolean; notes: boolean; goals: boolean; tasks: boolean };
   onClickNote: (note: PlannerNote) => void;
   onClickGoal: (goal: PlannerGoal) => void;
   onClickSchedule: (schedule: StudySchedule) => void;
+  onClickTask: (task: Task) => void;
   onClickDay: (date: Date) => void;
 }
 
@@ -35,10 +38,12 @@ export function CalendarMonthView({
   schedules,
   notes,
   goals,
+  tasks,
   filters,
   onClickNote,
   onClickGoal,
   onClickSchedule,
+  onClickTask,
   onClickDay,
 }: CalendarMonthViewProps) {
   const days = useMemo(() => {
@@ -79,6 +84,17 @@ export function CalendarMonthView({
     return map;
   }, [schedules]);
 
+  const tasksByDate = useMemo(() => {
+    const map = new Map<string, Task[]>();
+    tasks.forEach((t) => {
+      if (t.due_date && !t.is_archived) {
+        if (!map.has(t.due_date)) map.set(t.due_date, []);
+        map.get(t.due_date)!.push(t);
+      }
+    });
+    return map;
+  }, [tasks]);
+
   const MAX_VISIBLE = 3;
 
   return (
@@ -101,11 +117,13 @@ export function CalendarMonthView({
           const dayNotes = filters.notes ? notesByDate.get(dateStr) || [] : [];
           const dayGoals = filters.goals ? goalsByDate.get(dateStr) || [] : [];
           const daySchedules = filters.schedules ? schedulesByDow.get(dow) || [] : [];
+          const dayTasks = filters.tasks ? tasksByDate.get(dateStr) || [] : [];
 
-          const allEvents: { type: "schedule" | "note" | "goal"; item: any; time?: string }[] = [];
+          const allEvents: { type: "schedule" | "note" | "goal" | "task"; item: any; time?: string }[] = [];
           daySchedules.forEach((s) =>
             allEvents.push({ type: "schedule", item: s, time: s.start_time?.slice(0, 5) })
           );
+          dayTasks.forEach((t) => allEvents.push({ type: "task", item: t }));
           dayNotes.forEach((n) => allEvents.push({ type: "note", item: n }));
           dayGoals.forEach((g) => allEvents.push({ type: "goal", item: g }));
 
@@ -139,14 +157,20 @@ export function CalendarMonthView({
                     key={`${ev.type}-${ev.item.id}-${i}`}
                     id={ev.item.id}
                     type={ev.type}
-                    title={ev.item.title}
+                    title={ev.type === "task" ? ev.item.subject_name : ev.item.title}
                     time={ev.time}
                     color={ev.type === "schedule" ? ev.item.color : undefined}
-                    completed={ev.type === "goal" ? ev.item.completed : ev.type === "note" ? ev.item.completed : false}
+                    completed={
+                      ev.type === "goal" ? ev.item.completed
+                      : ev.type === "note" ? ev.item.completed
+                      : ev.type === "task" ? ev.item.status === "completed"
+                      : false
+                    }
                     onClick={(e) => {
                       e.stopPropagation();
                       if (ev.type === "note") onClickNote(ev.item);
                       else if (ev.type === "goal") onClickGoal(ev.item);
+                      else if (ev.type === "task") onClickTask(ev.item);
                       else onClickSchedule(ev.item);
                     }}
                   />
