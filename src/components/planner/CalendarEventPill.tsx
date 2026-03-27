@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
-import { Clock, StickyNote, Target, Flag } from "lucide-react";
+import { Clock, StickyNote, Target, ClipboardList } from "lucide-react";
 
 interface CalendarEventPillProps {
-  type: "schedule" | "note" | "goal";
+  type: "schedule" | "note" | "goal" | "task";
   title: string;
   time?: string;
   color?: string | null;
@@ -25,6 +25,11 @@ const typeConfig = {
     bg: "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300",
     dot: "bg-emerald-500",
     icon: Target,
+  },
+  task: {
+    bg: "bg-violet-500/15 hover:bg-violet-500/25 text-violet-700 dark:text-violet-300",
+    dot: "bg-violet-500",
+    icon: ClipboardList,
   },
 };
 

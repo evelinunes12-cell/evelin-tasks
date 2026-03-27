@@ -14,6 +14,7 @@ export interface Task {
   status: string;
   user_id: string;
   environment_id: string | null;
+  is_archived: boolean;
   created_at: string;
   updated_at: string;
   checklist: ChecklistItem[];

@@ -10,6 +10,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { PlannerNote, PlannerGoal } from "@/services/planner";
 import { StudySchedule } from "@/services/studySchedules";
+import { Task } from "@/services/tasks";
 import { DraggableEventPill } from "./DraggableEventPill";
 import { DroppableDayCell } from "./DroppableDayCell";
 
@@ -18,10 +19,12 @@ interface CalendarWeekViewProps {
   schedules: StudySchedule[];
   notes: PlannerNote[];
   goals: PlannerGoal[];
-  filters: { schedules: boolean; notes: boolean; goals: boolean };
+  tasks: Task[];
+  filters: { schedules: boolean; notes: boolean; goals: boolean; tasks: boolean };
   onClickNote: (note: PlannerNote) => void;
   onClickGoal: (goal: PlannerGoal) => void;
   onClickSchedule: (schedule: StudySchedule) => void;
+  onClickTask: (task: Task) => void;
   onClickDay: (date: Date) => void;
 }
 
@@ -30,10 +33,12 @@ export function CalendarWeekView({
   schedules,
   notes,
   goals,
+  tasks,
   filters,
   onClickNote,
   onClickGoal,
   onClickSchedule,
+  onClickTask,
   onClickDay,
 }: CalendarWeekViewProps) {
   const days = useMemo(() => {
@@ -72,6 +77,17 @@ export function CalendarWeekView({
     return map;
   }, [schedules]);
 
+  const tasksByDate = useMemo(() => {
+    const map = new Map<string, Task[]>();
+    tasks.forEach((t) => {
+      if (t.due_date && !t.is_archived) {
+        if (!map.has(t.due_date)) map.set(t.due_date, []);
+        map.get(t.due_date)!.push(t);
+      }
+    });
+    return map;
+  }, [tasks]);
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="grid grid-cols-7 border-b">
@@ -103,6 +119,7 @@ export function CalendarWeekView({
           const dayNotes = filters.notes ? notesByDate.get(dateStr) || [] : [];
           const dayGoals = filters.goals ? goalsByDate.get(dateStr) || [] : [];
           const daySchedules = filters.schedules ? schedulesByDow.get(dow) || [] : [];
+          const dayTasks = filters.tasks ? tasksByDate.get(dateStr) || [] : [];
 
           return (
             <DroppableDayCell
@@ -122,6 +139,19 @@ export function CalendarWeekView({
                   onClick={(e) => {
                     e.stopPropagation();
                     onClickSchedule(s);
+                  }}
+                />
+              ))}
+              {dayTasks.map((t) => (
+                <DraggableEventPill
+                  key={t.id}
+                  id={t.id}
+                  type="task"
+                  title={t.subject_name}
+                  completed={t.status === "completed"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClickTask(t);
                   }}
                 />
               ))}

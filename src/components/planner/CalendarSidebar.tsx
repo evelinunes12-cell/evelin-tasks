@@ -7,15 +7,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Clock, StickyNote, Target } from "lucide-react";
+import { Plus, Clock, StickyNote, Target, ClipboardList } from "lucide-react";
 
 interface CalendarSidebarProps {
   filters: {
     schedules: boolean;
     notes: boolean;
     goals: boolean;
+    tasks: boolean;
   };
-  onFilterChange: (key: "schedules" | "notes" | "goals", value: boolean) => void;
+  onFilterChange: (key: "schedules" | "notes" | "goals" | "tasks", value: boolean) => void;
   onCreateNote: () => void;
   onCreateGoal: () => void;
   onCreateSchedule: () => void;
@@ -97,6 +98,20 @@ export function CalendarSidebar({
               id="f-goals"
               checked={filters.goals}
               onCheckedChange={(v) => onFilterChange("goals", v)}
+              className="scale-75"
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-2.5 w-2.5 rounded-full bg-violet-500" />
+              <Label htmlFor="f-tasks" className="text-sm font-normal cursor-pointer">
+                Tarefas
+              </Label>
+            </div>
+            <Switch
+              id="f-tasks"
+              checked={filters.tasks}
+              onCheckedChange={(v) => onFilterChange("tasks", v)}
               className="scale-75"
             />
           </div>
