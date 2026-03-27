@@ -25,6 +25,7 @@ import {
 } from "@/services/planner";
 import { fetchSubjects } from "@/services/subjects";
 import { fetchStudySchedules, StudySchedule } from "@/services/studySchedules";
+import { fetchTasks, Task } from "@/services/tasks";
 import { NoteDialog } from "@/components/planner/NoteDialog";
 import { GoalDialog } from "@/components/planner/GoalDialog";
 import { ScheduleBlockDialog } from "@/components/ScheduleBlockDialog";
@@ -63,7 +64,7 @@ const Planner = () => {
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarView, setCalendarView] = useState<PlannerView>("month");
-  const [filters, setFilters] = useState({ schedules: true, notes: true, goals: true });
+  const [filters, setFilters] = useState({ schedules: true, notes: true, goals: true, tasks: true });
 
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<PlannerNote | null>(null);
@@ -108,6 +109,12 @@ const Planner = () => {
     queryKey: ["study-schedules", user?.id],
     queryFn: () => fetchStudySchedules(user!.id),
     enabled: !!user?.id,
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["tasks"],
+    queryFn: fetchTasks,
+    enabled: !!user,
   });
 
   // Note mutations
@@ -296,7 +303,11 @@ const Planner = () => {
     setDayDetailOpen(true);
   };
 
-  const handleFilterChange = (key: "schedules" | "notes" | "goals", value: boolean) => {
+  const handleClickTask = (task: Task) => {
+    navigate(`/tasks/${task.id}`);
+  };
+
+  const handleFilterChange = (key: "schedules" | "notes" | "goals" | "tasks", value: boolean) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -390,10 +401,12 @@ const Planner = () => {
                     schedules={schedules}
                     notes={notes}
                     goals={goals}
+                    tasks={tasks}
                     filters={filters}
                     onClickNote={openEditNote}
                     onClickGoal={openEditGoal}
                     onClickSchedule={openEditSchedule}
+                    onClickTask={handleClickTask}
                     onClickDay={handleClickDay}
                   />
                 ) : (
@@ -402,10 +415,12 @@ const Planner = () => {
                     schedules={schedules}
                     notes={notes}
                     goals={goals}
+                    tasks={tasks}
                     filters={filters}
                     onClickNote={openEditNote}
                     onClickGoal={openEditGoal}
                     onClickSchedule={openEditSchedule}
+                    onClickTask={handleClickTask}
                     onClickDay={handleClickDay}
                   />
                 )}
@@ -441,10 +456,12 @@ const Planner = () => {
         schedules={schedules}
         notes={notes}
         goals={goals}
+        tasks={tasks}
         filters={filters}
         onEditNote={openEditNote}
         onEditGoal={openEditGoal}
         onEditSchedule={openEditSchedule}
+        onClickTask={handleClickTask}
         onDeleteNote={(id) => deleteNoteMut.mutate(id)}
         onDeleteGoal={(id) => deleteGoalMut.mutate(id)}
         onDeleteSchedule={(id) => deleteScheduleMut.mutate(id)}

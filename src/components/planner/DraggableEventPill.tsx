@@ -3,7 +3,7 @@ import { CalendarEventPill } from "./CalendarEventPill";
 
 interface DraggableEventPillProps {
   id: string;
-  type: "schedule" | "note" | "goal";
+  type: "schedule" | "note" | "goal" | "task";
   title: string;
   time?: string;
   color?: string | null;
