@@ -34,6 +34,7 @@ import {
   FileX,
   CalendarIcon,
   Link2,
+  Sparkles,
 } from "lucide-react";
 import { logError } from "@/lib/logger";
 import { profileSchema, passwordSchema } from "@/lib/validation";
@@ -346,8 +347,12 @@ export default function Settings() {
             <TabsTrigger value="appearance" className="gap-2">
               <Palette className="h-4 w-4" /> <span className="hidden sm:inline">Aparência</span>
             </TabsTrigger>
-            <TabsTrigger value="support" className="gap-2">
-              <Heart className="h-4 w-4" /> <span className="hidden sm:inline">Apoie</span>
+            <TabsTrigger
+              value="support"
+              className="gap-2 animate-pulse ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/30"
+            >
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="hidden sm:inline font-semibold">Apoie</span>
             </TabsTrigger>
           </TabsList>
 

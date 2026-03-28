@@ -23,7 +23,7 @@ export const StreakKeeper = () => {
         toast({
           variant: "destructive",
           title: "Sequência perdida... 🧊",
-          description: "Você ficou mais de um dia sem praticar. Sua ofensiva e todas as conquistas foram reiniciadas.",
+          description: "Você ficou mais de um dia sem praticar. Sua ofensiva foi zerada e as conquistas de ofensiva precisarão ser reconquistadas.",
         });
 
         // 2. Resetar conquistas desbloqueadas (exceto Pioneiro, que é permanente)
