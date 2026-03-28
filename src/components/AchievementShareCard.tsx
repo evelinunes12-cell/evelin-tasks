@@ -24,6 +24,7 @@ export const AchievementShareCard = ({
   const [downloading, setDownloading] = useState(false);
 
   if (!achievement) return null;
+  const firstName = userName?.trim().split(/\s+/)[0] || "Estudante";
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
@@ -73,18 +74,24 @@ export const AchievementShareCard = ({
         <div className="flex justify-center">
           <div
             ref={cardRef}
-            className="relative w-[270px] h-[480px] rounded-2xl overflow-hidden flex flex-col items-center justify-center text-center p-6"
+            className="relative w-[270px] h-[480px] rounded-3xl overflow-hidden flex flex-col items-center justify-center text-center p-6 border border-white/25 shadow-2xl"
             style={{
-              background: `linear-gradient(160deg, hsl(${achievement.gradient_from}), hsl(${achievement.gradient_to}))`,
+              background: `
+                radial-gradient(circle at 20% 15%, rgba(255,255,255,0.22), transparent 42%),
+                radial-gradient(circle at 80% 85%, rgba(255,255,255,0.14), transparent 40%),
+                linear-gradient(165deg, hsl(${achievement.gradient_from}), hsl(${achievement.gradient_to}))
+              `,
             }}
           >
-            {/* Decorative circles */}
-            <div className="absolute top-6 left-6 w-20 h-20 rounded-full bg-white/10" />
-            <div className="absolute bottom-10 right-4 w-32 h-32 rounded-full bg-white/5" />
+            {/* Decorative layers */}
+            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(rgba(255,255,255,0.75)_1px,transparent_1px)] [background-size:14px_14px]" />
+            <div className="absolute top-6 left-6 w-20 h-20 rounded-full bg-white/15 blur-sm" />
+            <div className="absolute bottom-10 right-4 w-32 h-32 rounded-full bg-white/10 blur-md" />
+            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/20 to-transparent" />
 
             {/* Content */}
             <div className="relative z-10 flex flex-col items-center gap-4">
-              <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center shadow-lg"
+              <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/40"
                 style={{ boxShadow: "0 0 40px rgba(255,255,255,0.3)" }}>
                 <AchievementIcon name={achievement.icon} className="w-12 h-12 text-white" />
               </div>
@@ -97,8 +104,8 @@ export const AchievementShareCard = ({
                 Conquistei {achievement.required_value} dias seguidos de foco no Zenit 🏔️
               </p>
 
-              <div className="mt-2 px-4 py-1.5 rounded-full bg-white/20 text-white text-xs font-medium">
-                {userName || "Estudante Zenit"}
+              <div className="mt-2 px-4 py-1.5 rounded-full bg-white/20 border border-white/30 text-white text-xs font-semibold tracking-wide uppercase">
+                {firstName}
               </div>
 
               <span className="mt-4 text-white/50 text-[10px] tracking-widest uppercase">
