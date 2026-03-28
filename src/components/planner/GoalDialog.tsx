@@ -25,7 +25,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, X, CalendarSync } from "lucide-react";
+import { CalendarIcon, X, CalendarCheck2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -155,7 +155,7 @@ export function GoalDialog({ open, onOpenChange, goal, subjects, onSave }: GoalD
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <CalendarSync className="h-4 w-4 text-muted-foreground" />
+                  <CalendarCheck2 className="h-4 w-4 text-muted-foreground" />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Será sincronizado com o seu Google Calendar se a sua conta estiver vinculada</p>
