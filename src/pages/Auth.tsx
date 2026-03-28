@@ -326,6 +326,10 @@ const Auth = () => {
 
                       const result = await lovable.auth.signInWithOAuth("google", {
                         redirect_uri: `${window.location.origin}/dashboard`,
+                        extraParams: {
+                          access_type: "offline",
+                          scope: "https://www.googleapis.com/auth/calendar.events",
+                        },
                       });
                       if (result?.error) {
                         toast({

@@ -881,6 +881,10 @@ function GoogleAccountCard() {
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + "/settings",
+        extraParams: {
+          access_type: "offline",
+          scope: "https://www.googleapis.com/auth/calendar.events",
+        },
       });
       if (result?.error) {
         toast.error("Erro ao vincular conta Google: " + String(result.error));

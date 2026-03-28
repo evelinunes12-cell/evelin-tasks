@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { registerActivity } from "@/services/activity";
 import { logXP, XP } from "@/services/scoring";
+import { createGoogleCalendarEvent } from "@/services/googleCalendar";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -120,11 +121,20 @@ const Planner = () => {
   // Note mutations
   const createNoteMut = useMutation({
     mutationFn: (data: Parameters<typeof createNote>[1]) => createNote(user!.id, data),
-    onSuccess: () => {
+    onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["planner-notes"] });
       if (user) { registerActivity(user.id); logXP(user.id, "create_note", XP.CREATE_ITEM); }
       queryClient.invalidateQueries({ queryKey: ["user-streak"] });
       toast.success("Anotação criada!");
+      if (variables.planned_date) {
+        createGoogleCalendarEvent({
+          title: variables.title || "Anotação Zenit",
+          description: variables.content || null,
+          date: variables.planned_date,
+        }).then((ok) => {
+          if (ok) toast.success("✅ Sincronizado com o Google Calendar!");
+        }).catch(() => {});
+      }
     },
     onError: () => toast.error("Erro ao criar anotação"),
   });
@@ -152,11 +162,20 @@ const Planner = () => {
   // Goal mutations
   const createGoalMut = useMutation({
     mutationFn: (data: Parameters<typeof createGoal>[1]) => createGoal(user!.id, data),
-    onSuccess: () => {
+    onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["planner-goals"] });
       if (user) { registerActivity(user.id); logXP(user.id, "create_goal", XP.CREATE_ITEM); }
       queryClient.invalidateQueries({ queryKey: ["user-streak"] });
       toast.success("Meta criada!");
+      if (variables.target_date) {
+        createGoogleCalendarEvent({
+          title: variables.title,
+          description: variables.description || null,
+          date: variables.target_date,
+        }).then((ok) => {
+          if (ok) toast.success("✅ Sincronizado com o Google Calendar!");
+        }).catch(() => {});
+      }
     },
     onError: () => toast.error("Erro ao criar meta"),
   });
