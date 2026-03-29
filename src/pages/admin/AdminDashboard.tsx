@@ -75,31 +75,20 @@ const AdminDashboard = () => {
       return;
     }
 
-    const { data, error } = await supabase.rpc("get_admin_dashboard_metrics", params);
+    const { data, error } = await supabase.rpc("get_admin_stats", params);
 
-    if (error) {
-      const fallback = await supabase.rpc("get_admin_stats", params);
-      if (fallback.error || !fallback.data) {
-        const message = fallback.error?.message || error.message || "Falha ao carregar métricas do painel administrativo.";
-        setLoadError(message);
-        setStats(null);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar painel administrativo",
-          description: "Não foi possível buscar as métricas globais. Verifique suas permissões de admin e tente novamente.",
-        });
-        console.error("[AdminDashboard] metrics fetch failed", { error, fallbackError: fallback.error, params });
-      } else {
-        setStats(fallback.data as unknown as AdminStats);
-      }
-      setLoading(false);
-      return;
-    }
-
-    if (data) {
-      setStats(data as unknown as AdminStats);
-    } else {
+    if (error || !data) {
+      const message = error?.message || "Falha ao carregar métricas do painel administrativo.";
+      setLoadError(message);
       setStats(null);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar painel administrativo",
+        description: "Não foi possível buscar as métricas globais. Verifique suas permissões de admin e tente novamente.",
+      });
+      console.error("[AdminDashboard] metrics fetch failed", { error, params });
+    } else {
+      setStats(data as unknown as AdminStats);
     }
 
     setLoading(false);
