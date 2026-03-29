@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CheckCircle2, Activity, Filter, ListTodo, Percent, UserX, Trophy, Mail, Clock, TrendingDown, UserCheck } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { format, parseISO, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { DateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -48,8 +49,10 @@ const tooltipStyle = {
 };
 
 const AdminDashboard = () => {
+  const { toast } = useToast();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
     to: new Date(),
@@ -57,34 +60,71 @@ const AdminDashboard = () => {
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     const params: Record<string, string> = {};
     if (dateRange?.from) params.p_start_date = startOfDay(dateRange.from).toISOString();
     if (dateRange?.to) params.p_end_date = endOfDay(dateRange.to).toISOString();
 
-    const { data, error } = await supabase.rpc("get_admin_stats", params);
-    if (!error && data) {
-      setStats(data as unknown as AdminStats);
+    if (
+      dateRange?.from &&
+      dateRange?.to &&
+      startOfDay(dateRange.from).getTime() > endOfDay(dateRange.to).getTime()
+    ) {
+      setLoadError("Intervalo de datas inválido.");
+      setLoading(false);
+      return;
     }
+
+    const { data, error } = await supabase.rpc("get_admin_dashboard_metrics", params);
+
+    if (error) {
+      const fallback = await supabase.rpc("get_admin_stats", params);
+      if (fallback.error || !fallback.data) {
+        const message = fallback.error?.message || error.message || "Falha ao carregar métricas do painel administrativo.";
+        setLoadError(message);
+        setStats(null);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar painel administrativo",
+          description: "Não foi possível buscar as métricas globais. Verifique suas permissões de admin e tente novamente.",
+        });
+        console.error("[AdminDashboard] metrics fetch failed", { error, fallbackError: fallback.error, params });
+      } else {
+        setStats(fallback.data as unknown as AdminStats);
+      }
+      setLoading(false);
+      return;
+    }
+
+    if (data) {
+      setStats(data as unknown as AdminStats);
+    } else {
+      setStats(null);
+    }
+
     setLoading(false);
-  }, [dateRange]);
+  }, [dateRange, toast]);
 
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
 
+  const toChartLabel = (value: string) => format(new Date(value), "dd/MM", { locale: ptBR });
+  const toDisplayDate = (value: string) => format(new Date(value), "dd/MM/yyyy", { locale: ptBR });
+
   const newUsersChartData = stats?.new_users_chart?.map((d) => ({
     ...d,
-    label: format(parseISO(d.date), "dd/MM", { locale: ptBR }),
+    label: toChartLabel(d.date),
   })) ?? [];
 
   const tasksChartData = stats?.tasks_created_chart?.map((d) => ({
     ...d,
-    label: format(parseISO(d.date), "dd/MM", { locale: ptBR }),
+    label: toChartLabel(d.date),
   })) ?? [];
 
   const churnChartData = stats?.churn_rate?.map((d) => ({
     ...d,
-    label: format(parseISO(d.week_date), "dd/MM", { locale: ptBR }),
+    label: toChartLabel(d.week_date),
   })) ?? [];
 
   // Build heatmap grid: 7 days x 24 hours
@@ -126,6 +166,11 @@ const AdminDashboard = () => {
             Exibindo dados de: {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} até {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
           </Badge>
         </div>
+      )}
+      {loadError && !loading && (
+        <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md p-3">
+          {loadError}
+        </p>
       )}
 
       {/* Stats Cards */}
@@ -247,8 +292,8 @@ const AdminDashboard = () => {
                 <TableBody>
                   {stats.cohort_retention.map((c, i) => (
                     <TableRow key={i}>
-                      <TableCell className="font-medium text-sm">
-                        {format(parseISO(c.cohort_week), "dd/MM/yyyy", { locale: ptBR })}
+                          <TableCell className="font-medium text-sm">
+                        {toDisplayDate(c.cohort_week)}
                       </TableCell>
                       <TableCell className="text-center text-sm">{c.cohort_size}</TableCell>
                       <TableCell className="text-center">
@@ -394,7 +439,7 @@ const AdminDashboard = () => {
                         <TableCell className="font-medium text-sm">{u.full_name || "—"}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                         <TableCell className="text-sm">
-                          {format(parseISO(u.last_seen), "dd/MM/yyyy", { locale: ptBR })}
+                          {toDisplayDate(u.last_seen)}
                         </TableCell>
                       </TableRow>
                     ))}
