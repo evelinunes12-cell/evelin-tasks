@@ -14,9 +14,8 @@ DECLARE
   v_is_admin boolean;
   v_result jsonb;
 BEGIN
-  v_is_admin := public.has_role(auth.uid(), 'admin')
-    OR COALESCE((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin', false)
-    OR COALESCE((auth.jwt() -> 'app_metadata' -> 'roles') ? 'admin', false);
+  -- Only trust server-side role data so admin revocations take effect immediately.
+  v_is_admin := public.has_role(auth.uid(), 'admin');
 
   IF NOT v_is_admin THEN
     RAISE EXCEPTION 'Access denied: admin role required';
