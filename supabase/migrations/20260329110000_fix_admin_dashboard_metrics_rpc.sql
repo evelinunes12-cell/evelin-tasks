@@ -11,14 +11,13 @@ AS $function$
 DECLARE
   v_start date;
   v_end date;
-  v_is_admin boolean;
   v_result jsonb;
 BEGIN
   -- Only trust server-side role data so admin revocations take effect immediately.
-  v_is_admin := public.has_role(auth.uid(), 'admin');
-
-  IF NOT v_is_admin THEN
-    RAISE EXCEPTION 'Access denied: admin role required';
+  IF NOT public.has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION USING
+      MESSAGE = 'Access denied: admin role required',
+      ERRCODE = '42501';
   END IF;
 
   v_start := COALESCE((p_start_date AT TIME ZONE 'UTC')::date, CURRENT_DATE - 30);
