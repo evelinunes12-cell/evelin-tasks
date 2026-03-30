@@ -33,6 +33,14 @@ interface GeneratedBlock {
   block_count: number;
 }
 
+interface EditableBlock {
+  id: string;
+  subject_id: string;
+  subject_name: string;
+  subject_color: string | null;
+  allocated_minutes: number;
+}
+
 interface StudyCycleAdvancedWizardProps {
   subjects: Subject[];
   onSave: (name: string, blocks: NewBlock[]) => Promise<void>;
