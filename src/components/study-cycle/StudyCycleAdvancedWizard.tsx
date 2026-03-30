@@ -412,29 +412,58 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
         {step === 3 && (
           <motion.div key="step3" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.25 }} className="space-y-4">
             <div>
-              <Label>Revisão do Ciclo Gerado</Label>
-              <p className="text-xs text-muted-foreground mt-1">O Zenit distribuiu as tuas {totalHours}h com base nos pesos e níveis de domínio.</p>
+              <Label>Revisão e Edição dos Blocos</Label>
+              <p className="text-xs text-muted-foreground mt-1">Arraste para reordenar, ajuste os minutos ou adicione/remova blocos.</p>
             </div>
 
-            <div className="space-y-2">
-              {generatedBlocks.map((gb) => (
-                <div key={gb.subject_id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
-                  {gb.subject_color && <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: gb.subject_color }} />}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{gb.subject_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {gb.block_count} bloco{gb.block_count > 1 ? "s" : ""} de {gb.allocated_minutes} min
-                    </p>
-                  </div>
-                  <span className="text-xs font-medium text-primary shrink-0">
-                    {Math.round(gb.allocated_minutes * gb.block_count)} min
-                  </span>
-                </div>
-              ))}
+            <div className="space-y-1.5 max-h-[35vh] overflow-y-auto pr-1">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleBlockDragEnd}>
+                <SortableContext items={editableBlocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+                  {editableBlocks.map((block) => (
+                    <SortableBlockItem
+                      key={block.id}
+                      block={block}
+                      onUpdateMinutes={updateBlockMinutes}
+                      onDelete={deleteBlock}
+                      canDelete={editableBlocks.length > 1}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+              {editableBlocks.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhum bloco. Adicione um abaixo.</p>
+              )}
             </div>
+
+            {/* Add block */}
+            <Popover open={addBlockOpen} onOpenChange={setAddBlockOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full">
+                  <Plus className="h-4 w-4 mr-1" /> Adicionar Bloco
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[250px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Selecionar disciplina..." />
+                  <CommandList>
+                    <CommandEmpty>Nenhuma disciplina encontrada</CommandEmpty>
+                    <CommandGroup>
+                      {localSubjects.map((s) => (
+                        <CommandItem key={s.id} value={s.name} onSelect={() => addNewBlock(s.id)}>
+                          <span className="flex items-center gap-2">
+                            {s.color && <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />}
+                            {s.name}
+                          </span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
 
             <div className="rounded-lg bg-primary/5 border border-primary/10 p-3 text-sm text-center">
-              <span className="font-semibold text-primary">{generatedBlocks.length} disciplina(s)</span>
+              <span className="font-semibold text-primary">{editableBlocks.length} bloco{editableBlocks.length !== 1 ? "s" : ""}</span>
               {" · "}
               <span className="text-muted-foreground">
                 Tempo total: {genHours > 0 ? `${genHours}h ` : ""}{genMins > 0 ? `${genMins}min` : genHours > 0 ? "" : "0min"}
@@ -445,7 +474,7 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
               <Button variant="outline" onClick={() => setStep(2)}>
                 <ChevronLeft className="mr-1 h-4 w-4" /> Ajustar
               </Button>
-              <Button onClick={handleSave} disabled={saving}>
+              <Button onClick={handleSave} disabled={saving || editableBlocks.length === 0}>
                 {saving ? "Salvando..." : "Guardar Ciclo"}
               </Button>
             </div>
