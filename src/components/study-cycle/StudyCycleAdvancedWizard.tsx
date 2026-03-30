@@ -230,9 +230,15 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
   const [name, setName] = useState("");
   const [totalHours, setTotalHours] = useState(10);
   const [configs, setConfigs] = useState<SubjectConfig[]>([{ id: generateId(), subject_id: "", weight: 3, mastery: "intermediate" }]);
-  const [generatedBlocks, setGeneratedBlocks] = useState<GeneratedBlock[]>([]);
+  const [editableBlocks, setEditableBlocks] = useState<EditableBlock[]>([]);
   const [saving, setSaving] = useState(false);
   const [localSubjects, setLocalSubjects] = useState<Subject[]>(initialSubjects);
+  const [addBlockOpen, setAddBlockOpen] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   useEffect(() => { setLocalSubjects(initialSubjects); }, [initialSubjects]);
 
@@ -252,20 +258,19 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
     if (validConfigs.length === 0) { toast.error("Adicione pelo menos uma disciplina."); return; }
     if (totalHours < 1) { toast.error("Defina pelo menos 1 hora de carga horária."); return; }
     const blocks = generateCycleBlocks(totalHours, validConfigs, localSubjects);
-    setGeneratedBlocks(blocks);
+    setEditableBlocks(blocks);
     setStep(3);
   };
 
   const handleSave = async () => {
     if (!name.trim()) { toast.error("Dê um nome ao seu ciclo."); return; }
+    if (editableBlocks.length === 0) { toast.error("Adicione pelo menos um bloco."); return; }
     setSaving(true);
     try {
-      const finalBlocks: NewBlock[] = [];
-      for (const gb of generatedBlocks) {
-        for (let i = 0; i < gb.block_count; i++) {
-          finalBlocks.push({ subject_id: gb.subject_id, allocated_minutes: gb.allocated_minutes });
-        }
-      }
+      const finalBlocks: NewBlock[] = editableBlocks.map((b) => ({
+        subject_id: b.subject_id,
+        allocated_minutes: b.allocated_minutes,
+      }));
       await onSave(name.trim(), finalBlocks);
     } catch {
       toast.error("Erro ao salvar o ciclo.");
@@ -274,7 +279,39 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
     }
   };
 
-  const totalGeneratedMinutes = generatedBlocks.reduce((s, b) => s + b.allocated_minutes * b.block_count, 0);
+  const handleBlockDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setEditableBlocks((prev) => {
+        const oldIndex = prev.findIndex((b) => b.id === active.id);
+        const newIndex = prev.findIndex((b) => b.id === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const updateBlockMinutes = (id: string, minutes: number) => {
+    setEditableBlocks((prev) => prev.map((b) => b.id === id ? { ...b, allocated_minutes: minutes } : b));
+  };
+
+  const deleteBlock = (id: string) => {
+    setEditableBlocks((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  const addNewBlock = (subjectId: string) => {
+    const subject = localSubjects.find((s) => s.id === subjectId);
+    if (!subject) return;
+    setEditableBlocks((prev) => [...prev, {
+      id: generateId(),
+      subject_id: subject.id,
+      subject_name: subject.name,
+      subject_color: subject.color || null,
+      allocated_minutes: 45,
+    }]);
+    setAddBlockOpen(false);
+  };
+
+  const totalGeneratedMinutes = editableBlocks.reduce((s, b) => s + b.allocated_minutes, 0);
   const genHours = Math.floor(totalGeneratedMinutes / 60);
   const genMins = totalGeneratedMinutes % 60;
 
