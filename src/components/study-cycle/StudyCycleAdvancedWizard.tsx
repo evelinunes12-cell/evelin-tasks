@@ -147,12 +147,12 @@ function generateCycleBlocks(
   totalHours: number,
   configs: SubjectConfig[],
   subjects: Subject[]
-): GeneratedBlock[] {
+): EditableBlock[] {
   const totalMinutes = totalHours * 60;
   const totalWeight = configs.reduce((s, c) => s + c.weight, 0);
   if (totalWeight === 0) return [];
 
-  const results: GeneratedBlock[] = [];
+  const results: EditableBlock[] = [];
 
   for (const config of configs) {
     const proportion = config.weight / totalWeight;
@@ -162,17 +162,67 @@ function generateCycleBlocks(
     const adjustedBlockMinutes = Math.round(subjectMinutes / blockCount);
     const subject = subjects.find((s) => s.id === config.subject_id);
 
-    results.push({
-      subject_id: config.subject_id,
-      subject_name: subject?.name || "Disciplina",
-      subject_color: subject?.color || null,
-      allocated_minutes: adjustedBlockMinutes,
-      block_count: blockCount,
-    });
+    for (let i = 0; i < blockCount; i++) {
+      results.push({
+        id: generateId(),
+        subject_id: config.subject_id,
+        subject_name: subject?.name || "Disciplina",
+        subject_color: subject?.color || null,
+        allocated_minutes: adjustedBlockMinutes,
+      });
+    }
   }
 
   return results;
 }
+
+// --- Sortable Block Item ---
+const SortableBlockItem = ({ block, onUpdateMinutes, onDelete, canDelete }: {
+  block: EditableBlock;
+  onUpdateMinutes: (id: string, minutes: number) => void;
+  onDelete: (id: string) => void;
+  canDelete: boolean;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-2 rounded-lg border bg-card p-2.5 transition-shadow",
+        isDragging && "shadow-lg ring-2 ring-primary/20 z-10"
+      )}
+    >
+      <button type="button" className="cursor-grab touch-none text-muted-foreground hover:text-foreground" {...attributes} {...listeners}>
+        <GripVertical className="h-4 w-4" />
+      </button>
+      {block.subject_color && <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: block.subject_color }} />}
+      <span className="text-sm font-medium truncate flex-1 min-w-0">{block.subject_name}</span>
+      <div className="flex items-center gap-1 shrink-0">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onUpdateMinutes(block.id, Math.max(5, block.allocated_minutes - 5))}>
+          <Minus className="h-3 w-3" />
+        </Button>
+        <Input
+          type="number"
+          min={5}
+          max={240}
+          value={block.allocated_minutes}
+          onChange={(e) => onUpdateMinutes(block.id, Math.max(5, parseInt(e.target.value) || 5))}
+          className="h-7 w-16 text-center text-xs px-1"
+        />
+        <span className="text-xs text-muted-foreground">min</span>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onUpdateMinutes(block.id, Math.min(240, block.allocated_minutes + 5))}>
+          <Plus className="h-3 w-3" />
+        </Button>
+      </div>
+      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0" onClick={() => onDelete(block.id)} disabled={!canDelete}>
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+};
 
 // --- Wizard ---
 const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel, userId, onSubjectsChanged }: StudyCycleAdvancedWizardProps) => {
