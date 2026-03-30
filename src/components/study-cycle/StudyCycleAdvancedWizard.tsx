@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, ChevronRight, ChevronLeft, Sparkles, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Trash2, ChevronRight, ChevronLeft, Sparkles, Check, ChevronsUpDown, GripVertical, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,9 @@ import { NewBlock } from "@/services/studyCycles";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type MasteryLevel = "beginner" | "intermediate" | "advanced";
 
@@ -28,6 +31,14 @@ interface GeneratedBlock {
   subject_color: string | null;
   allocated_minutes: number;
   block_count: number;
+}
+
+interface EditableBlock {
+  id: string;
+  subject_id: string;
+  subject_name: string;
+  subject_color: string | null;
+  allocated_minutes: number;
 }
 
 interface StudyCycleAdvancedWizardProps {
@@ -136,12 +147,12 @@ function generateCycleBlocks(
   totalHours: number,
   configs: SubjectConfig[],
   subjects: Subject[]
-): GeneratedBlock[] {
+): EditableBlock[] {
   const totalMinutes = totalHours * 60;
   const totalWeight = configs.reduce((s, c) => s + c.weight, 0);
   if (totalWeight === 0) return [];
 
-  const results: GeneratedBlock[] = [];
+  const results: EditableBlock[] = [];
 
   for (const config of configs) {
     const proportion = config.weight / totalWeight;
@@ -151,17 +162,67 @@ function generateCycleBlocks(
     const adjustedBlockMinutes = Math.round(subjectMinutes / blockCount);
     const subject = subjects.find((s) => s.id === config.subject_id);
 
-    results.push({
-      subject_id: config.subject_id,
-      subject_name: subject?.name || "Disciplina",
-      subject_color: subject?.color || null,
-      allocated_minutes: adjustedBlockMinutes,
-      block_count: blockCount,
-    });
+    for (let i = 0; i < blockCount; i++) {
+      results.push({
+        id: generateId(),
+        subject_id: config.subject_id,
+        subject_name: subject?.name || "Disciplina",
+        subject_color: subject?.color || null,
+        allocated_minutes: adjustedBlockMinutes,
+      });
+    }
   }
 
   return results;
 }
+
+// --- Sortable Block Item ---
+const SortableBlockItem = ({ block, onUpdateMinutes, onDelete, canDelete }: {
+  block: EditableBlock;
+  onUpdateMinutes: (id: string, minutes: number) => void;
+  onDelete: (id: string) => void;
+  canDelete: boolean;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-2 rounded-lg border bg-card p-2.5 transition-shadow",
+        isDragging && "shadow-lg ring-2 ring-primary/20 z-10"
+      )}
+    >
+      <button type="button" className="cursor-grab touch-none text-muted-foreground hover:text-foreground" {...attributes} {...listeners}>
+        <GripVertical className="h-4 w-4" />
+      </button>
+      {block.subject_color && <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: block.subject_color }} />}
+      <span className="text-sm font-medium truncate flex-1 min-w-0">{block.subject_name}</span>
+      <div className="flex items-center gap-1 shrink-0">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onUpdateMinutes(block.id, Math.max(5, block.allocated_minutes - 5))}>
+          <Minus className="h-3 w-3" />
+        </Button>
+        <Input
+          type="number"
+          min={5}
+          max={240}
+          value={block.allocated_minutes}
+          onChange={(e) => onUpdateMinutes(block.id, Math.max(5, parseInt(e.target.value) || 5))}
+          className="h-7 w-16 text-center text-xs px-1"
+        />
+        <span className="text-xs text-muted-foreground">min</span>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onUpdateMinutes(block.id, Math.min(240, block.allocated_minutes + 5))}>
+          <Plus className="h-3 w-3" />
+        </Button>
+      </div>
+      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0" onClick={() => onDelete(block.id)} disabled={!canDelete}>
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+};
 
 // --- Wizard ---
 const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel, userId, onSubjectsChanged }: StudyCycleAdvancedWizardProps) => {
@@ -169,9 +230,15 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
   const [name, setName] = useState("");
   const [totalHours, setTotalHours] = useState(10);
   const [configs, setConfigs] = useState<SubjectConfig[]>([{ id: generateId(), subject_id: "", weight: 3, mastery: "intermediate" }]);
-  const [generatedBlocks, setGeneratedBlocks] = useState<GeneratedBlock[]>([]);
+  const [editableBlocks, setEditableBlocks] = useState<EditableBlock[]>([]);
   const [saving, setSaving] = useState(false);
   const [localSubjects, setLocalSubjects] = useState<Subject[]>(initialSubjects);
+  const [addBlockOpen, setAddBlockOpen] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   useEffect(() => { setLocalSubjects(initialSubjects); }, [initialSubjects]);
 
@@ -191,20 +258,19 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
     if (validConfigs.length === 0) { toast.error("Adicione pelo menos uma disciplina."); return; }
     if (totalHours < 1) { toast.error("Defina pelo menos 1 hora de carga horária."); return; }
     const blocks = generateCycleBlocks(totalHours, validConfigs, localSubjects);
-    setGeneratedBlocks(blocks);
+    setEditableBlocks(blocks);
     setStep(3);
   };
 
   const handleSave = async () => {
     if (!name.trim()) { toast.error("Dê um nome ao seu ciclo."); return; }
+    if (editableBlocks.length === 0) { toast.error("Adicione pelo menos um bloco."); return; }
     setSaving(true);
     try {
-      const finalBlocks: NewBlock[] = [];
-      for (const gb of generatedBlocks) {
-        for (let i = 0; i < gb.block_count; i++) {
-          finalBlocks.push({ subject_id: gb.subject_id, allocated_minutes: gb.allocated_minutes });
-        }
-      }
+      const finalBlocks: NewBlock[] = editableBlocks.map((b) => ({
+        subject_id: b.subject_id,
+        allocated_minutes: b.allocated_minutes,
+      }));
       await onSave(name.trim(), finalBlocks);
     } catch {
       toast.error("Erro ao salvar o ciclo.");
@@ -213,7 +279,39 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
     }
   };
 
-  const totalGeneratedMinutes = generatedBlocks.reduce((s, b) => s + b.allocated_minutes * b.block_count, 0);
+  const handleBlockDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setEditableBlocks((prev) => {
+        const oldIndex = prev.findIndex((b) => b.id === active.id);
+        const newIndex = prev.findIndex((b) => b.id === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const updateBlockMinutes = (id: string, minutes: number) => {
+    setEditableBlocks((prev) => prev.map((b) => b.id === id ? { ...b, allocated_minutes: minutes } : b));
+  };
+
+  const deleteBlock = (id: string) => {
+    setEditableBlocks((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  const addNewBlock = (subjectId: string) => {
+    const subject = localSubjects.find((s) => s.id === subjectId);
+    if (!subject) return;
+    setEditableBlocks((prev) => [...prev, {
+      id: generateId(),
+      subject_id: subject.id,
+      subject_name: subject.name,
+      subject_color: subject.color || null,
+      allocated_minutes: 45,
+    }]);
+    setAddBlockOpen(false);
+  };
+
+  const totalGeneratedMinutes = editableBlocks.reduce((s, b) => s + b.allocated_minutes, 0);
   const genHours = Math.floor(totalGeneratedMinutes / 60);
   const genMins = totalGeneratedMinutes % 60;
 
@@ -314,29 +412,58 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
         {step === 3 && (
           <motion.div key="step3" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.25 }} className="space-y-4">
             <div>
-              <Label>Revisão do Ciclo Gerado</Label>
-              <p className="text-xs text-muted-foreground mt-1">O Zenit distribuiu as tuas {totalHours}h com base nos pesos e níveis de domínio.</p>
+              <Label>Revisão e Edição dos Blocos</Label>
+              <p className="text-xs text-muted-foreground mt-1">Arraste para reordenar, ajuste os minutos ou adicione/remova blocos.</p>
             </div>
 
-            <div className="space-y-2">
-              {generatedBlocks.map((gb) => (
-                <div key={gb.subject_id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
-                  {gb.subject_color && <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: gb.subject_color }} />}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{gb.subject_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {gb.block_count} bloco{gb.block_count > 1 ? "s" : ""} de {gb.allocated_minutes} min
-                    </p>
-                  </div>
-                  <span className="text-xs font-medium text-primary shrink-0">
-                    {Math.round(gb.allocated_minutes * gb.block_count)} min
-                  </span>
-                </div>
-              ))}
+            <div className="space-y-1.5 max-h-[35vh] overflow-y-auto pr-1">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleBlockDragEnd}>
+                <SortableContext items={editableBlocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+                  {editableBlocks.map((block) => (
+                    <SortableBlockItem
+                      key={block.id}
+                      block={block}
+                      onUpdateMinutes={updateBlockMinutes}
+                      onDelete={deleteBlock}
+                      canDelete={editableBlocks.length > 1}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+              {editableBlocks.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhum bloco. Adicione um abaixo.</p>
+              )}
             </div>
+
+            {/* Add block */}
+            <Popover open={addBlockOpen} onOpenChange={setAddBlockOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full">
+                  <Plus className="h-4 w-4 mr-1" /> Adicionar Bloco
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[250px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Selecionar disciplina..." />
+                  <CommandList>
+                    <CommandEmpty>Nenhuma disciplina encontrada</CommandEmpty>
+                    <CommandGroup>
+                      {localSubjects.map((s) => (
+                        <CommandItem key={s.id} value={s.name} onSelect={() => addNewBlock(s.id)}>
+                          <span className="flex items-center gap-2">
+                            {s.color && <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />}
+                            {s.name}
+                          </span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
 
             <div className="rounded-lg bg-primary/5 border border-primary/10 p-3 text-sm text-center">
-              <span className="font-semibold text-primary">{generatedBlocks.length} disciplina(s)</span>
+              <span className="font-semibold text-primary">{editableBlocks.length} bloco{editableBlocks.length !== 1 ? "s" : ""}</span>
               {" · "}
               <span className="text-muted-foreground">
                 Tempo total: {genHours > 0 ? `${genHours}h ` : ""}{genMins > 0 ? `${genMins}min` : genHours > 0 ? "" : "0min"}
@@ -347,7 +474,7 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
               <Button variant="outline" onClick={() => setStep(2)}>
                 <ChevronLeft className="mr-1 h-4 w-4" /> Ajustar
               </Button>
-              <Button onClick={handleSave} disabled={saving}>
+              <Button onClick={handleSave} disabled={saving || editableBlocks.length === 0}>
                 {saving ? "Salvando..." : "Guardar Ciclo"}
               </Button>
             </div>
