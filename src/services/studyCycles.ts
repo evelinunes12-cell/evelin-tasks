@@ -30,6 +30,13 @@ export interface NewBlock {
   allocated_minutes: number;
 }
 
+export interface AdvancedCycleMetadata {
+  start_date: string;
+  end_date: string;
+  hours_per_day?: number;
+  hours_per_week?: number;
+}
+
 export const fetchStudyCycles = async (): Promise<StudyCycle[]> => {
   const { data, error } = await supabase
     .from("study_cycles")
