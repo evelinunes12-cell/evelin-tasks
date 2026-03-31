@@ -172,6 +172,9 @@ const StudyAnalyticsPage = () => {
           </Card>
         ) : (
           <>
+            {/* Active Cycle Progress */}
+            <ActiveCycleProgressCard />
+
             {/* KPI Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <KpiCard icon={Clock} label="Tempo Total" value={formatTime(analytics.totalMinutes)} />
