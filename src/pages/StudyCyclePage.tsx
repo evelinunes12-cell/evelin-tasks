@@ -16,6 +16,7 @@ import {
   toggleCycleActive,
   StudyCycle,
   NewBlock,
+  AdvancedCycleMetadata,
 } from "@/services/studyCycles";
 import StudyCycleDialog from "@/components/StudyCycleDialog";
 import StudyCyclePlayer from "@/components/StudyCyclePlayer";
