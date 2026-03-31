@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { Clock, Repeat, Timer, CheckCircle, TrendingUp, BookOpen } from "lucide-react";
+import ActiveCycleProgressCard from "@/components/ActiveCycleProgressCard";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
