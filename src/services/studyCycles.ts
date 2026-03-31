@@ -63,11 +63,21 @@ export const fetchStudyCycles = async (): Promise<StudyCycle[]> => {
 export const createStudyCycle = async (
   userId: string,
   name: string,
-  blocks: NewBlock[]
+  blocks: NewBlock[],
+  advancedMeta?: AdvancedCycleMetadata
 ): Promise<StudyCycle> => {
+  const insertData: any = { user_id: userId, name };
+  if (advancedMeta) {
+    insertData.is_advanced = true;
+    insertData.start_date = advancedMeta.start_date;
+    insertData.end_date = advancedMeta.end_date;
+    if (advancedMeta.hours_per_day != null) insertData.hours_per_day = advancedMeta.hours_per_day;
+    if (advancedMeta.hours_per_week != null) insertData.hours_per_week = advancedMeta.hours_per_week;
+  }
+
   const { data: cycle, error: cycleError } = await supabase
     .from("study_cycles")
-    .insert({ user_id: userId, name })
+    .insert(insertData)
     .select()
     .single();
 
