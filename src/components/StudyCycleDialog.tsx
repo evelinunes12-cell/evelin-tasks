@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Music } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Subject } from "@/services/subjects";
-import { NewBlock, StudyCycle } from "@/services/studyCycles";
+import { NewBlock, StudyCycle, AdvancedCycleMetadata } from "@/services/studyCycles";
 import StudyCycleModeSelector from "@/components/study-cycle/StudyCycleModeSelector";
 import StudyCycleSimpleForm from "@/components/study-cycle/StudyCycleSimpleForm";
 import StudyCycleAdvancedWizard from "@/components/study-cycle/StudyCycleAdvancedWizard";
@@ -12,7 +12,7 @@ interface StudyCycleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   subjects: Subject[];
-  onSave: (name: string, blocks: NewBlock[]) => Promise<void>;
+  onSave: (name: string, blocks: NewBlock[], advancedMeta?: AdvancedCycleMetadata) => Promise<void>;
   cycleToEdit?: StudyCycle | null;
   userId?: string;
   onSubjectsChanged?: () => void;
@@ -26,13 +26,12 @@ const StudyCycleDialog = ({ open, onOpenChange, subjects, onSave, cycleToEdit, u
 
   useEffect(() => {
     if (open) {
-      // When editing, go straight to simple form
       setMode(isEditing ? "simple" : "select");
     }
   }, [open, isEditing]);
 
-  const handleSave = async (name: string, blocks: NewBlock[]) => {
-    await onSave(name, blocks);
+  const handleSave = async (name: string, blocks: NewBlock[], advancedMeta?: AdvancedCycleMetadata) => {
+    await onSave(name, blocks, advancedMeta);
     onOpenChange(false);
   };
 
@@ -80,7 +79,7 @@ const StudyCycleDialog = ({ open, onOpenChange, subjects, onSave, cycleToEdit, u
             <motion.div key="simple" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
               <StudyCycleSimpleForm
                 subjects={subjects}
-                onSave={handleSave}
+                onSave={(name, blocks) => handleSave(name, blocks)}
                 cycleToEdit={cycleToEdit}
                 userId={userId}
                 onSubjectsChanged={onSubjectsChanged}
