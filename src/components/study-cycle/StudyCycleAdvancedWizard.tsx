@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, ChevronRight, ChevronLeft, Sparkles, Check, ChevronsUpDown, GripVertical, Minus } from "lucide-react";
+import { Plus, Trash2, ChevronRight, ChevronLeft, Sparkles, Check, ChevronsUpDown, GripVertical, Minus, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,30 +7,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Calendar } from "@/components/ui/calendar";
 import { Subject, createSubject } from "@/services/subjects";
-import { NewBlock } from "@/services/studyCycles";
+import { NewBlock, AdvancedCycleMetadata } from "@/services/studyCycles";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { format, differenceInDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type MasteryLevel = "beginner" | "intermediate" | "advanced";
+type DedicationType = "per_day" | "per_week";
 
 interface SubjectConfig {
   id: string;
   subject_id: string;
   weight: number;
   mastery: MasteryLevel;
-}
-
-interface GeneratedBlock {
-  subject_id: string;
-  subject_name: string;
-  subject_color: string | null;
-  allocated_minutes: number;
-  block_count: number;
 }
 
 interface EditableBlock {
@@ -43,7 +40,7 @@ interface EditableBlock {
 
 interface StudyCycleAdvancedWizardProps {
   subjects: Subject[];
-  onSave: (name: string, blocks: NewBlock[]) => Promise<void>;
+  onSave: (name: string, blocks: NewBlock[], advancedMeta?: AdvancedCycleMetadata) => Promise<void>;
   onCancel: () => void;
   userId?: string;
   onSubjectsChanged?: () => void;
@@ -63,7 +60,7 @@ const MASTERY_BLOCK_MINUTES: Record<MasteryLevel, number> = {
   advanced: 45,
 };
 
-// --- Subject Combobox (reused) ---
+// --- Subject Combobox ---
 const SubjectCombobox = ({ subjects, value, usedIds, onChange, userId, onCreated }: {
   subjects: Subject[]; value: string; usedIds: string[];
   onChange: (id: string) => void; userId?: string; onCreated?: (s: Subject) => void;
@@ -142,9 +139,24 @@ const SubjectCombobox = ({ subjects, value, usedIds, onChange, userId, onCreated
   );
 };
 
+// --- Calculate total hours ---
+function calculateTotalHours(
+  startDate: Date,
+  endDate: Date,
+  dedicationType: DedicationType,
+  hoursValue: number
+): number {
+  const days = differenceInDays(endDate, startDate) + 1;
+  if (dedicationType === "per_day") {
+    return days * hoursValue;
+  }
+  return (days / 7) * hoursValue;
+}
+
 // --- Engine ---
 function generateCycleBlocks(
   totalHours: number,
+  maxDailyMinutes: number,
   configs: SubjectConfig[],
   subjects: Subject[]
 ): EditableBlock[] {
@@ -157,7 +169,11 @@ function generateCycleBlocks(
   for (const config of configs) {
     const proportion = config.weight / totalWeight;
     const subjectMinutes = Math.round(totalMinutes * proportion);
-    const blockSize = MASTERY_BLOCK_MINUTES[config.mastery];
+    let blockSize = MASTERY_BLOCK_MINUTES[config.mastery];
+    // Cap block size to daily available time
+    if (maxDailyMinutes > 0) {
+      blockSize = Math.min(blockSize, maxDailyMinutes);
+    }
     const blockCount = Math.max(1, Math.round(subjectMinutes / blockSize));
     const adjustedBlockMinutes = Math.round(subjectMinutes / blockCount);
     const subject = subjects.find((s) => s.id === config.subject_id);
@@ -228,7 +244,15 @@ const SortableBlockItem = ({ block, onUpdateMinutes, onDelete, canDelete }: {
 const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel, userId, onSubjectsChanged }: StudyCycleAdvancedWizardProps) => {
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
-  const [totalHours, setTotalHours] = useState(10);
+
+  // Step 1 - new fields
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [dedicationType, setDedicationType] = useState<DedicationType>("per_day");
+  const [hoursValue, setHoursValue] = useState(3);
+  const [startDateOpen, setStartDateOpen] = useState(false);
+  const [endDateOpen, setEndDateOpen] = useState(false);
+
   const [configs, setConfigs] = useState<SubjectConfig[]>([{ id: generateId(), subject_id: "", weight: 3, mastery: "intermediate" }]);
   const [editableBlocks, setEditableBlocks] = useState<EditableBlock[]>([]);
   const [saving, setSaving] = useState(false);
@@ -254,10 +278,23 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
   const usedIds = configs.map((c) => c.subject_id).filter(Boolean);
   const validConfigs = configs.filter((c) => c.subject_id);
 
+  const totalDays = startDate && endDate ? differenceInDays(endDate, startDate) + 1 : 0;
+  const computedTotalHours = startDate && endDate ? calculateTotalHours(startDate, endDate, dedicationType, hoursValue) : 0;
+  const maxDailyMinutes = dedicationType === "per_day" ? hoursValue * 60 : Math.round((hoursValue / 7) * 60);
+
+  const handleValidateStep1 = () => {
+    if (!name.trim()) { toast.error("Dê um nome ao ciclo."); return false; }
+    if (!startDate) { toast.error("Selecione a data inicial."); return false; }
+    if (!endDate) { toast.error("Selecione a data final."); return false; }
+    if (endDate < startDate) { toast.error("A data final deve ser após a data inicial."); return false; }
+    if (hoursValue < 1) { toast.error("Defina pelo menos 1 hora."); return false; }
+    if (computedTotalHours < 1) { toast.error("O período e horas resultam em menos de 1 hora total."); return false; }
+    return true;
+  };
+
   const handleGenerate = () => {
     if (validConfigs.length === 0) { toast.error("Adicione pelo menos uma disciplina."); return; }
-    if (totalHours < 1) { toast.error("Defina pelo menos 1 hora de carga horária."); return; }
-    const blocks = generateCycleBlocks(totalHours, validConfigs, localSubjects);
+    const blocks = generateCycleBlocks(computedTotalHours, maxDailyMinutes, validConfigs, localSubjects);
     setEditableBlocks(blocks);
     setStep(3);
   };
@@ -271,7 +308,12 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
         subject_id: b.subject_id,
         allocated_minutes: b.allocated_minutes,
       }));
-      await onSave(name.trim(), finalBlocks);
+      const meta: AdvancedCycleMetadata = {
+        start_date: format(startDate!, "yyyy-MM-dd"),
+        end_date: format(endDate!, "yyyy-MM-dd"),
+        ...(dedicationType === "per_day" ? { hours_per_day: hoursValue } : { hours_per_week: hoursValue }),
+      };
+      await onSave(name.trim(), finalBlocks, meta);
     } catch {
       toast.error("Erro ao salvar o ciclo.");
     } finally {
@@ -327,26 +369,99 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
       <div className="space-y-2">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>Passo {step} de 3</span>
-          <span>{step === 1 ? "Carga Horária" : step === 2 ? "Disciplinas" : "Revisão"}</span>
+          <span>{step === 1 ? "Período e Tempo" : step === 2 ? "Disciplinas" : "Revisão"}</span>
         </div>
         <Progress value={(step / 3) * 100} className="h-1.5" />
       </div>
 
       <AnimatePresence mode="wait">
         {step === 1 && (
-          <motion.div key="step1" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.25 }} className="space-y-5">
+          <motion.div key="step1" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.25 }} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="adv-name">Nome do Ciclo</Label>
               <Input id="adv-name" placeholder="Ex: Ciclo Intensivo, Plano Mensal..." value={name} onChange={(e) => setName(e.target.value)} maxLength={100} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="total-hours">Carga Horária Total (horas)</Label>
-              <p className="text-xs text-muted-foreground">Quantas horas no total queres dedicar a este ciclo?</p>
-              <Input id="total-hours" type="number" min={1} max={200} value={totalHours} onChange={(e) => setTotalHours(Math.max(1, parseInt(e.target.value) || 1))} className="w-32" />
+
+            {/* Date range */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-sm">Data Inicial</Label>
+                <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !startDate && "text-muted-foreground")}>
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setStartDateOpen(false); }} locale={ptBR} initialFocus />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Data Final</Label>
+                <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !endDate && "text-muted-foreground")}>
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setEndDateOpen(false); }} disabled={(date) => startDate ? date < startDate : false} locale={ptBR} initialFocus />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
+
+            {/* Dedication type */}
+            <div className="space-y-2">
+              <Label>Como preferes dedicar o teu tempo?</Label>
+              <RadioGroup value={dedicationType} onValueChange={(v) => setDedicationType(v as DedicationType)} className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="per_day" id="per_day" />
+                  <Label htmlFor="per_day" className="font-normal cursor-pointer">Horas por dia</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="per_week" id="per_week" />
+                  <Label htmlFor="per_week" className="font-normal cursor-pointer">Horas por semana</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Hours input */}
+            <div className="space-y-1.5">
+              <Label htmlFor="hours-value">
+                {dedicationType === "per_day" ? "Quantas horas por dia?" : "Quantas horas por semana?"}
+              </Label>
+              <Input
+                id="hours-value"
+                type="number"
+                min={1}
+                max={dedicationType === "per_day" ? 16 : 80}
+                value={hoursValue}
+                onChange={(e) => setHoursValue(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-32"
+              />
+            </div>
+
+            {/* Summary */}
+            {startDate && endDate && totalDays > 0 && (
+              <div className="rounded-lg bg-primary/5 border border-primary/10 p-3 text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Período:</span>
+                  <span className="font-medium">{totalDays} dia{totalDays !== 1 ? "s" : ""}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Carga total estimada:</span>
+                  <span className="font-semibold text-primary">{Math.round(computedTotalHours)}h</span>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-              <Button onClick={() => { if (!name.trim()) { toast.error("Dê um nome ao ciclo."); return; } setStep(2); }}>
+              <Button onClick={() => { if (handleValidateStep1()) setStep(2); }}>
                 Próximo <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
