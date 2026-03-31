@@ -8,6 +8,11 @@ export interface StudyCycle {
   created_at: string;
   current_block_index: number;
   current_block_remaining_seconds: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  is_advanced: boolean;
+  hours_per_day: number | null;
+  hours_per_week: number | null;
   blocks?: StudyCycleBlock[];
 }
 
