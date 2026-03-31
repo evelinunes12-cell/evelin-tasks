@@ -16,6 +16,7 @@ import {
   toggleCycleActive,
   StudyCycle,
   NewBlock,
+  AdvancedCycleMetadata,
 } from "@/services/studyCycles";
 import StudyCycleDialog from "@/components/StudyCycleDialog";
 import StudyCyclePlayer from "@/components/StudyCyclePlayer";
@@ -62,14 +63,14 @@ const StudyCyclePage = () => {
     }
   };
 
-  const handleSave = async (name: string, blocks: NewBlock[]) => {
+  const handleSave = async (name: string, blocks: NewBlock[], advancedMeta?: AdvancedCycleMetadata) => {
     if (!user) return;
     if (editingCycle) {
       await updateStudyCycle(editingCycle.id, name, blocks);
       toast.success("Ciclo atualizado com sucesso!");
       logXP(user.id, "edit_basic", XP.EDIT_BASIC);
     } else {
-      await createStudyCycle(user.id, name, blocks);
+      await createStudyCycle(user.id, name, blocks, advancedMeta);
       toast.success("Ciclo criado com sucesso!");
       logXP(user.id, "create_cycle", XP.CREATE_ITEM);
     }

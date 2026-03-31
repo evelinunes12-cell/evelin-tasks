@@ -620,27 +620,42 @@ export type Database = {
           created_at: string
           current_block_index: number
           current_block_remaining_seconds: number | null
+          end_date: string | null
+          hours_per_day: number | null
+          hours_per_week: number | null
           id: string
           is_active: boolean
+          is_advanced: boolean
           name: string
+          start_date: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
           current_block_index?: number
           current_block_remaining_seconds?: number | null
+          end_date?: string | null
+          hours_per_day?: number | null
+          hours_per_week?: number | null
           id?: string
           is_active?: boolean
+          is_advanced?: boolean
           name: string
+          start_date?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
           current_block_index?: number
           current_block_remaining_seconds?: number | null
+          end_date?: string | null
+          hours_per_day?: number | null
+          hours_per_week?: number | null
           id?: string
           is_active?: boolean
+          is_advanced?: boolean
           name?: string
+          start_date?: string | null
           user_id?: string
         }
         Relationships: [

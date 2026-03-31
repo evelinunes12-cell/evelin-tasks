@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { Clock, Repeat, Timer, CheckCircle, TrendingUp, BookOpen } from "lucide-react";
+import ActiveCycleProgressCard from "@/components/ActiveCycleProgressCard";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
@@ -171,6 +172,9 @@ const StudyAnalyticsPage = () => {
           </Card>
         ) : (
           <>
+            {/* Active Cycle Progress */}
+            <ActiveCycleProgressCard />
+
             {/* KPI Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <KpiCard icon={Clock} label="Tempo Total" value={formatTime(analytics.totalMinutes)} />
