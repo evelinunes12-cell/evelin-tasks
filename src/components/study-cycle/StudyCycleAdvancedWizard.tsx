@@ -54,11 +54,6 @@ const MASTERY_LABELS: Record<MasteryLevel, string> = {
   advanced: "Avançado",
 };
 
-const MASTERY_BLOCK_MINUTES: Record<MasteryLevel, number> = {
-  beginner: 90,
-  intermediate: 60,
-  advanced: 45,
-};
 
 // --- Subject Combobox ---
 const SubjectCombobox = ({ subjects, value, usedIds, onChange, userId, onCreated }: {
