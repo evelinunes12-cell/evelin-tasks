@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, SkipForward, RotateCcw, X, Coffee } from "lucide-react";
+import { Play, Pause, SkipForward, RotateCcw, X, Coffee, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DonutTimer } from "@/components/DonutTimer";
 import { StudyCycle, saveCycleProgress } from "@/services/studyCycles";
@@ -17,8 +17,6 @@ interface StudyCyclePlayerProps {
 }
 
 const BREAK_SECONDS = 300; // 5 min
-
-// (DonutTimer is now a separate component)
 
 // ─── Queue Block Chip ──────────────────────────────────────────────
 interface QueueChipProps {
@@ -59,19 +57,16 @@ const QueueChip = ({ name, color, minutes, isDone, isCurrent, onClick, disabled 
   </button>
 );
 
-// ─── Main Player ───────────────────────────────────────────────────
+// ─── Main Player (Count-Up Timer) ──────────────────────────────────
 const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
   const { user } = useAuth();
   const blocks = cycle.blocks || [];
 
-  // Initialize from saved progress
   const savedIndex = Math.min(cycle.current_block_index || 0, Math.max(blocks.length - 1, 0));
-  const savedRemaining = cycle.current_block_remaining_seconds;
 
   const [currentIndex, setCurrentIndex] = useState(savedIndex);
-  const [timeRemaining, setTimeRemaining] = useState(
-    savedRemaining ?? (blocks[savedIndex]?.allocated_minutes ?? 0) * 60
-  );
+  // Count-up: elapsed seconds
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [completedBlocks, setCompletedBlocks] = useState<Set<number>>(() => {
@@ -80,16 +75,20 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     return set;
   });
   const [mode, setMode] = useState<"study" | "break">("study");
+  const [targetReached, setTargetReached] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const endTimeRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const elapsedAtStartRef = useRef(0);
+
+  // Break mode uses countdown
+  const [breakRemaining, setBreakRemaining] = useState(BREAK_SECONDS);
+  const breakEndTimeRef = useRef<number | null>(null);
 
   const currentBlock = blocks[currentIndex];
   const isBreak = mode === "break";
-  const totalSeconds = isBreak
-    ? BREAK_SECONDS
-    : currentBlock
-    ? currentBlock.allocated_minutes * 60
-    : 0;
+  const targetSeconds = currentBlock ? currentBlock.allocated_minutes * 60 : 0;
+
+  const isOvertime = !isBreak && elapsedSeconds > targetSeconds && targetSeconds > 0;
 
   // ── Persistence ──────────────────────────────────────────────────
   const persistProgress = useCallback(
@@ -106,29 +105,20 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
   useEffect(() => {
     return () => {
       if (mode === "study") {
-        persistProgress(currentIndex, timeRemaining > 0 ? timeRemaining : null);
+        persistProgress(currentIndex, null);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, timeRemaining, mode]);
+  }, [currentIndex, mode]);
 
   const clearTimer = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    endTimeRef.current = null;
+    startTimeRef.current = null;
+    breakEndTimeRef.current = null;
   }, []);
-
-  const advanceToNextBlock = useCallback(() => {
-    const nextIdx = currentIndex + 1 < blocks.length ? currentIndex + 1 : 0;
-    setCurrentIndex(nextIdx);
-    setTimeRemaining(blocks[nextIdx].allocated_minutes * 60);
-    setMode("study");
-    setIsRunning(false);
-    setIsPaused(false);
-    persistProgress(nextIdx, null);
-  }, [currentIndex, blocks, persistProgress]);
 
   const playAlarm = useCallback(() => {
     try {
@@ -148,71 +138,118 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     }
   }, []);
 
-  const handleStudyComplete = useCallback(async () => {
+  // ── Complete block (manual) ──────────────────────────────────────
+  const handleCompleteBlock = useCallback(async () => {
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
     setCompletedBlocks((prev) => new Set(prev).add(currentIndex));
-    playAlarm();
+
+    const realElapsed = elapsedSeconds;
+    const realMinutes = Math.max(1, Math.round(realElapsed / 60));
+
     if (user) {
       await registerActivity(user.id);
       logXP(user.id, "study_block_completed", XP.STUDY_BLOCK_COMPLETED);
       const block = blocks[currentIndex];
       if (block) {
-        const startedAt = new Date(Date.now() - block.allocated_minutes * 60 * 1000);
-        await createFocusSession(user.id, startedAt, block.allocated_minutes, block.subject_id, cycle.id);
+        const startedAt = new Date(Date.now() - realElapsed * 1000);
+        await createFocusSession(user.id, startedAt, realMinutes, block.subject_id, cycle.id);
       }
     }
-    toast.success(`✅ ${currentBlock?.subject?.name || "Bloco"} concluído!`);
+
+    toast.success(`✅ ${currentBlock?.subject?.name || "Bloco"} concluído! (${realMinutes}min)`);
+
+    // Go to break
     setMode("break");
-    setTimeRemaining(BREAK_SECONDS);
-  }, [currentIndex, currentBlock, blocks, user, clearTimer, playAlarm, cycle.id]);
+    setBreakRemaining(BREAK_SECONDS);
+    setElapsedSeconds(0);
+    setTargetReached(false);
+  }, [currentIndex, currentBlock, blocks, user, clearTimer, cycle.id, elapsedSeconds]);
+
+  const advanceToNextBlock = useCallback(() => {
+    const nextIdx = currentIndex + 1 < blocks.length ? currentIndex + 1 : 0;
+    setCurrentIndex(nextIdx);
+    setElapsedSeconds(0);
+    setTargetReached(false);
+    setMode("study");
+    setIsRunning(false);
+    setIsPaused(false);
+    persistProgress(nextIdx, null);
+  }, [currentIndex, blocks, persistProgress]);
 
   const handleBreakComplete = useCallback(() => {
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
     playAlarm();
-    const allDone = completedBlocks.size + 1 >= blocks.length;
-    if (allDone && completedBlocks.has(currentIndex)) {
+    const allDone = completedBlocks.size >= blocks.length;
+    if (allDone) {
       toast.success("🎉 Ciclo completo! Parabéns!");
       setMode("study");
       persistProgress(0, null);
       return;
     }
     advanceToNextBlock();
-  }, [clearTimer, completedBlocks, blocks.length, currentIndex, advanceToNextBlock, persistProgress, playAlarm]);
+  }, [clearTimer, completedBlocks, blocks.length, advanceToNextBlock, persistProgress, playAlarm]);
 
-  // Timer tick
+  // Timer tick - study mode (count up)
   useEffect(() => {
-    if (isRunning && endTimeRef.current) {
+    if (isRunning && !isBreak && startTimeRef.current) {
       intervalRef.current = setInterval(() => {
         const now = Date.now();
-        const remaining = Math.max(0, Math.floor((endTimeRef.current! - now) / 1000));
-        setTimeRemaining(remaining);
+        const elapsed = elapsedAtStartRef.current + Math.floor((now - startTimeRef.current!) / 1000);
+        setElapsedSeconds(elapsed);
       }, 250);
     }
     return () => {
-      if (intervalRef.current) {
+      if (intervalRef.current && !isBreak) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
     };
-  }, [isRunning]);
+  }, [isRunning, isBreak]);
 
-  // Handle completion
+  // Timer tick - break mode (countdown)
   useEffect(() => {
-    if (isRunning && timeRemaining <= 0 && endTimeRef.current) {
-      if (mode === "study") {
-        handleStudyComplete();
-      } else {
-        handleBreakComplete();
-      }
+    if (isRunning && isBreak && breakEndTimeRef.current) {
+      intervalRef.current = setInterval(() => {
+        const now = Date.now();
+        const remaining = Math.max(0, Math.floor((breakEndTimeRef.current! - now) / 1000));
+        setBreakRemaining(remaining);
+      }, 250);
     }
-  }, [isRunning, timeRemaining, mode, handleStudyComplete, handleBreakComplete]);
+    return () => {
+      if (intervalRef.current && isBreak) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isRunning, isBreak]);
+
+  // Target reached alarm (study mode) - fires once
+  useEffect(() => {
+    if (!isBreak && elapsedSeconds >= targetSeconds && targetSeconds > 0 && !targetReached && isRunning) {
+      setTargetReached(true);
+      playAlarm();
+      toast.success("⏰ Tempo planejado concluído! Você está no tempo extra.");
+    }
+  }, [elapsedSeconds, targetSeconds, targetReached, isBreak, isRunning, playAlarm]);
+
+  // Break completion
+  useEffect(() => {
+    if (isRunning && isBreak && breakRemaining <= 0 && breakEndTimeRef.current) {
+      handleBreakComplete();
+    }
+  }, [isRunning, isBreak, breakRemaining, handleBreakComplete]);
 
   const startTimer = () => {
-    endTimeRef.current = Date.now() + timeRemaining * 1000;
+    if (isBreak) {
+      breakEndTimeRef.current = Date.now() + breakRemaining * 1000;
+    } else {
+      startTimeRef.current = Date.now();
+      elapsedAtStartRef.current = elapsedSeconds;
+    }
     setIsRunning(true);
     setIsPaused(false);
   };
@@ -222,7 +259,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     setIsRunning(false);
     setIsPaused(true);
     if (mode === "study") {
-      persistProgress(currentIndex, timeRemaining);
+      persistProgress(currentIndex, null);
     }
   };
 
@@ -239,11 +276,13 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
       advanceToNextBlock();
       return;
     }
+    // Skip study block without saving
     setCompletedBlocks((prev) => new Set(prev).add(currentIndex));
     if (currentIndex < blocks.length - 1) {
       const nextIdx = currentIndex + 1;
       setCurrentIndex(nextIdx);
-      setTimeRemaining(blocks[nextIdx].allocated_minutes * 60);
+      setElapsedSeconds(0);
+      setTargetReached(false);
       persistProgress(nextIdx, null);
     } else {
       toast.success("🎉 Ciclo completo!");
@@ -255,10 +294,11 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
+    setTargetReached(false);
     if (isBreak) {
-      setTimeRemaining(BREAK_SECONDS);
+      setBreakRemaining(BREAK_SECONDS);
     } else {
-      setTimeRemaining(currentBlock?.allocated_minutes * 60 || 0);
+      setElapsedSeconds(0);
     }
   };
 
@@ -268,23 +308,36 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     setIsRunning(false);
     setIsPaused(false);
     setCurrentIndex(index);
-    setTimeRemaining(blocks[index].allocated_minutes * 60);
+    setElapsedSeconds(0);
+    setTargetReached(false);
     persistProgress(index, null);
   };
 
   const handleClose = () => {
     clearTimer();
     if (mode === "study") {
-      persistProgress(currentIndex, timeRemaining > 0 ? timeRemaining : null);
+      persistProgress(currentIndex, null);
     }
     onClose();
   };
 
   // ── Derived UI values ────────────────────────────────────────────
-  const minutes = Math.floor(timeRemaining / 60);
-  const seconds = timeRemaining % 60;
-  const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  const progress = totalSeconds > 0 ? ((totalSeconds - timeRemaining) / totalSeconds) * 100 : 0;
+  const formatTime = (totalSecs: number) => {
+    const m = Math.floor(totalSecs / 60);
+    const s = totalSecs % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const formattedTime = isBreak ? formatTime(breakRemaining) : formatTime(elapsedSeconds);
+  const progress = isBreak
+    ? ((BREAK_SECONDS - breakRemaining) / BREAK_SECONDS) * 100
+    : targetSeconds > 0
+    ? (elapsedSeconds / targetSeconds) * 100
+    : 0;
+
+  const overtimeSeconds = !isBreak && elapsedSeconds > targetSeconds ? elapsedSeconds - targetSeconds : 0;
+  const overtimeText = overtimeSeconds > 0 ? formatTime(overtimeSeconds) : undefined;
+
   const allDone = completedBlocks.size === blocks.length;
   const subjectColor = isBreak ? "hsl(var(--primary))" : currentBlock?.subject?.color || "hsl(var(--primary))";
 
@@ -300,7 +353,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
   const statusLabel = isBreak
     ? isRunning ? "Descansando..." : "Intervalo"
     : isRunning
-    ? "Estudando..."
+    ? isOvertime ? "Tempo extra!" : "Estudando..."
     : isPaused
     ? "Pausado"
     : allDone
@@ -342,6 +395,8 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
           subjectColor={subjectColor}
           isRunning={isRunning}
           isPaused={isPaused}
+          isOvertime={isOvertime}
+          overtimeText={overtimeText}
         />
 
         {/* ── Controls ───────────────────────────────────────────── */}
@@ -373,16 +428,39 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
             )}
           </Button>
 
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-12 w-12 rounded-full border-border/50"
-            onClick={handleSkip}
-            disabled={allDone && !isBreak}
-          >
-            <SkipForward className="h-5 w-5" />
-          </Button>
+          {!isBreak ? (
+            <Button
+              variant="outline"
+              size="icon"
+              className={cn(
+                "h-12 w-12 rounded-full border-border/50",
+                (isRunning || isPaused) && "border-primary/50 text-primary hover:bg-primary/10"
+              )}
+              onClick={handleCompleteBlock}
+              disabled={allDone || (!isRunning && !isPaused && elapsedSeconds === 0)}
+              title="Concluir bloco"
+            >
+              <CheckCircle2 className="h-5 w-5" />
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 rounded-full border-border/50"
+              onClick={handleSkip}
+              disabled={allDone}
+            >
+              <SkipForward className="h-5 w-5" />
+            </Button>
+          )}
         </div>
+
+        {/* Complete block hint */}
+        {!isBreak && (isRunning || isPaused) && (
+          <p className="text-xs text-muted-foreground text-center">
+            Clique em <CheckCircle2 className="h-3.5 w-3.5 inline -mt-0.5" /> para concluir e salvar o tempo estudado
+          </p>
+        )}
 
         {/* Skip break shortcut */}
         {isBreak && (
