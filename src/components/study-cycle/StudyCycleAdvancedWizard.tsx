@@ -325,7 +325,7 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
 
   const handleGenerate = () => {
     if (validConfigs.length === 0) { toast.error("Adicione pelo menos uma disciplina."); return; }
-    const blocks = generateCycleBlocks(dailyMinutes, validConfigs, localSubjects);
+    const blocks = generateCycleBlocks(weeklyMinutes, validConfigs, localSubjects);
     setEditableBlocks(blocks);
     setStep(3);
   };
