@@ -312,7 +312,7 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
   const usedIds = configs.map((c) => c.subject_id).filter(Boolean);
   const validConfigs = configs.filter((c) => c.subject_id);
 
-  const dailyMinutes = dedicationType === "per_day" ? hoursValue * 60 : Math.round((hoursValue / 7) * 60);
+  const weeklyMinutes = dedicationType === "per_week" ? hoursValue * 60 : hoursValue * 7 * 60;
 
   const handleValidateStep1 = () => {
     if (!name.trim()) { toast.error("Dê um nome ao ciclo."); return false; }
