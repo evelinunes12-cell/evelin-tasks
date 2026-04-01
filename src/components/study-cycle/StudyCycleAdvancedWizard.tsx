@@ -139,19 +139,6 @@ const SubjectCombobox = ({ subjects, value, usedIds, onChange, userId, onCreated
   );
 };
 
-// --- Calculate total hours ---
-function calculateTotalHours(
-  startDate: Date,
-  endDate: Date,
-  dedicationType: DedicationType,
-  hoursValue: number
-): number {
-  const days = differenceInDays(endDate, startDate) + 1;
-  if (dedicationType === "per_day") {
-    return days * hoursValue;
-  }
-  return (days / 7) * hoursValue;
-}
 
 // --- Engine: 1 block per subject, proportional to weight based on daily minutes ---
 function generateCycleBlocks(
