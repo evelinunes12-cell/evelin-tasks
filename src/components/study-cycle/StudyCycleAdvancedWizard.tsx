@@ -477,13 +477,13 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
             </div>
 
             {/* Summary */}
-            {startDate && endDate && dailyMinutes > 0 && (
+            {startDate && endDate && weeklyMinutes > 0 && (
               <div className="rounded-lg bg-primary/5 border border-primary/10 p-3 text-sm space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Meta diária:</span>
-                  <span className="font-semibold text-primary">{Math.floor(dailyMinutes / 60)}h{dailyMinutes % 60 > 0 ? ` ${dailyMinutes % 60}min` : ""}</span>
+                  <span className="text-muted-foreground">Rodada base (semanal):</span>
+                  <span className="font-semibold text-primary">{Math.floor(weeklyMinutes / 60)}h{weeklyMinutes % 60 > 0 ? ` ${weeklyMinutes % 60}min` : ""}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">O ciclo gerará 1 bloco por disciplina cuja soma = meta diária. Repita-o todos os dias.</p>
+                <p className="text-xs text-muted-foreground">O ciclo será uma esteira contínua. Cada rodada = sua carga semanal distribuída pelas disciplinas.</p>
               </div>
             )}
 
