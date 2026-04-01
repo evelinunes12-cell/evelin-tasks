@@ -262,9 +262,7 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
   const usedIds = configs.map((c) => c.subject_id).filter(Boolean);
   const validConfigs = configs.filter((c) => c.subject_id);
 
-  const totalDays = startDate && endDate ? differenceInDays(endDate, startDate) + 1 : 0;
-  const computedTotalHours = startDate && endDate ? calculateTotalHours(startDate, endDate, dedicationType, hoursValue) : 0;
-  const maxDailyMinutes = dedicationType === "per_day" ? hoursValue * 60 : Math.round((hoursValue / 7) * 60);
+  const dailyMinutes = dedicationType === "per_day" ? hoursValue * 60 : Math.round((hoursValue / 7) * 60);
 
   const handleValidateStep1 = () => {
     if (!name.trim()) { toast.error("Dê um nome ao ciclo."); return false; }
@@ -272,13 +270,12 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
     if (!endDate) { toast.error("Selecione a data final."); return false; }
     if (endDate < startDate) { toast.error("A data final deve ser após a data inicial."); return false; }
     if (hoursValue < 1) { toast.error("Defina pelo menos 1 hora."); return false; }
-    if (computedTotalHours < 1) { toast.error("O período e horas resultam em menos de 1 hora total."); return false; }
     return true;
   };
 
   const handleGenerate = () => {
     if (validConfigs.length === 0) { toast.error("Adicione pelo menos uma disciplina."); return; }
-    const blocks = generateCycleBlocks(computedTotalHours, maxDailyMinutes, validConfigs, localSubjects);
+    const blocks = generateCycleBlocks(dailyMinutes, validConfigs, localSubjects);
     setEditableBlocks(blocks);
     setStep(3);
   };
