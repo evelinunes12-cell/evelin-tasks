@@ -135,27 +135,95 @@ const SubjectCombobox = ({ subjects, value, usedIds, onChange, userId, onCreated
 };
 
 
-// --- Engine: 1 block per subject, proportional to weight based on daily minutes ---
+const MASTERY_MULTIPLIER: Record<MasteryLevel, number> = {
+  beginner: 1.5,
+  intermediate: 1.0,
+  advanced: 0.8,
+};
+
+const MIN_BLOCK = 60;
+const MAX_BLOCK = 150;
+
+// --- Engine: Continuous Cycle ("Rodada Base" semanal) ---
 function generateCycleBlocks(
-  dailyMinutes: number,
+  weeklyMinutes: number,
   configs: SubjectConfig[],
   subjects: Subject[]
 ): EditableBlock[] {
-  const totalWeight = configs.reduce((s, c) => s + c.weight, 0);
-  if (totalWeight === 0 || dailyMinutes <= 0) return [];
+  if (configs.length === 0 || weeklyMinutes <= 0) return [];
 
-  return configs.map((config) => {
-    const proportion = config.weight / totalWeight;
-    const blockMinutes = Math.max(5, Math.round(dailyMinutes * proportion));
-    const subject = subjects.find((s) => s.id === config.subject_id);
+  // 1. Score de relevância para cada disciplina
+  const scored = configs.map((c) => ({
+    ...c,
+    score: c.weight * (MASTERY_MULTIPLIER[c.mastery] ?? 1),
+  }));
+  const totalScore = scored.reduce((s, c) => s + c.score, 0);
+
+  // 2. Minutos totais por disciplina na rodada e fatiamento em blocos
+  type RawBlock = { subject_id: string; minutes: number };
+  const rawBlocks: RawBlock[] = [];
+
+  scored.forEach((config) => {
+    const proportion = config.score / totalScore;
+    let totalMinutes = Math.round(weeklyMinutes * proportion);
+    totalMinutes = Math.max(totalMinutes, MIN_BLOCK); // garante mínimo
+
+    if (totalMinutes <= MAX_BLOCK) {
+      rawBlocks.push({ subject_id: config.subject_id, minutes: totalMinutes });
+    } else {
+      // Fatiar em múltiplos blocos
+      const numBlocks = Math.ceil(totalMinutes / MAX_BLOCK);
+      const perBlock = Math.round(totalMinutes / numBlocks);
+      for (let i = 0; i < numBlocks; i++) {
+        rawBlocks.push({ subject_id: config.subject_id, minutes: perBlock });
+      }
+    }
+  });
+
+  // 3. Intercalação: nunca dois blocos da mesma disciplina lado a lado
+  const interleaved = interleaveBlocks(rawBlocks);
+
+  // 4. Converter para EditableBlock
+  return interleaved.map((rb) => {
+    const subject = subjects.find((s) => s.id === rb.subject_id);
     return {
       id: generateId(),
-      subject_id: config.subject_id,
+      subject_id: rb.subject_id,
       subject_name: subject?.name || "Disciplina",
       subject_color: subject?.color || null,
-      allocated_minutes: blockMinutes,
+      allocated_minutes: rb.minutes,
     };
   });
+}
+
+// Intercala blocos para que a mesma disciplina nunca fique lado a lado
+function interleaveBlocks(blocks: { subject_id: string; minutes: number }[]) {
+  // Agrupa por disciplina, ordena pelo grupo com mais blocos primeiro
+  const groups = new Map<string, { subject_id: string; minutes: number }[]>();
+  blocks.forEach((b) => {
+    if (!groups.has(b.subject_id)) groups.set(b.subject_id, []);
+    groups.get(b.subject_id)!.push(b);
+  });
+  const sorted = [...groups.values()].sort((a, b) => b.length - a.length);
+
+  const result: { subject_id: string; minutes: number }[] = [];
+  while (sorted.some((g) => g.length > 0)) {
+    for (const group of sorted) {
+      if (group.length === 0) continue;
+      // Evitar adjacência
+      if (result.length > 0 && result[result.length - 1].subject_id === group[0].subject_id) continue;
+      result.push(group.shift()!);
+    }
+    // Se restaram blocos que não puderam ser inseridos sem adjacência, force
+    const remaining = sorted.filter((g) => g.length > 0);
+    if (remaining.length > 0 && result.length > 0) {
+      const stuck = remaining.find((g) => g[0].subject_id === result[result.length - 1].subject_id);
+      if (stuck && remaining.length === 1) {
+        result.push(stuck.shift()!);
+      }
+    }
+  }
+  return result;
 }
 
 // --- Sortable Block Item ---
@@ -244,7 +312,7 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
   const usedIds = configs.map((c) => c.subject_id).filter(Boolean);
   const validConfigs = configs.filter((c) => c.subject_id);
 
-  const dailyMinutes = dedicationType === "per_day" ? hoursValue * 60 : Math.round((hoursValue / 7) * 60);
+  const weeklyMinutes = dedicationType === "per_week" ? hoursValue * 60 : hoursValue * 7 * 60;
 
   const handleValidateStep1 = () => {
     if (!name.trim()) { toast.error("Dê um nome ao ciclo."); return false; }
@@ -257,7 +325,7 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
 
   const handleGenerate = () => {
     if (validConfigs.length === 0) { toast.error("Adicione pelo menos uma disciplina."); return; }
-    const blocks = generateCycleBlocks(dailyMinutes, validConfigs, localSubjects);
+    const blocks = generateCycleBlocks(weeklyMinutes, validConfigs, localSubjects);
     setEditableBlocks(blocks);
     setStep(3);
   };
@@ -409,13 +477,13 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
             </div>
 
             {/* Summary */}
-            {startDate && endDate && dailyMinutes > 0 && (
+            {startDate && endDate && weeklyMinutes > 0 && (
               <div className="rounded-lg bg-primary/5 border border-primary/10 p-3 text-sm space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Meta diária:</span>
-                  <span className="font-semibold text-primary">{Math.floor(dailyMinutes / 60)}h{dailyMinutes % 60 > 0 ? ` ${dailyMinutes % 60}min` : ""}</span>
+                  <span className="text-muted-foreground">Rodada base (semanal):</span>
+                  <span className="font-semibold text-primary">{Math.floor(weeklyMinutes / 60)}h{weeklyMinutes % 60 > 0 ? ` ${weeklyMinutes % 60}min` : ""}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">O ciclo gerará 1 bloco por disciplina cuja soma = meta diária. Repita-o todos os dias.</p>
+                <p className="text-xs text-muted-foreground">O ciclo será uma esteira contínua. Cada rodada = sua carga semanal distribuída pelas disciplinas.</p>
               </div>
             )}
 
