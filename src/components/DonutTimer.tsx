@@ -8,6 +8,8 @@ interface DonutTimerProps {
   subjectColor?: string;
   isRunning?: boolean;
   isPaused?: boolean;
+  isOvertime?: boolean;
+  overtimeText?: string;
 }
 
 const RADIUS = 120;
@@ -23,12 +25,17 @@ export const DonutTimer = ({
   subjectColor,
   isRunning = false,
   isPaused = false,
+  isOvertime = false,
+  overtimeText,
 }: DonutTimerProps) => {
-  const strokeDashoffset = CIRCUMFERENCE - (progress / 100) * CIRCUMFERENCE;
-  const progressColor =
-    mode === "study"
-      ? subjectColor || "hsl(var(--primary))"
-      : "hsl(142, 71%, 45%)";
+  const clampedProgress = Math.min(progress, 100);
+  const strokeDashoffset = CIRCUMFERENCE - (clampedProgress / 100) * CIRCUMFERENCE;
+
+  const progressColor = isOvertime
+    ? "hsl(142, 71%, 45%)"
+    : mode === "study"
+    ? subjectColor || "hsl(var(--primary))"
+    : "hsl(142, 71%, 45%)";
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: SIZE, height: SIZE }}>
@@ -82,9 +89,10 @@ export const DonutTimer = ({
         <span
           className={cn(
             "text-5xl font-mono font-bold tracking-tighter tabular-nums transition-colors duration-300",
-            isRunning && "text-foreground",
-            isPaused && "text-destructive",
-            !isRunning && !isPaused && "text-muted-foreground"
+            isOvertime && "text-green-500",
+            !isOvertime && isRunning && "text-foreground",
+            !isOvertime && isPaused && "text-destructive",
+            !isOvertime && !isRunning && !isPaused && "text-muted-foreground"
           )}
         >
           {timeLeft}
@@ -92,6 +100,11 @@ export const DonutTimer = ({
         <span className="text-sm text-muted-foreground mt-1.5 font-medium truncate max-w-[160px]">
           {label}
         </span>
+        {isOvertime && overtimeText && (
+          <span className="text-xs text-green-500 font-semibold mt-1 tabular-nums">
+            +{overtimeText} excedente
+          </span>
+        )}
       </div>
     </div>
   );

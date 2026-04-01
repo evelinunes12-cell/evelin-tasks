@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { format, differenceInDays } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type MasteryLevel = "beginner" | "intermediate" | "advanced";
@@ -54,11 +54,6 @@ const MASTERY_LABELS: Record<MasteryLevel, string> = {
   advanced: "Avançado",
 };
 
-const MASTERY_BLOCK_MINUTES: Record<MasteryLevel, number> = {
-  beginner: 90,
-  intermediate: 60,
-  advanced: 45,
-};
 
 // --- Subject Combobox ---
 const SubjectCombobox = ({ subjects, value, usedIds, onChange, userId, onCreated }: {
@@ -139,57 +134,28 @@ const SubjectCombobox = ({ subjects, value, usedIds, onChange, userId, onCreated
   );
 };
 
-// --- Calculate total hours ---
-function calculateTotalHours(
-  startDate: Date,
-  endDate: Date,
-  dedicationType: DedicationType,
-  hoursValue: number
-): number {
-  const days = differenceInDays(endDate, startDate) + 1;
-  if (dedicationType === "per_day") {
-    return days * hoursValue;
-  }
-  return (days / 7) * hoursValue;
-}
 
-// --- Engine ---
+// --- Engine: 1 block per subject, proportional to weight based on daily minutes ---
 function generateCycleBlocks(
-  totalHours: number,
-  maxDailyMinutes: number,
+  dailyMinutes: number,
   configs: SubjectConfig[],
   subjects: Subject[]
 ): EditableBlock[] {
-  const totalMinutes = totalHours * 60;
   const totalWeight = configs.reduce((s, c) => s + c.weight, 0);
-  if (totalWeight === 0) return [];
+  if (totalWeight === 0 || dailyMinutes <= 0) return [];
 
-  const results: EditableBlock[] = [];
-
-  for (const config of configs) {
+  return configs.map((config) => {
     const proportion = config.weight / totalWeight;
-    const subjectMinutes = Math.round(totalMinutes * proportion);
-    let blockSize = MASTERY_BLOCK_MINUTES[config.mastery];
-    // Cap block size to daily available time
-    if (maxDailyMinutes > 0) {
-      blockSize = Math.min(blockSize, maxDailyMinutes);
-    }
-    const blockCount = Math.max(1, Math.round(subjectMinutes / blockSize));
-    const adjustedBlockMinutes = Math.round(subjectMinutes / blockCount);
+    const blockMinutes = Math.max(5, Math.round(dailyMinutes * proportion));
     const subject = subjects.find((s) => s.id === config.subject_id);
-
-    for (let i = 0; i < blockCount; i++) {
-      results.push({
-        id: generateId(),
-        subject_id: config.subject_id,
-        subject_name: subject?.name || "Disciplina",
-        subject_color: subject?.color || null,
-        allocated_minutes: adjustedBlockMinutes,
-      });
-    }
-  }
-
-  return results;
+    return {
+      id: generateId(),
+      subject_id: config.subject_id,
+      subject_name: subject?.name || "Disciplina",
+      subject_color: subject?.color || null,
+      allocated_minutes: blockMinutes,
+    };
+  });
 }
 
 // --- Sortable Block Item ---
@@ -278,9 +244,7 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
   const usedIds = configs.map((c) => c.subject_id).filter(Boolean);
   const validConfigs = configs.filter((c) => c.subject_id);
 
-  const totalDays = startDate && endDate ? differenceInDays(endDate, startDate) + 1 : 0;
-  const computedTotalHours = startDate && endDate ? calculateTotalHours(startDate, endDate, dedicationType, hoursValue) : 0;
-  const maxDailyMinutes = dedicationType === "per_day" ? hoursValue * 60 : Math.round((hoursValue / 7) * 60);
+  const dailyMinutes = dedicationType === "per_day" ? hoursValue * 60 : Math.round((hoursValue / 7) * 60);
 
   const handleValidateStep1 = () => {
     if (!name.trim()) { toast.error("Dê um nome ao ciclo."); return false; }
@@ -288,13 +252,12 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
     if (!endDate) { toast.error("Selecione a data final."); return false; }
     if (endDate < startDate) { toast.error("A data final deve ser após a data inicial."); return false; }
     if (hoursValue < 1) { toast.error("Defina pelo menos 1 hora."); return false; }
-    if (computedTotalHours < 1) { toast.error("O período e horas resultam em menos de 1 hora total."); return false; }
     return true;
   };
 
   const handleGenerate = () => {
     if (validConfigs.length === 0) { toast.error("Adicione pelo menos uma disciplina."); return; }
-    const blocks = generateCycleBlocks(computedTotalHours, maxDailyMinutes, validConfigs, localSubjects);
+    const blocks = generateCycleBlocks(dailyMinutes, validConfigs, localSubjects);
     setEditableBlocks(blocks);
     setStep(3);
   };
@@ -446,16 +409,13 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
             </div>
 
             {/* Summary */}
-            {startDate && endDate && totalDays > 0 && (
+            {startDate && endDate && dailyMinutes > 0 && (
               <div className="rounded-lg bg-primary/5 border border-primary/10 p-3 text-sm space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Período:</span>
-                  <span className="font-medium">{totalDays} dia{totalDays !== 1 ? "s" : ""}</span>
+                  <span className="text-muted-foreground">Meta diária:</span>
+                  <span className="font-semibold text-primary">{Math.floor(dailyMinutes / 60)}h{dailyMinutes % 60 > 0 ? ` ${dailyMinutes % 60}min` : ""}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Carga total estimada:</span>
-                  <span className="font-semibold text-primary">{Math.round(computedTotalHours)}h</span>
-                </div>
+                <p className="text-xs text-muted-foreground">O ciclo gerará 1 bloco por disciplina cuja soma = meta diária. Repita-o todos os dias.</p>
               </div>
             )}
 
