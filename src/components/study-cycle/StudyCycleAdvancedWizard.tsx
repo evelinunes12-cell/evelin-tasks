@@ -153,43 +153,27 @@ function calculateTotalHours(
   return (days / 7) * hoursValue;
 }
 
-// --- Engine ---
+// --- Engine: 1 block per subject, proportional to weight based on daily minutes ---
 function generateCycleBlocks(
-  totalHours: number,
-  maxDailyMinutes: number,
+  dailyMinutes: number,
   configs: SubjectConfig[],
   subjects: Subject[]
 ): EditableBlock[] {
-  const totalMinutes = totalHours * 60;
   const totalWeight = configs.reduce((s, c) => s + c.weight, 0);
-  if (totalWeight === 0) return [];
+  if (totalWeight === 0 || dailyMinutes <= 0) return [];
 
-  const results: EditableBlock[] = [];
-
-  for (const config of configs) {
+  return configs.map((config) => {
     const proportion = config.weight / totalWeight;
-    const subjectMinutes = Math.round(totalMinutes * proportion);
-    let blockSize = MASTERY_BLOCK_MINUTES[config.mastery];
-    // Cap block size to daily available time
-    if (maxDailyMinutes > 0) {
-      blockSize = Math.min(blockSize, maxDailyMinutes);
-    }
-    const blockCount = Math.max(1, Math.round(subjectMinutes / blockSize));
-    const adjustedBlockMinutes = Math.round(subjectMinutes / blockCount);
+    const blockMinutes = Math.max(5, Math.round(dailyMinutes * proportion));
     const subject = subjects.find((s) => s.id === config.subject_id);
-
-    for (let i = 0; i < blockCount; i++) {
-      results.push({
-        id: generateId(),
-        subject_id: config.subject_id,
-        subject_name: subject?.name || "Disciplina",
-        subject_color: subject?.color || null,
-        allocated_minutes: adjustedBlockMinutes,
-      });
-    }
-  }
-
-  return results;
+    return {
+      id: generateId(),
+      subject_id: config.subject_id,
+      subject_name: subject?.name || "Disciplina",
+      subject_color: subject?.color || null,
+      allocated_minutes: blockMinutes,
+    };
+  });
 }
 
 // --- Sortable Block Item ---
