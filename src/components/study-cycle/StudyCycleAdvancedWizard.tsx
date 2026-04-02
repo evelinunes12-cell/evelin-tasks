@@ -635,6 +635,58 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
               <Plus className="h-4 w-4 mr-1" /> Adicionar Disciplina
             </Button>
 
+            {/* Distribution Preview */}
+            {validConfigs.length > 0 && weeklyMinutes > 0 && (() => {
+              const scored = validConfigs.map((c) => {
+                const subj = c.isNew && c.newName ? { name: c.newName, color: null } : localSubjects.find((s) => s.id === c.subject_id);
+                return {
+                  name: subj?.name || "—",
+                  color: (subj && 'color' in subj ? subj.color : null) as string | null,
+                  score: c.weight * (MASTERY_MULTIPLIER[c.mastery] ?? 1),
+                };
+              });
+              const totalScore = scored.reduce((s, c) => s + c.score, 0);
+              const items = scored.map((s) => ({
+                ...s,
+                pct: totalScore > 0 ? (s.score / totalScore) * 100 : 0,
+                mins: totalScore > 0 ? Math.round((s.score / totalScore) * weeklyMinutes) : 0,
+              }));
+
+              return (
+                <div className="rounded-lg border bg-muted/30 p-3 space-y-2.5">
+                  <p className="text-xs font-medium text-muted-foreground">Prévia da distribuição na rodada semanal</p>
+                  {/* Stacked bar */}
+                  <div className="flex h-3 rounded-full overflow-hidden bg-muted">
+                    {items.map((item, i) => (
+                      <div
+                        key={i}
+                        className="h-full transition-all duration-300"
+                        style={{
+                          width: `${item.pct}%`,
+                          backgroundColor: item.color || `hsl(${(i * 47 + 200) % 360}, 60%, 55%)`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  {/* Legend */}
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                    {items.map((item, i) => (
+                      <div key={i} className="flex items-center gap-1.5 text-xs min-w-0">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: item.color || `hsl(${(i * 47 + 200) % 360}, 60%, 55%)` }}
+                        />
+                        <span className="truncate text-foreground">{item.name}</span>
+                        <span className="text-muted-foreground ml-auto shrink-0">
+                          {Math.round(item.pct)}% · {item.mins >= 60 ? `${Math.floor(item.mins / 60)}h${item.mins % 60 > 0 ? `${item.mins % 60}m` : ""}` : `${item.mins}m`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="flex justify-between gap-2 pt-2">
               <Button variant="outline" onClick={() => setStep(1)}>
                 <ChevronLeft className="mr-1 h-4 w-4" /> Voltar
