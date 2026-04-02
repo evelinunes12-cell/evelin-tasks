@@ -570,17 +570,39 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
 
         {step === 2 && (
           <motion.div key="step2" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.25 }} className="space-y-4">
-            <div>
-              <Label>Configuração das Disciplinas</Label>
-              <p className="text-xs text-muted-foreground mt-1">Adicione disciplinas, defina o peso (1-5) e o nível de domínio.</p>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <Label>Configuração das Disciplinas</Label>
+                <p className="text-xs text-muted-foreground mt-1">Adicione disciplinas, defina o peso (1-5) e o nível de domínio.</p>
+              </div>
+              <EditalAIImporter onImport={handleAIImport} />
             </div>
 
             <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1">
               {configs.map((config, i) => (
-                <div key={config.id} className="rounded-lg border bg-card p-3 space-y-3">
+                <div key={config.id} className={cn(
+                  "rounded-lg border bg-card p-3 space-y-3",
+                  config.fromAI && "border-primary/30"
+                )}>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground font-medium w-5 shrink-0">{i + 1}.</span>
-                    <SubjectCombobox subjects={localSubjects} value={config.subject_id} usedIds={usedIds} onChange={(v) => updateConfig(config.id, "subject_id", v)} userId={userId} onCreated={handleSubjectCreated} />
+                    {config.isNew && config.newName ? (
+                      <div className="flex-1 flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-medium truncate">{config.newName}</span>
+                        <Badge variant="secondary" className="shrink-0 text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/20">
+                          Nova
+                        </Badge>
+                      </div>
+                    ) : (
+                      <div className="flex-1 flex items-center gap-2 min-w-0">
+                        <SubjectCombobox subjects={localSubjects} value={config.subject_id} usedIds={usedIds} onChange={(v) => updateConfig(config.id, "subject_id", v)} userId={userId} onCreated={handleSubjectCreated} />
+                        {config.fromAI && (
+                          <Badge variant="outline" className="shrink-0 text-[10px] px-1.5 py-0">
+                            IA
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                     <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeConfig(config.id)} disabled={configs.length <= 1}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
