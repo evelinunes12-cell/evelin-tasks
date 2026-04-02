@@ -314,6 +314,42 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
   const removeConfig = (id: string) => setConfigs((prev) => prev.filter((c) => c.id !== id));
   const updateConfig = (id: string, field: keyof SubjectConfig, value: string | number) => setConfigs((prev) => prev.map((c) => c.id === id ? { ...c, [field]: value } : c));
 
+  // --- AI Edital Import: Reconciliation ---
+  const normalizeStr = (s: string) =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+  const handleAIImport = (extracted: AIExtractedSubject[]) => {
+    const newConfigs: SubjectConfig[] = extracted.map((ext) => {
+      const normalized = normalizeStr(ext.name);
+      const match = localSubjects.find(
+        (s) => normalizeStr(s.name) === normalized
+      );
+
+      if (match) {
+        return {
+          id: generateId(),
+          subject_id: match.id,
+          weight: Math.min(5, Math.max(1, ext.weight)),
+          mastery: "intermediate" as MasteryLevel,
+          fromAI: true,
+        };
+      }
+
+      return {
+        id: generateId(),
+        subject_id: `new_${generateId()}`,
+        weight: Math.min(5, Math.max(1, ext.weight)),
+        mastery: "intermediate" as MasteryLevel,
+        isNew: true,
+        newName: ext.name,
+        fromAI: true,
+      };
+    });
+
+    setConfigs(newConfigs);
+    toast.success(`${newConfigs.length} disciplinas importadas! Revise os níveis de domínio.`);
+  };
+
   const usedIds = configs.map((c) => c.subject_id).filter(Boolean);
   const validConfigs = configs.filter((c) => c.subject_id);
 
