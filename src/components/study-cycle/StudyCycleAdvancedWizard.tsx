@@ -30,6 +30,9 @@ interface SubjectConfig {
   subject_id: string;
   weight: number;
   mastery: MasteryLevel;
+  isNew?: boolean;
+  newName?: string;
+  fromAI?: boolean;
 }
 
 interface EditableBlock {
