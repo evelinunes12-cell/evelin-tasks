@@ -9,10 +9,12 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
 import { Subject, createSubject } from "@/services/subjects";
 import { NewBlock, AdvancedCycleMetadata } from "@/services/studyCycles";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import EditalAIImporter, { AIExtractedSubject } from "@/components/study-cycle/EditalAIImporter";
 import { motion, AnimatePresence } from "framer-motion";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
