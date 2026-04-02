@@ -9,10 +9,12 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
 import { Subject, createSubject } from "@/services/subjects";
 import { NewBlock, AdvancedCycleMetadata } from "@/services/studyCycles";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import EditalAIImporter, { AIExtractedSubject } from "@/components/study-cycle/EditalAIImporter";
 import { motion, AnimatePresence } from "framer-motion";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -28,6 +30,9 @@ interface SubjectConfig {
   subject_id: string;
   weight: number;
   mastery: MasteryLevel;
+  isNew?: boolean;
+  newName?: string;
+  fromAI?: boolean;
 }
 
 interface EditableBlock {
@@ -309,8 +314,44 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
   const removeConfig = (id: string) => setConfigs((prev) => prev.filter((c) => c.id !== id));
   const updateConfig = (id: string, field: keyof SubjectConfig, value: string | number) => setConfigs((prev) => prev.map((c) => c.id === id ? { ...c, [field]: value } : c));
 
+  // --- AI Edital Import: Reconciliation ---
+  const normalizeStr = (s: string) =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+  const handleAIImport = (extracted: AIExtractedSubject[]) => {
+    const newConfigs: SubjectConfig[] = extracted.map((ext) => {
+      const normalized = normalizeStr(ext.name);
+      const match = localSubjects.find(
+        (s) => normalizeStr(s.name) === normalized
+      );
+
+      if (match) {
+        return {
+          id: generateId(),
+          subject_id: match.id,
+          weight: Math.min(5, Math.max(1, ext.weight)),
+          mastery: "intermediate" as MasteryLevel,
+          fromAI: true,
+        };
+      }
+
+      return {
+        id: generateId(),
+        subject_id: `new_${generateId()}`,
+        weight: Math.min(5, Math.max(1, ext.weight)),
+        mastery: "intermediate" as MasteryLevel,
+        isNew: true,
+        newName: ext.name,
+        fromAI: true,
+      };
+    });
+
+    setConfigs(newConfigs);
+    toast.success(`${newConfigs.length} disciplinas importadas! Revise os níveis de domínio.`);
+  };
+
   const usedIds = configs.map((c) => c.subject_id).filter(Boolean);
-  const validConfigs = configs.filter((c) => c.subject_id);
+  const validConfigs = configs.filter((c) => c.subject_id || c.isNew);
 
   const weeklyMinutes = dedicationType === "per_week" ? hoursValue * 60 : hoursValue * 7 * 60;
 
@@ -323,9 +364,40 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
     return true;
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (validConfigs.length === 0) { toast.error("Adicione pelo menos uma disciplina."); return; }
-    const blocks = generateCycleBlocks(weeklyMinutes, validConfigs, localSubjects);
+
+    // Create new subjects from AI import before generating blocks
+    const newSubjectConfigs = validConfigs.filter((c) => c.isNew && c.newName);
+    let updatedSubjects = [...localSubjects];
+    let updatedConfigs = [...configs];
+
+    if (newSubjectConfigs.length > 0 && userId) {
+      setSaving(true);
+      try {
+        for (const config of newSubjectConfigs) {
+          const created = await createSubject(config.newName!, userId);
+          updatedSubjects = [...updatedSubjects, created].sort((a, b) => a.name.localeCompare(b.name));
+          updatedConfigs = updatedConfigs.map((c) =>
+            c.id === config.id
+              ? { ...c, subject_id: created.id, isNew: false, newName: undefined }
+              : c
+          );
+        }
+        setLocalSubjects(updatedSubjects);
+        setConfigs(updatedConfigs);
+        onSubjectsChanged?.();
+        toast.success(`${newSubjectConfigs.length} disciplina(s) nova(s) criada(s)!`);
+      } catch {
+        toast.error("Erro ao criar disciplinas novas.");
+        setSaving(false);
+        return;
+      }
+      setSaving(false);
+    }
+
+    const finalValidConfigs = updatedConfigs.filter((c) => c.subject_id && !c.subject_id.startsWith("new_"));
+    const blocks = generateCycleBlocks(weeklyMinutes, finalValidConfigs, updatedSubjects);
     setEditableBlocks(blocks);
     setStep(3);
   };
@@ -498,17 +570,39 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
 
         {step === 2 && (
           <motion.div key="step2" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.25 }} className="space-y-4">
-            <div>
-              <Label>Configuração das Disciplinas</Label>
-              <p className="text-xs text-muted-foreground mt-1">Adicione disciplinas, defina o peso (1-5) e o nível de domínio.</p>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <Label>Configuração das Disciplinas</Label>
+                <p className="text-xs text-muted-foreground mt-1">Adicione disciplinas, defina o peso (1-5) e o nível de domínio.</p>
+              </div>
+              <EditalAIImporter onImport={handleAIImport} />
             </div>
 
             <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1">
               {configs.map((config, i) => (
-                <div key={config.id} className="rounded-lg border bg-card p-3 space-y-3">
+                <div key={config.id} className={cn(
+                  "rounded-lg border bg-card p-3 space-y-3",
+                  config.fromAI && "border-primary/30"
+                )}>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground font-medium w-5 shrink-0">{i + 1}.</span>
-                    <SubjectCombobox subjects={localSubjects} value={config.subject_id} usedIds={usedIds} onChange={(v) => updateConfig(config.id, "subject_id", v)} userId={userId} onCreated={handleSubjectCreated} />
+                    {config.isNew && config.newName ? (
+                      <div className="flex-1 flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-medium truncate">{config.newName}</span>
+                        <Badge variant="secondary" className="shrink-0 text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/20">
+                          Nova
+                        </Badge>
+                      </div>
+                    ) : (
+                      <div className="flex-1 flex items-center gap-2 min-w-0">
+                        <SubjectCombobox subjects={localSubjects} value={config.subject_id} usedIds={usedIds} onChange={(v) => updateConfig(config.id, "subject_id", v)} userId={userId} onCreated={handleSubjectCreated} />
+                        {config.fromAI && (
+                          <Badge variant="outline" className="shrink-0 text-[10px] px-1.5 py-0">
+                            IA
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                     <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeConfig(config.id)} disabled={configs.length <= 1}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -545,8 +639,8 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
               <Button variant="outline" onClick={() => setStep(1)}>
                 <ChevronLeft className="mr-1 h-4 w-4" /> Voltar
               </Button>
-              <Button onClick={handleGenerate}>
-                <Sparkles className="mr-1 h-4 w-4" /> Gerar Ciclo Automático
+              <Button onClick={handleGenerate} disabled={saving}>
+                {saving ? "Criando disciplinas..." : <><Sparkles className="mr-1 h-4 w-4" /> Gerar Ciclo Automático</>}
               </Button>
             </div>
           </motion.div>
