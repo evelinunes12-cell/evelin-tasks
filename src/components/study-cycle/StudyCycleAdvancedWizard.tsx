@@ -351,7 +351,7 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
   };
 
   const usedIds = configs.map((c) => c.subject_id).filter(Boolean);
-  const validConfigs = configs.filter((c) => c.subject_id);
+  const validConfigs = configs.filter((c) => c.subject_id || c.isNew);
 
   const weeklyMinutes = dedicationType === "per_week" ? hoursValue * 60 : hoursValue * 7 * 60;
 
@@ -364,9 +364,40 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
     return true;
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (validConfigs.length === 0) { toast.error("Adicione pelo menos uma disciplina."); return; }
-    const blocks = generateCycleBlocks(weeklyMinutes, validConfigs, localSubjects);
+
+    // Create new subjects from AI import before generating blocks
+    const newSubjectConfigs = validConfigs.filter((c) => c.isNew && c.newName);
+    let updatedSubjects = [...localSubjects];
+    let updatedConfigs = [...configs];
+
+    if (newSubjectConfigs.length > 0 && userId) {
+      setSaving(true);
+      try {
+        for (const config of newSubjectConfigs) {
+          const created = await createSubject(config.newName!, userId);
+          updatedSubjects = [...updatedSubjects, created].sort((a, b) => a.name.localeCompare(b.name));
+          updatedConfigs = updatedConfigs.map((c) =>
+            c.id === config.id
+              ? { ...c, subject_id: created.id, isNew: false, newName: undefined }
+              : c
+          );
+        }
+        setLocalSubjects(updatedSubjects);
+        setConfigs(updatedConfigs);
+        onSubjectsChanged?.();
+        toast.success(`${newSubjectConfigs.length} disciplina(s) nova(s) criada(s)!`);
+      } catch {
+        toast.error("Erro ao criar disciplinas novas.");
+        setSaving(false);
+        return;
+      }
+      setSaving(false);
+    }
+
+    const finalValidConfigs = updatedConfigs.filter((c) => c.subject_id && !c.subject_id.startsWith("new_"));
+    const blocks = generateCycleBlocks(weeklyMinutes, finalValidConfigs, updatedSubjects);
     setEditableBlocks(blocks);
     setStep(3);
   };
