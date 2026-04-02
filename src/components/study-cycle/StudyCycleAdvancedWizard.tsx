@@ -639,8 +639,8 @@ const StudyCycleAdvancedWizard = ({ subjects: initialSubjects, onSave, onCancel,
               <Button variant="outline" onClick={() => setStep(1)}>
                 <ChevronLeft className="mr-1 h-4 w-4" /> Voltar
               </Button>
-              <Button onClick={handleGenerate}>
-                <Sparkles className="mr-1 h-4 w-4" /> Gerar Ciclo Automático
+              <Button onClick={handleGenerate} disabled={saving}>
+                {saving ? "Criando disciplinas..." : <><Sparkles className="mr-1 h-4 w-4" /> Gerar Ciclo Automático</>}
               </Button>
             </div>
           </motion.div>
