@@ -9,9 +9,10 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SwipeToOpenSidebar } from "@/components/SwipeToOpenSidebar";
 import { ConfettiProvider } from "@/hooks/useConfetti";
 import { FocusTimerProvider } from "@/contexts/FocusTimerContext";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useCallback } from "react";
 import PageTransition from "./components/PageTransition";
 import PageLoadingFallback from "./components/PageLoadingFallback";
+import SplashScreen from "./components/SplashScreen";
 
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -84,60 +85,71 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-    <QueryClientProvider client={queryClient}>
-      <ConfettiProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <PWAInstallPrompt />
-          <BrowserRouter>
-            <ZenitCommand />
-            <FocusTimerProvider>
-              <Suspense fallback={<PageLoadingFallback />}>
-                <SidebarShell>
-                  <Routes>
-                    <Route path="/" element={<Navigate to="/auth" replace />} />
-                    <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
-                    <Route path="/onboarding" element={<ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>} />
-                    <Route path="/invite/:token" element={<PageTransition><InvitePage /></PageTransition>} />
-                    {/* Protected routes */}
-                    <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
-                    <Route path="/subjects" element={<ProtectedRoute><PageTransition><Subjects /></PageTransition></ProtectedRoute>} />
-                    <Route path="/task-statuses" element={<ProtectedRoute><PageTransition><TaskStatuses /></PageTransition></ProtectedRoute>} />
-                    <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
-                    <Route path="/shared-environments" element={<ProtectedRoute><PageTransition><SharedEnvironments /></PageTransition></ProtectedRoute>} />
-                    <Route path="/reports" element={<ProtectedRoute><PageTransition><Reports /></PageTransition></ProtectedRoute>} />
-                    <Route path="/archived" element={<ProtectedRoute><PageTransition><ArchivedTasks /></PageTransition></ProtectedRoute>} />
-                    <Route path="/planner" element={<ProtectedRoute><PageTransition><Planner /></PageTransition></ProtectedRoute>} />
-                    <Route path="/ranking" element={<ProtectedRoute><PageTransition><RankingPage /></PageTransition></ProtectedRoute>} />
-                    <Route path="/environment/new" element={<ProtectedRoute><PageTransition><EnvironmentForm /></PageTransition></ProtectedRoute>} />
-                    <Route path="/environment/:id/edit" element={<ProtectedRoute><PageTransition><EnvironmentForm /></PageTransition></ProtectedRoute>} />
-                    <Route path="/environment/:id" element={<ProtectedRoute><PageTransition><EnvironmentDetail /></PageTransition></ProtectedRoute>} />
-                    <Route path="/task/new" element={<ProtectedRoute><PageTransition><TaskForm /></PageTransition></ProtectedRoute>} />
-                    <Route path="/task/edit/:id" element={<ProtectedRoute><PageTransition><TaskForm /></PageTransition></ProtectedRoute>} />
-                    <Route path="/task/:id" element={<ProtectedRoute><PageTransition><TaskDetail /></PageTransition></ProtectedRoute>} />
-                    <Route path="/estudos/pomodoro" element={<ProtectedRoute><PageTransition><PomodoroPage /></PageTransition></ProtectedRoute>} />
-                    <Route path="/estudos/ciclo" element={<ProtectedRoute><PageTransition><StudyCyclePage /></PageTransition></ProtectedRoute>} />
-                    <Route path="/estudos/desempenho" element={<ProtectedRoute><PageTransition><StudyAnalyticsPage /></PageTransition></ProtectedRoute>} />
-                    
-                    {/* Admin routes */}
-                    <Route path="/admin" element={<AdminRoute><PageTransition><AdminDashboard /></PageTransition></AdminRoute>} />
-                    <Route path="/admin/users" element={<AdminRoute><PageTransition><AdminUsers /></PageTransition></AdminRoute>} />
-                    <Route path="/admin/banners" element={<AdminRoute><PageTransition><AdminBanners /></PageTransition></AdminRoute>} />
-                    <Route path="/admin/notifications" element={<AdminRoute><PageTransition><AdminNotifications /></PageTransition></AdminRoute>} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
-                  </Routes>
-                </SidebarShell>
-              </Suspense>
-            </FocusTimerProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ConfettiProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
-);
+const App = () => {
+  const [showSplash, setShowSplash] = useState(() => {
+    const seen = sessionStorage.getItem("zenit-splash-seen");
+    return !seen;
+  });
+
+  const handleSplashComplete = useCallback(() => {
+    sessionStorage.setItem("zenit-splash-seen", "1");
+    setShowSplash(false);
+  }, []);
+
+  return (
+    <>
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <QueryClientProvider client={queryClient}>
+          <ConfettiProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <PWAInstallPrompt />
+              <BrowserRouter>
+                <ZenitCommand />
+                <FocusTimerProvider>
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <SidebarShell>
+                      <Routes>
+                        <Route path="/" element={<Navigate to="/auth" replace />} />
+                        <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+                        <Route path="/onboarding" element={<ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>} />
+                        <Route path="/invite/:token" element={<PageTransition><InvitePage /></PageTransition>} />
+                        <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
+                        <Route path="/subjects" element={<ProtectedRoute><PageTransition><Subjects /></PageTransition></ProtectedRoute>} />
+                        <Route path="/task-statuses" element={<ProtectedRoute><PageTransition><TaskStatuses /></PageTransition></ProtectedRoute>} />
+                        <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
+                        <Route path="/shared-environments" element={<ProtectedRoute><PageTransition><SharedEnvironments /></PageTransition></ProtectedRoute>} />
+                        <Route path="/reports" element={<ProtectedRoute><PageTransition><Reports /></PageTransition></ProtectedRoute>} />
+                        <Route path="/archived" element={<ProtectedRoute><PageTransition><ArchivedTasks /></PageTransition></ProtectedRoute>} />
+                        <Route path="/planner" element={<ProtectedRoute><PageTransition><Planner /></PageTransition></ProtectedRoute>} />
+                        <Route path="/ranking" element={<ProtectedRoute><PageTransition><RankingPage /></PageTransition></ProtectedRoute>} />
+                        <Route path="/environment/new" element={<ProtectedRoute><PageTransition><EnvironmentForm /></PageTransition></ProtectedRoute>} />
+                        <Route path="/environment/:id/edit" element={<ProtectedRoute><PageTransition><EnvironmentForm /></PageTransition></ProtectedRoute>} />
+                        <Route path="/environment/:id" element={<ProtectedRoute><PageTransition><EnvironmentDetail /></PageTransition></ProtectedRoute>} />
+                        <Route path="/task/new" element={<ProtectedRoute><PageTransition><TaskForm /></PageTransition></ProtectedRoute>} />
+                        <Route path="/task/edit/:id" element={<ProtectedRoute><PageTransition><TaskForm /></PageTransition></ProtectedRoute>} />
+                        <Route path="/task/:id" element={<ProtectedRoute><PageTransition><TaskDetail /></PageTransition></ProtectedRoute>} />
+                        <Route path="/estudos/pomodoro" element={<ProtectedRoute><PageTransition><PomodoroPage /></PageTransition></ProtectedRoute>} />
+                        <Route path="/estudos/ciclo" element={<ProtectedRoute><PageTransition><StudyCyclePage /></PageTransition></ProtectedRoute>} />
+                        <Route path="/estudos/desempenho" element={<ProtectedRoute><PageTransition><StudyAnalyticsPage /></PageTransition></ProtectedRoute>} />
+                        <Route path="/admin" element={<AdminRoute><PageTransition><AdminDashboard /></PageTransition></AdminRoute>} />
+                        <Route path="/admin/users" element={<AdminRoute><PageTransition><AdminUsers /></PageTransition></AdminRoute>} />
+                        <Route path="/admin/banners" element={<AdminRoute><PageTransition><AdminBanners /></PageTransition></AdminRoute>} />
+                        <Route path="/admin/notifications" element={<AdminRoute><PageTransition><AdminNotifications /></PageTransition></AdminRoute>} />
+                        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+                      </Routes>
+                    </SidebarShell>
+                  </Suspense>
+                </FocusTimerProvider>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ConfettiProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </>
+  );
+};
 
 export default App;
