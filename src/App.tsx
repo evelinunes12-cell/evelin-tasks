@@ -97,7 +97,8 @@ const App = () => {
   }, []);
 
   return (
-  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
     <QueryClientProvider client={queryClient}>
       <ConfettiProvider>
         <TooltipProvider>
