@@ -151,6 +151,7 @@ const App = () => {
       </ConfettiProvider>
     </QueryClientProvider>
   </ThemeProvider>
-);
+  );
+};
 
 export default App;
