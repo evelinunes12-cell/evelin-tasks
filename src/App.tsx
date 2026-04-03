@@ -85,7 +85,18 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-const App = () => (
+const App = () => {
+  const [showSplash, setShowSplash] = useState(() => {
+    const seen = sessionStorage.getItem("zenit-splash-seen");
+    return !seen;
+  });
+
+  const handleSplashComplete = useCallback(() => {
+    sessionStorage.setItem("zenit-splash-seen", "1");
+    setShowSplash(false);
+  }, []);
+
+  return (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
     <QueryClientProvider client={queryClient}>
       <ConfettiProvider>
