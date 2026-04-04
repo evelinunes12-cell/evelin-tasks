@@ -98,10 +98,11 @@ export const AchievementUnlockChecker = () => {
       .then(({ error }) => {
         if (!error) {
           queryClient.invalidateQueries({ queryKey: ["user-achievements"] });
-          const shownRaw = sessionStorage.getItem(SESSION_KEY);
-          const shownIds: string[] = shownRaw ? JSON.parse(shownRaw) : [];
-          const filtered = shownIds.filter((id) => !shouldRemoveIds.includes(id));
-          sessionStorage.setItem(SESSION_KEY, JSON.stringify(filtered));
+          const storageKey = getStorageKey(user.id);
+          const seenRaw = localStorage.getItem(storageKey);
+          const seenIds: string[] = seenRaw ? JSON.parse(seenRaw) : [];
+          const filtered = seenIds.filter((id) => !shouldRemoveIds.includes(id));
+          localStorage.setItem(storageKey, JSON.stringify(filtered));
         }
       });
   }, [user, streakData, achievements, unlocked, queryClient]);
