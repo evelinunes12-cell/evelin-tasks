@@ -39,38 +39,42 @@ export const OnboardingProgress = () => {
     if (
       !data || data.progress !== 100 ||
       hasTriggeredReward.current ||
-      !achievements.length
+      !achievements.length ||
+      !user
     ) return;
-
-    const alreadyCelebrated = localStorage.getItem("quick_start_celebrated");
-    if (alreadyCelebrated) return;
-
-    const pioneiro = achievements.find(a => a.title === PIONEIRO_TITLE);
-    if (!pioneiro) return;
-
-    const alreadyUnlocked = unlocked.some(u => u.achievement_id === pioneiro.id);
-    if (alreadyUnlocked) return;
 
     hasTriggeredReward.current = true;
 
+    const pioneiro = achievements.find(a => a.title === PIONEIRO_TITLE);
+    const alreadyUnlocked = pioneiro && unlocked.some(u => u.achievement_id === pioneiro.id);
+
     const doReward = async () => {
-      // Unlock the badge
-      await unlock(pioneiro.id);
+      // Always mark onboarding as completed in DB (persistent)
+      await supabase
+        .from("profiles")
+        .update({ onboarding_completed: true })
+        .eq("id", user.id);
+
+      // Unlock Pioneiro if not already unlocked
+      if (pioneiro && !alreadyUnlocked) {
+        await unlock(pioneiro.id);
+      }
 
       // Get user name for share card
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", user.id)
-          .maybeSingle();
-        setUserName(profile?.full_name || "Estudante");
-      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      setUserName(profile?.full_name || "Estudante");
 
       localStorage.setItem("quick_start_celebrated", "true");
       triggerConfetti();
-      setPioneiroAchievement(pioneiro);
-      setShareOpen(true);
+
+      if (pioneiro) {
+        setPioneiroAchievement(pioneiro);
+        setShareOpen(true);
+      }
     };
 
     doReward();
@@ -82,11 +86,8 @@ export const OnboardingProgress = () => {
     localStorage.setItem("onboarding_open", String(newState));
   };
 
+  // data is null when onboarding_completed=true in DB
   if (isLoading || !data) return null;
-
-  // If user already completed the guide once, never show it again
-  const alreadyCelebrated = localStorage.getItem("quick_start_celebrated");
-  if (alreadyCelebrated) return null;
 
   // If completed everything and minimized, hide
   if (data.progress === 100 && !isOpen) return null;
