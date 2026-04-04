@@ -40,10 +40,10 @@ export const AchievementUnlockChecker = () => {
     const currentStreak = streakData.streak;
     const unlockedIds = new Set(unlocked.map((u) => u.achievement_id));
 
-    // Already shown this session
-    const shownRaw = sessionStorage.getItem(SESSION_KEY);
-    const shownIds: string[] = shownRaw ? JSON.parse(shownRaw) : [];
-    const shownSet = new Set(shownIds);
+    const storageKey = getStorageKey(user.id);
+    const seenRaw = localStorage.getItem(storageKey);
+    const seenIds: string[] = seenRaw ? JSON.parse(seenRaw) : [];
+    const seenSet = new Set(seenIds);
 
     // Find achievements that should be unlocked but aren't yet
     const toUnlock = achievements.filter(
@@ -57,17 +57,17 @@ export const AchievementUnlockChecker = () => {
         await unlock(a.id);
       }
 
-      // Only show popup for ones not already shown this session
-      const toShow = toUnlock.filter((a) => !shownSet.has(a.id));
+      // Only show popup for ones never seen before
+      const toShow = toUnlock.filter((a) => !seenSet.has(a.id));
       if (toShow.length > 0) {
         const highest = toShow[toShow.length - 1];
         setNewlyUnlocked(highest);
         setShareOpen(true);
         triggerConfetti();
 
-        // Mark all as shown this session
-        const updated = [...shownIds, ...toUnlock.map((a) => a.id)];
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify(updated));
+        // Persist as seen permanently
+        const updated = [...seenIds, ...toUnlock.map((a) => a.id)];
+        localStorage.setItem(storageKey, JSON.stringify(updated));
       }
     };
 
