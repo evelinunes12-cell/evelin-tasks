@@ -24,8 +24,19 @@ export const useOnboardingStatus = () => {
     queryFn: async (): Promise<OnboardingStatus | null> => {
       if (!user) return null;
 
+      // Check if onboarding was already completed (persistent DB flag)
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("onboarding_completed, avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      // If already marked as completed in DB, don't show guide ever again
+      if (profileData?.onboarding_completed) {
+        return null;
+      }
+
       const [
-        profile,
         subjects,
         tasks,
         studySchedules,
@@ -34,7 +45,6 @@ export const useOnboardingStatus = () => {
         ownedEnvironments,
         memberEnvironments,
       ] = await Promise.all([
-        supabase.from("profiles").select("avatar_url").eq("id", user.id).maybeSingle(),
         supabase.from("subjects").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("tasks").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("study_schedules").select("id", { count: "exact", head: true }).eq("user_id", user.id),
@@ -44,7 +54,7 @@ export const useOnboardingStatus = () => {
         supabase.from("environment_members").select("id", { count: "exact", head: true }).eq("user_id", user.id),
       ]);
 
-      const hasAvatar = !!profile.data?.avatar_url;
+      const hasAvatar = !!profileData?.avatar_url;
       const hasSubjects = (subjects.count || 0) > 0;
       const hasTasks = (tasks.count || 0) > 0;
       const hasStudySchedule = (studySchedules.count || 0) > 0;
