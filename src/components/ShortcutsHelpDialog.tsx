@@ -36,7 +36,7 @@ const ShortcutsHelpDialog = () => {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-xl">
-          <Keyboard className="w-5 h-5" />
+          <CircleHelp className="w-5 h-5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
