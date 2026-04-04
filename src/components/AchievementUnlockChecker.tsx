@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useConfetti } from "@/hooks/useConfetti";
 import { useQueryClient } from "@tanstack/react-query";
 
-const SESSION_KEY = "achievement_checked_session";
+const getStorageKey = (userId: string) => `zenit_achievement_seen_${userId}`;
 
 export const AchievementUnlockChecker = () => {
   const { user } = useAuth();
