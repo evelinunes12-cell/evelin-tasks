@@ -7,7 +7,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Keyboard, Command, ArrowRight } from "lucide-react";
+import { CircleHelp, Command, ArrowRight } from "lucide-react";
 
 const Kbd = ({ children }: { children: React.ReactNode }) => (
   <kbd className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 py-0.5 rounded border border-border bg-muted text-muted-foreground text-xs font-mono font-semibold shadow-sm">
@@ -36,7 +36,7 @@ const ShortcutsHelpDialog = () => {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-xl">
-          <Keyboard className="w-5 h-5" />
+          <CircleHelp className="w-5 h-5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
