@@ -20,7 +20,6 @@ export const AchievementUnlockChecker = () => {
   const [userName, setUserName] = useState("");
   const checkedRef = useRef(false);
 
-  // Fetch user name once
   useEffect(() => {
     if (!user) return;
     supabase
@@ -45,7 +44,6 @@ export const AchievementUnlockChecker = () => {
     const seenIds: string[] = seenRaw ? JSON.parse(seenRaw) : [];
     const seenSet = new Set(seenIds);
 
-    // Find achievements that should be unlocked but aren't yet
     const toUnlock = achievements.filter(
       (a) => a.required_value <= currentStreak && !unlockedIds.has(a.id)
     );
@@ -54,10 +52,13 @@ export const AchievementUnlockChecker = () => {
 
     const unlockAll = async () => {
       for (const a of toUnlock) {
-        await unlock(a.id);
+        try {
+          await unlock(a.id);
+        } catch {
+          // Server-side validation may reject if criteria not met
+        }
       }
 
-      // Only show popup for ones never seen before
       const toShow = toUnlock.filter((a) => !seenSet.has(a.id));
       if (toShow.length > 0) {
         const highest = toShow[toShow.length - 1];
@@ -65,7 +66,6 @@ export const AchievementUnlockChecker = () => {
         setShareOpen(true);
         triggerConfetti();
 
-        // Persist as seen permanently
         const updated = [...seenIds, ...toUnlock.map((a) => a.id)];
         localStorage.setItem(storageKey, JSON.stringify(updated));
       }
@@ -73,39 +73,6 @@ export const AchievementUnlockChecker = () => {
 
     unlockAll();
   }, [user, streakData, achievements, unlocked, unlock, triggerConfetti]);
-
-  useEffect(() => {
-    if (!user || !streakData || achievements.length === 0 || unlocked.length === 0) return;
-
-    const currentStreak = streakData.streak;
-    const unlockedIds = new Set(unlocked.map((u) => u.achievement_id));
-    const shouldRemoveIds = achievements
-      .filter(
-        (achievement) =>
-          achievement.title !== "Pioneiro" &&
-          achievement.required_value > currentStreak &&
-          unlockedIds.has(achievement.id)
-      )
-      .map((achievement) => achievement.id);
-
-    if (shouldRemoveIds.length === 0) return;
-
-    supabase
-      .from("user_achievements")
-      .delete()
-      .eq("user_id", user.id)
-      .in("achievement_id", shouldRemoveIds)
-      .then(({ error }) => {
-        if (!error) {
-          queryClient.invalidateQueries({ queryKey: ["user-achievements"] });
-          const storageKey = getStorageKey(user.id);
-          const seenRaw = localStorage.getItem(storageKey);
-          const seenIds: string[] = seenRaw ? JSON.parse(seenRaw) : [];
-          const filtered = seenIds.filter((id) => !shouldRemoveIds.includes(id));
-          localStorage.setItem(storageKey, JSON.stringify(filtered));
-        }
-      });
-  }, [user, streakData, achievements, unlocked, queryClient]);
 
   return (
     <AchievementShareCard

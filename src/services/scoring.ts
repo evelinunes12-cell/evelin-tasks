@@ -2,22 +2,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { logError } from "@/lib/logger";
 
 /**
- * Logs XP points for a user action asynchronously.
+ * Logs XP points for a user action via secure server-side function.
+ * Points are validated and assigned server-side to prevent manipulation.
  * Fire-and-forget: does not block UI.
  */
-export const logXP = (userId: string, actionType: string, points: number) => {
-  if (!userId || points <= 0) return;
+export const logXP = (userId: string, actionType: string, _points?: number) => {
+  if (!userId) return;
 
-  // Fire-and-forget async insert
+  // Call the SECURITY DEFINER function that validates action type and assigns correct points
   supabase
-    .from("user_xp_logs" as any)
-    .insert({ user_id: userId, action_type: actionType, points } as any)
+    .rpc("log_user_xp", { p_action_type: actionType })
     .then(({ error }) => {
       if (error) logError("Erro ao registrar XP", error);
     });
 };
 
-// XP Constants
+// XP Constants (kept for reference/display purposes only - actual values enforced server-side)
 export const XP = {
   TASK_COMPLETED: 50,
   POMODORO_COMPLETED: 50,
