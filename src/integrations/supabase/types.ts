@@ -1177,7 +1177,9 @@ export type Database = {
         Args: { _environment_id: string; _user_id: string }
         Returns: boolean
       }
+      log_user_xp: { Args: { p_action_type: string }; Returns: undefined }
       purge_old_focus_sessions: { Args: never; Returns: undefined }
+      reset_streak_achievements: { Args: never; Returns: undefined }
       send_broadcast_notification:
         | {
             Args: {
@@ -1210,6 +1212,10 @@ export type Database = {
             }
             Returns: undefined
           }
+      unlock_user_achievement: {
+        Args: { p_achievement_id: string }
+        Returns: undefined
+      }
       validate_invite: { Args: { invite_token: string }; Returns: Json }
     }
     Enums: {
