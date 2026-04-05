@@ -54,10 +54,11 @@ export const useAchievements = () => {
   const unlockMutation = useMutation({
     mutationFn: async (achievementId: string) => {
       if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase
-        .from("user_achievements")
-        .insert({ user_id: user.id, achievement_id: achievementId });
-      if (error && !error.message.includes("duplicate")) throw error;
+      // Use SECURITY DEFINER function that validates criteria server-side
+      const { error } = await supabase.rpc("unlock_user_achievement", {
+        p_achievement_id: achievementId,
+      });
+      if (error && !error.message.includes("already") && !error.message.includes("duplicate")) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-achievements"] });
