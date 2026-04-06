@@ -34,6 +34,7 @@ const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminBanners = lazy(() => import("./pages/AdminBanners"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const AdminFeedback = lazy(() => import("./pages/admin/AdminFeedback"));
 const PomodoroPage = lazy(() => import("./pages/PomodoroPage"));
 const StudyCyclePage = lazy(() => import("./pages/StudyCyclePage"));
 const StudyAnalyticsPage = lazy(() => import("./pages/StudyAnalyticsPage"));
