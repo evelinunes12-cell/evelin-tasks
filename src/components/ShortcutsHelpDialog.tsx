@@ -7,7 +7,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CircleHelp, Command, ArrowRight } from "lucide-react";
+import { CircleHelp, Command, ArrowRight, Mail } from "lucide-react";
 
 const Kbd = ({ children }: { children: React.ReactNode }) => (
   <kbd className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 py-0.5 rounded border border-border bg-muted text-muted-foreground text-xs font-mono font-semibold shadow-sm">
@@ -42,17 +42,32 @@ const ShortcutsHelpDialog = () => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Command className="w-5 h-5 text-primary" />
-            Central de Atalhos
+            <CircleHelp className="w-5 h-5 text-primary" />
+            Central de Ajuda
           </DialogTitle>
           <DialogDescription>
-            Navegue pelo Zenit mais rápido usando o teclado.
+            Atalhos, suporte e canal de contato.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
-          {/* Highlight principal */}
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/10 border border-primary/20">
+          {/* Contact card */}
+          <a
+            href="mailto:appzenitio@gmail.com"
+            className="flex items-center gap-3 p-4 rounded-xl bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors group"
+          >
+            <div className="p-2 rounded-lg bg-primary/20 group-hover:bg-primary/30 transition-colors">
+              <Mail className="w-5 h-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">Precisa de ajuda ou tem sugestões?</p>
+              <p className="text-sm font-semibold text-primary mt-0.5 truncate">appzenitio@gmail.com</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Clique para enviar um e-mail</p>
+            </div>
+          </a>
+
+          {/* Command menu highlight */}
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 border border-border">
             <div className="flex items-center gap-1">
               <Kbd>{modKey}</Kbd>
               <span className="text-muted-foreground text-xs">+</span>
@@ -64,7 +79,7 @@ const ShortcutsHelpDialog = () => {
             </div>
           </div>
 
-          {/* O que dá pra fazer */}
+          {/* Inside command menu */}
           <div>
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1">
               Dentro do Menu de Comandos
@@ -85,7 +100,7 @@ const ShortcutsHelpDialog = () => {
             </div>
           </div>
 
-          {/* Atalhos diretos */}
+          {/* Direct shortcuts */}
           <div>
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1">
               Atalhos Diretos
