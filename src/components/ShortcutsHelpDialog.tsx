@@ -67,6 +67,19 @@ const ShortcutsHelpDialog = () => {
             </div>
           </a>
 
+          {/* Feedback button */}
+          <FeedbackDialog>
+            <button className="flex items-center gap-3 p-4 rounded-xl bg-accent/50 border border-border hover:bg-accent transition-colors w-full text-left group">
+              <div className="p-2 rounded-lg bg-accent group-hover:bg-accent/80 transition-colors">
+                <MessageSquarePlus className="w-5 h-5 text-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">Enviar feedback pelo app</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Sugestões, problemas ou dúvidas</p>
+              </div>
+            </button>
+          </FeedbackDialog>
+
           {/* Command menu highlight */}
           <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 border border-border">
             <div className="flex items-center gap-1">
