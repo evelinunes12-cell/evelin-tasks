@@ -139,6 +139,7 @@ const App = () => {
                         <Route path="/admin/users" element={<AdminRoute><PageTransition><AdminUsers /></PageTransition></AdminRoute>} />
                         <Route path="/admin/banners" element={<AdminRoute><PageTransition><AdminBanners /></PageTransition></AdminRoute>} />
                         <Route path="/admin/notifications" element={<AdminRoute><PageTransition><AdminNotifications /></PageTransition></AdminRoute>} />
+                        <Route path="/admin/feedback" element={<AdminRoute><PageTransition><AdminFeedback /></PageTransition></AdminRoute>} />
                         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
                       </Routes>
                     </SidebarShell>

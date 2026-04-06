@@ -47,6 +47,7 @@ const adminSubItems = [
   { title: "Usuários", url: "/admin/users", icon: Users, description: "Gerenciar usuários da plataforma" },
   { title: "Banners", url: "/admin/banners", icon: Image, description: "Gerenciar banners da Dashboard" },
   { title: "Notificações", url: "/admin/notifications", icon: Bell, description: "Enviar notificações aos usuários" },
+  { title: "Feedbacks", url: "/admin/feedback", icon: Sparkles, description: "Ver feedbacks dos usuários" },
 ];
 
 export function AppSidebar() {
