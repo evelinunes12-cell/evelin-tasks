@@ -34,6 +34,7 @@ const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminBanners = lazy(() => import("./pages/AdminBanners"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const AdminFeedback = lazy(() => import("./pages/admin/AdminFeedback"));
 const PomodoroPage = lazy(() => import("./pages/PomodoroPage"));
 const StudyCyclePage = lazy(() => import("./pages/StudyCyclePage"));
 const StudyAnalyticsPage = lazy(() => import("./pages/StudyAnalyticsPage"));
@@ -138,6 +139,7 @@ const App = () => {
                         <Route path="/admin/users" element={<AdminRoute><PageTransition><AdminUsers /></PageTransition></AdminRoute>} />
                         <Route path="/admin/banners" element={<AdminRoute><PageTransition><AdminBanners /></PageTransition></AdminRoute>} />
                         <Route path="/admin/notifications" element={<AdminRoute><PageTransition><AdminNotifications /></PageTransition></AdminRoute>} />
+                        <Route path="/admin/feedback" element={<AdminRoute><PageTransition><AdminFeedback /></PageTransition></AdminRoute>} />
                         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
                       </Routes>
                     </SidebarShell>

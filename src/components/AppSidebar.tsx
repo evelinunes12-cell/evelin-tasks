@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat, Sparkles, Trophy, TrendingUp, LogOut } from "lucide-react";
+import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat, Sparkles, Trophy, TrendingUp, LogOut, MessageSquarePlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAdminRole } from "@/hooks/useAdminRole";
@@ -47,6 +47,7 @@ const adminSubItems = [
   { title: "Usuários", url: "/admin/users", icon: Users, description: "Gerenciar usuários da plataforma" },
   { title: "Banners", url: "/admin/banners", icon: Image, description: "Gerenciar banners da Dashboard" },
   { title: "Notificações", url: "/admin/notifications", icon: Bell, description: "Enviar notificações aos usuários" },
+  { title: "Feedbacks", url: "/admin/feedback", icon: MessageSquarePlus, description: "Ver feedbacks dos usuários" },
 ];
 
 export function AppSidebar() {
