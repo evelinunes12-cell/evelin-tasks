@@ -7,7 +7,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CircleHelp, Command, ArrowRight, Mail } from "lucide-react";
+import { CircleHelp, Command, ArrowRight, Mail, MessageSquarePlus } from "lucide-react";
+import FeedbackDialog from "./FeedbackDialog";
 
 const Kbd = ({ children }: { children: React.ReactNode }) => (
   <kbd className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 py-0.5 rounded border border-border bg-muted text-muted-foreground text-xs font-mono font-semibold shadow-sm">
@@ -65,6 +66,19 @@ const ShortcutsHelpDialog = () => {
               <p className="text-xs text-muted-foreground mt-0.5">Clique para enviar um e-mail</p>
             </div>
           </a>
+
+          {/* Feedback button */}
+          <FeedbackDialog>
+            <button className="flex items-center gap-3 p-4 rounded-xl bg-accent/50 border border-border hover:bg-accent transition-colors w-full text-left group">
+              <div className="p-2 rounded-lg bg-accent group-hover:bg-accent/80 transition-colors">
+                <MessageSquarePlus className="w-5 h-5 text-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">Enviar feedback pelo app</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Sugestões, problemas ou dúvidas</p>
+              </div>
+            </button>
+          </FeedbackDialog>
 
           {/* Command menu highlight */}
           <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 border border-border">
