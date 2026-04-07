@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -15,6 +15,8 @@ import { AchievementUnlockChecker } from "@/components/AchievementUnlockChecker"
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { IncompleteProfileAlert } from "@/components/IncompleteProfileAlert";
 import DashboardBannerCarousel from "@/components/DashboardBannerCarousel";
+import { supabase } from "@/integrations/supabase/client";
+import { formatUsername } from "@/lib/username";
 
 import { TodaySummary } from "@/components/dashboard/TodaySummary";
 import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
@@ -62,6 +64,20 @@ const Dashboard = () => {
     : false;
 
   const completedStatusName = availableStatuses.find(s => s.toLowerCase().includes("conclu")) || "Concluído";
+  const [displayUsername, setDisplayUsername] = useState("@usuario");
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setDisplayUsername(formatUsername(data?.username));
+      });
+  }, [user?.id]);
 
   if (authLoading) {
     return (
@@ -83,7 +99,7 @@ const Dashboard = () => {
         {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">Minhas Tarefas</h2>
+            <h2 className="text-3xl font-bold text-foreground mb-2">Olá, {displayUsername}!</h2>
             <p className="text-muted-foreground">Gerencie seus trabalhos e projetos de forma organizada</p>
           </div>
           <div className="flex items-center gap-3">

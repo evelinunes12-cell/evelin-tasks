@@ -17,10 +17,12 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { resolveUsername } from "@/lib/username";
 
 interface Profile {
   id: string;
   full_name: string | null;
+  username: string | null;
   email: string;
   created_at: string | null;
   is_active: boolean | null;
@@ -40,7 +42,7 @@ const AdminUsers = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, email, created_at, is_active, current_streak, education_level")
+      .select("id, full_name, username, email, created_at, is_active, current_streak, education_level")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -86,8 +88,15 @@ const AdminUsers = () => {
 
   const filtered = profiles.filter((p) => {
     const q = search.toLowerCase();
+    const resolvedUsername = resolveUsername({
+      username: p.username,
+      fullName: p.full_name,
+      email: p.email,
+      fallbackId: p.id,
+    });
     return (
       (p.full_name?.toLowerCase().includes(q) ?? false) ||
+      resolvedUsername.toLowerCase().includes(q) ||
       p.email.toLowerCase().includes(q)
     );
   });
@@ -123,6 +132,7 @@ const AdminUsers = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
+              <TableHead>@username</TableHead>
               <TableHead>E-mail</TableHead>
               <TableHead>Cadastro</TableHead>
               <TableHead>Status</TableHead>
@@ -133,13 +143,13 @@ const AdminUsers = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   Nenhum usuário encontrado
                 </TableCell>
               </TableRow>
@@ -148,6 +158,14 @@ const AdminUsers = () => {
                 <TableRow key={profile.id}>
                   <TableCell className="font-medium">
                     {profile.full_name || "Sem nome"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    @{resolveUsername({
+                      username: profile.username,
+                      fullName: profile.full_name,
+                      email: profile.email,
+                      fallbackId: profile.id,
+                    })}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {profile.email}
