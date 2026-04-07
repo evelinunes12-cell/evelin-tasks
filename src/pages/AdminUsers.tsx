@@ -17,6 +17,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { resolveUsername } from "@/lib/username";
 
 interface Profile {
   id: string;
@@ -87,9 +88,15 @@ const AdminUsers = () => {
 
   const filtered = profiles.filter((p) => {
     const q = search.toLowerCase();
+    const resolvedUsername = resolveUsername({
+      username: p.username,
+      fullName: p.full_name,
+      email: p.email,
+      fallbackId: p.id,
+    });
     return (
       (p.full_name?.toLowerCase().includes(q) ?? false) ||
-      (p.username?.toLowerCase().includes(q) ?? false) ||
+      resolvedUsername.toLowerCase().includes(q) ||
       p.email.toLowerCase().includes(q)
     );
   });
@@ -153,7 +160,12 @@ const AdminUsers = () => {
                     {profile.full_name || "Sem nome"}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {profile.username ? `@${profile.username}` : "—"}
+                    @{resolveUsername({
+                      username: profile.username,
+                      fullName: profile.full_name,
+                      email: profile.email,
+                      fallbackId: profile.id,
+                    })}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {profile.email}

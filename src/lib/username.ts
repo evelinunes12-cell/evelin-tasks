@@ -11,3 +11,23 @@ export const normalizeUsernameInput = (value: string) =>
 
 export const formatUsername = (username?: string | null) =>
   username ? `@${username}` : "@usuario";
+
+export const resolveUsername = (params: {
+  username?: string | null;
+  fullName?: string | null;
+  email?: string | null;
+  fallbackId?: string | null;
+}) => {
+  if (params.username && params.username.trim()) return params.username;
+
+  const fromName = normalizeUsernameInput(params.fullName || "");
+  if (fromName.length >= 3) return fromName;
+
+  const fromEmail = normalizeUsernameInput((params.email || "").split("@")[0] || "");
+  if (fromEmail.length >= 3) return fromEmail;
+
+  const fromId = normalizeUsernameInput((params.fallbackId || "").replace(/-/g, "").slice(0, 12));
+  if (fromId.length >= 3) return fromId;
+
+  return "usuario";
+};

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Crown, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { resolveUsername } from "@/lib/username";
 
 interface LeaderboardEntry {
   user_id: string;
@@ -33,7 +34,12 @@ function getInitials(name: string | null) {
   return name.slice(0, 2).toUpperCase();
 }
 
-const getDisplayUsername = (entry: LeaderboardEntry) => `@${entry.username || "usuario"}`;
+const getDisplayUsername = (entry: LeaderboardEntry) =>
+  `@${resolveUsername({
+    username: entry.username,
+    fullName: entry.full_name,
+    fallbackId: entry.user_id,
+  })}`;
 
 const podiumStyles = [
 {
