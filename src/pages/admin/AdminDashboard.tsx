@@ -23,8 +23,8 @@ interface AdminStats {
   total_tasks_created: number;
   completion_rate: number;
   inactive_users: number;
-  active_users_list: { email: string; full_name: string | null; last_seen: string }[];
-  usage_ranking: { full_name: string | null; email: string; tasks_created: number; tasks_completed: number; focus_sessions: number; score: number }[];
+  active_users_list: { email: string; full_name: string | null; username: string | null; last_seen: string }[];
+  usage_ranking: { full_name: string | null; username: string | null; email: string; tasks_created: number; tasks_completed: number; focus_sessions: number; score: number }[];
   tasks_created_chart: { date: string; count: number }[];
   cohort_retention: { cohort_week: string; cohort_size: number; retention_d1: number; retention_d7: number; retention_d30: number }[];
   usage_heatmap: { day_of_week: number; hour: number; activity_count: number }[];
@@ -418,6 +418,7 @@ const AdminDashboard = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nome</TableHead>
+                      <TableHead>@username</TableHead>
                       <TableHead>E-mail</TableHead>
                       <TableHead>Último acesso</TableHead>
                     </TableRow>
@@ -426,6 +427,7 @@ const AdminDashboard = () => {
                     {stats.active_users_list.map((u, i) => (
                       <TableRow key={i}>
                         <TableCell className="font-medium text-sm">{u.full_name || "—"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{u.username ? `@${u.username}` : "—"}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                         <TableCell className="text-sm">
                           {toDisplayDate(u.last_seen)}
@@ -474,6 +476,7 @@ const AdminDashboard = () => {
                         <TableCell>
                           <div>
                             <p className="font-medium text-sm">{r.full_name || "—"}</p>
+                            <p className="text-xs text-muted-foreground">{r.username ? `@${r.username}` : "—"}</p>
                             <p className="text-xs text-muted-foreground">{r.email}</p>
                           </div>
                         </TableCell>

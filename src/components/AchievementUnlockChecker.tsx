@@ -24,11 +24,11 @@ export const AchievementUnlockChecker = () => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("full_name")
+      .select("username")
       .eq("id", user.id)
       .single()
       .then(({ data }) => {
-        if (data?.full_name) setUserName(data.full_name);
+        if (data?.username) setUserName(data.username);
       });
   }, [user]);
 

@@ -20,6 +20,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 import { EDUCATION_LEVELS } from "@/lib/constants";
+import { UsernameInput } from "@/components/UsernameInput";
+import { USERNAME_REGEX } from "@/lib/username";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
@@ -40,6 +42,8 @@ const Auth = () => {
   const [educationLevel, setEducationLevel] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
+  const [username, setUsername] = useState("");
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   
   const { signUp, signIn, user, resetPassword, updatePassword } = useAuth();
   const { toast } = useToast();
@@ -109,6 +113,16 @@ const Auth = () => {
           setLoading(false);
           return;
         }
+
+        if (!USERNAME_REGEX.test(username) || usernameAvailable !== true) {
+          toast({
+            variant: "destructive",
+            title: "Username inválido ou indisponível",
+            description: "Escolha um @username válido e disponível para continuar.",
+          });
+          setLoading(false);
+          return;
+        }
         
         if (!allRequirementsMet) {
           toast({
@@ -134,6 +148,7 @@ const Auth = () => {
           email,
           password,
           fullName,
+          username,
           birthDate: birthDate ? format(birthDate, "yyyy-MM-dd") : undefined,
           city: city || undefined,
           phone: phone || undefined,
@@ -183,6 +198,26 @@ const Auth = () => {
           return;
         }
         
+        if (!USERNAME_REGEX.test(username)) {
+          toast({
+            variant: "destructive",
+            title: "Username inválido",
+            description: "Use 3-20 caracteres com letras minúsculas, números ou _.",
+          });
+          setLoading(false);
+          return;
+        }
+
+        if (!usernameAvailable) {
+          toast({
+            variant: "destructive",
+            title: "Username indisponível",
+            description: "Escolha outro @username para continuar.",
+          });
+          setLoading(false);
+          return;
+        }
+
         if (!allRequirementsMet) {
           toast({
             variant: "destructive",
@@ -383,6 +418,13 @@ const Auth = () => {
                     className="h-12 rounded-xl"
                   />
                 </div>
+
+                <UsernameInput
+                  value={username}
+                  onChange={setUsername}
+                  onAvailabilityChange={setUsernameAvailable}
+                  label="Escolha seu @username"
+                />
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">

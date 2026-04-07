@@ -63,10 +63,10 @@ export const OnboardingProgress = () => {
       // Get user name for share card
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name")
+        .select("username")
         .eq("id", user.id)
         .maybeSingle();
-      setUserName(profile?.full_name || "Estudante");
+      setUserName(profile?.username || "usuario");
 
       localStorage.setItem("quick_start_celebrated", "true");
       triggerConfetti();
