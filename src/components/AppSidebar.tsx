@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat, Sparkles, Trophy, TrendingUp, LogOut, MessageSquarePlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { formatUsername } from "@/lib/username";
 import {
   Sidebar,
   SidebarContent,
@@ -54,7 +56,7 @@ export function AppSidebar() {
   const { open, setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const { isAdmin } = useAdminRole();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isStudyRoute = location.pathname.startsWith("/estudos");
@@ -63,6 +65,23 @@ export function AppSidebar() {
   const [studyOpen, setStudyOpen] = useState(isStudyRoute);
   const [analyticsOpen, setAnalyticsOpen] = useState(isAnalyticsRoute);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [profileLabel, setProfileLabel] = useState({ name: "Usuário", username: "@usuario" });
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    supabase
+      .from("profiles")
+      .select("full_name, username")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setProfileLabel({
+          name: data?.full_name || user.email || "Usuário",
+          username: formatUsername(data?.username),
+        });
+      });
+  }, [user?.id, user?.email]);
 
   const handleLinkClick = () => {
     if (isMobile) {
@@ -224,7 +243,14 @@ export function AppSidebar() {
         </SidebarContent>
 
         {/* Sair - fixo no rodapé da sidebar */}
-        <SidebarFooter className="border-t">
+
+        <SidebarFooter className="border-t gap-2">
+          {open && (
+            <div className="px-2 py-1">
+              <p className="text-sm font-medium truncate">{profileLabel.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{profileLabel.username}</p>
+            </div>
+          )}
           <SidebarMenu>
             <SidebarMenuItem>
               <Tooltip>
