@@ -531,7 +531,7 @@ export type Database = {
           role: string | null
           terms_accepted: boolean | null
           updated_at: string | null
-          username: string
+          username: string | null
         }
         Insert: {
           age?: number | null
@@ -553,7 +553,7 @@ export type Database = {
           role?: string | null
           terms_accepted?: boolean | null
           updated_at?: string | null
-          username?: string
+          username?: string | null
         }
         Update: {
           age?: number | null
@@ -575,7 +575,7 @@ export type Database = {
           role?: string | null
           terms_accepted?: boolean | null
           updated_at?: string | null
-          username?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -1151,7 +1151,6 @@ export type Database = {
       }
       check_overdue_tasks: { Args: never; Returns: undefined }
       check_planner_notifications: { Args: never; Returns: undefined }
-      check_username_available: { Args: { new_username: string }; Returns: boolean }
       check_upcoming_tasks: { Args: never; Returns: undefined }
       consume_invite: { Args: { invite_token: string }; Returns: Json }
       create_default_environment_statuses: {
@@ -1178,7 +1177,6 @@ export type Database = {
           id: string
           permissions: string[]
           user_id: string
-          username: string | null
         }[]
       }
       get_leaderboard: {
@@ -1188,7 +1186,6 @@ export type Database = {
           full_name: string
           total_xp: number
           user_id: string
-          username: string | null
         }[]
       }
       has_environment_permission: {

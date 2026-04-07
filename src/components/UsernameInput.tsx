@@ -49,14 +49,17 @@ export function UsernameInput({
 
     const checkAvailability = async () => {
       setChecking(true);
-      const { data, error } = await supabase.rpc("check_username_available", {
-        new_username: debouncedUsername,
-      });
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", debouncedUsername)
+        .maybeSingle();
+      const isAvailableResult = !error && !data;
 
       if (!cancelled) {
-        const available = !error && Boolean(data);
-        setIsAvailable(available);
-        onAvailabilityChange?.(available);
+        setIsAvailable(isAvailableResult);
+        onAvailabilityChange?.(isAvailableResult);
+        setChecking(false);
         setChecking(false);
       }
     };
