@@ -524,12 +524,14 @@ export type Database = {
           id: string
           is_active: boolean | null
           last_activity_date: string | null
+          last_username_update: string | null
           onboarding_completed: boolean
           phone: string | null
           pomodoro_sessions: number | null
           role: string | null
           terms_accepted: boolean | null
           updated_at: string | null
+          username: string | null
         }
         Insert: {
           age?: number | null
@@ -544,12 +546,14 @@ export type Database = {
           id: string
           is_active?: boolean | null
           last_activity_date?: string | null
+          last_username_update?: string | null
           onboarding_completed?: boolean
           phone?: string | null
           pomodoro_sessions?: number | null
           role?: string | null
           terms_accepted?: boolean | null
           updated_at?: string | null
+          username?: string | null
         }
         Update: {
           age?: number | null
@@ -564,12 +568,14 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_activity_date?: string | null
+          last_username_update?: string | null
           onboarding_completed?: boolean
           phone?: string | null
           pomodoro_sessions?: number | null
           role?: string | null
           terms_accepted?: boolean | null
           updated_at?: string | null
+          username?: string | null
         }
         Relationships: []
       }
