@@ -37,6 +37,7 @@ import {
 import { Link2, Copy, Check, Trash2, Ban, Plus, Clock, Users, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -57,6 +58,7 @@ const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
   const [isUnlimited, setIsUnlimited] = useState(true);
   const [maxUses, setMaxUses] = useState(1);
   const [expiresInDays, setExpiresInDays] = useState(7);
+  const [inviteTarget, setInviteTarget] = useState("");
 
   useEffect(() => {
     if (isOwner) {
@@ -81,6 +83,58 @@ const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
 
     try {
       setCreating(true);
+
+      if (inviteTarget.trim()) {
+        const rawTarget = inviteTarget.trim();
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawTarget);
+
+        let inviteEmail = rawTarget.toLowerCase();
+        let inviteUserId: string | null = null;
+
+        if (!isEmail) {
+          const normalizedUsername = rawTarget.replace(/^@/, "").toLowerCase();
+          const { data: profileByUsername } = await supabase
+            .from("profiles")
+            .select("id, email")
+            .eq("username", normalizedUsername)
+            .maybeSingle();
+
+          if (!profileByUsername) {
+            toast.error("Usuário não encontrado");
+            return;
+          }
+
+          inviteEmail = profileByUsername.email;
+          inviteUserId = profileByUsername.id;
+        }
+
+        const { data: existingMember } = await supabase
+          .from("environment_members")
+          .select("id")
+          .eq("environment_id", environmentId)
+          .eq("email", inviteEmail)
+          .maybeSingle();
+
+        if (existingMember) {
+          toast.error("Este usuário já foi convidado para o grupo");
+          return;
+        }
+
+        const { error: insertError } = await supabase.from("environment_members").insert({
+          environment_id: environmentId,
+          email: inviteEmail,
+          user_id: inviteUserId,
+          permissions: ["view"],
+        } as any);
+
+        if (insertError) throw insertError;
+
+        setInviteTarget("");
+        setShowCreateDialog(false);
+        toast.success("Convite enviado com sucesso!");
+        return;
+      }
+
       const invite = await createGroupInvite(environmentId, user.id, {
         maxUses: isUnlimited ? 0 : maxUses,
         expiresInDays,
@@ -90,7 +144,6 @@ const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
       setShowCreateDialog(false);
       toast.success("Link de convite criado!");
 
-      // Auto-copy the link
       const link = buildInviteLink(invite.token);
       await navigator.clipboard.writeText(link);
       setCopiedId(invite.id);
@@ -181,6 +234,16 @@ const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
             </DialogHeader>
 
             <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="inviteTarget">Convidar por e-mail ou username</Label>
+                <Input
+                  id="inviteTarget"
+                  placeholder="Digite o e-mail ou @username do colega"
+                  value={inviteTarget}
+                  onChange={(e) => setInviteTarget(e.target.value)}
+                />
+              </div>
+
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Uso ilimitado</Label>
