@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { MessageSquarePlus, Trash2, Lightbulb, Bug, HelpCircle, MessageCircle, RefreshCw } from "lucide-react";
+import { MessageSquarePlus, Trash2, Lightbulb, Bug, HelpCircle, MessageCircle, RefreshCw, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,10 +105,15 @@ const AdminFeedback = () => {
     }
   };
 
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b bg-card shadow-sm px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3">
         <SidebarTrigger className="md:hidden" />
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-8 w-8">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         <MessageSquarePlus className="w-5 h-5 text-primary" />
         <h1 className="text-lg sm:text-xl font-bold text-foreground">Feedbacks</h1>
         <Badge variant="secondary" className="ml-auto">{feedbacks.length}</Badge>
