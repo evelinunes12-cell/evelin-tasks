@@ -57,9 +57,9 @@ export function UsernameInput({
       const isAvailableResult = !error && !data;
 
       if (!cancelled) {
-        const available = !error && Boolean(data);
-        setIsAvailable(available);
-        onAvailabilityChange?.(available);
+        setIsAvailable(isAvailableResult);
+        onAvailabilityChange?.(isAvailableResult);
+        setChecking(false);
         setChecking(false);
       }
     };
