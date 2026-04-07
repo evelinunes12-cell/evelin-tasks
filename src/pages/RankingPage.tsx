@@ -26,22 +26,7 @@ const fetchLeaderboard = async (period: string): Promise<LeaderboardEntry[]> => 
     period_type: period
   } as any);
   if (error) throw error;
-
-  const rows = (data as LeaderboardEntry[] | null) || [];
-  if (rows.length === 0) return [];
-
-  const userIds = rows.map((r) => r.user_id);
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, username")
-    .in("id", userIds);
-
-  const usernameByUserId = new Map((profiles || []).map((p) => [p.id, p.username]));
-
-  return rows.map((row) => ({
-    ...row,
-    username: usernameByUserId.get(row.user_id) || row.username,
-  }));
+  return data as any || [];
 };
 
 function getInitials(name: string | null) {
