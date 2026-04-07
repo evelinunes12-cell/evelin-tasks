@@ -51,6 +51,7 @@ interface Task {
 interface Member {
   id: string;
   email: string;
+  username: string | null;
   permissions: string[];
   user_id: string | null;
 }
@@ -453,9 +454,9 @@ const EnvironmentDetail = () => {
                       <Users className="w-5 h-5" />
                       <div>
                         <CardTitle className="text-base">
-                          {user?.email} {isOwner && "(Você)"}
+                          {isOwner ? "Você" : user?.email}
                         </CardTitle>
-                        <CardDescription>Proprietário</CardDescription>
+                        <CardDescription>{isOwner ? "Proprietário" : "Membro"}</CardDescription>
                       </div>
                     </div>
                     <Badge>Todas as permissões</Badge>
@@ -471,7 +472,7 @@ const EnvironmentDetail = () => {
                       <div className="flex items-center gap-3 min-w-0">
                         <Users className="w-5 h-5 shrink-0" />
                         <div className="min-w-0">
-                          <CardTitle className="text-base truncate">{member.email}</CardTitle>
+                          <CardTitle className="text-base truncate">{member.username ? `@${member.username}` : member.email}</CardTitle>
                           <CardDescription>
                             {member.user_id ? "Membro ativo" : "Convite pendente"}
                           </CardDescription>
@@ -499,7 +500,7 @@ const EnvironmentDetail = () => {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Remover membro</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tem certeza que deseja remover {member.email} deste ambiente?
+                                  Tem certeza que deseja remover {member.username ? `@${member.username}` : member.email} deste ambiente?
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>

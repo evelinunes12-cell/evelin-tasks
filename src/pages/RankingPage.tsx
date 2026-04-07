@@ -11,10 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Crown, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { resolveUsername } from "@/lib/username";
 
 interface LeaderboardEntry {
   user_id: string;
   full_name: string | null;
+  username: string | null;
   avatar_url: string | null;
   total_xp: number;
 }
@@ -28,14 +30,16 @@ const fetchLeaderboard = async (period: string): Promise<LeaderboardEntry[]> => 
 };
 
 function getInitials(name: string | null) {
-  if (!name) return "?";
-  return name.
-  split(" ").
-  map((n) => n[0]).
-  join("").
-  toUpperCase().
-  slice(0, 2);
+  if (!name) return "@";
+  return name.slice(0, 2).toUpperCase();
 }
+
+const getDisplayUsername = (entry: LeaderboardEntry) =>
+  `@${resolveUsername({
+    username: entry.username,
+    fullName: entry.full_name,
+    fallbackId: entry.user_id,
+  })}`;
 
 const podiumStyles = [
 {
@@ -94,7 +98,7 @@ function PodiumCard({
         <Avatar className={cn(style.size, style.ring)}>
           <AvatarImage src={entry.avatar_url || undefined} />
           <AvatarFallback className="text-lg font-bold">
-            {getInitials(entry.full_name)}
+            {getInitials(entry.username)}
           </AvatarFallback>
         </Avatar>
         <div
@@ -108,7 +112,7 @@ function PodiumCard({
       </div>
 
       <p className="font-semibold text-sm text-center line-clamp-1">
-        {entry.full_name || "Anônimo"}
+        {getDisplayUsername(entry)}
       </p>
       {isCurrentUser &&
       <Badge variant="secondary" className="text-[10px] mt-1">
@@ -151,12 +155,12 @@ function ListItem({
       <Avatar className="h-9 w-9">
         <AvatarImage src={entry.avatar_url || undefined} />
         <AvatarFallback className="text-xs">
-          {getInitials(entry.full_name)}
+          {getInitials(entry.username)}
         </AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm truncate">
-          {entry.full_name || "Anônimo"}
+          {getDisplayUsername(entry)}
           {isCurrentUser &&
           <Badge variant="secondary" className="text-[10px] ml-2">
               Você

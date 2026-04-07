@@ -24,7 +24,7 @@ export const AchievementShareCard = ({
   const [downloading, setDownloading] = useState(false);
 
   if (!achievement) return null;
-  const firstName = userName?.trim().split(/\s+/)[0] || "Estudante";
+  const displayName = userName?.startsWith("@") ? userName : `@${userName || "usuario"}`;
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
@@ -105,7 +105,7 @@ export const AchievementShareCard = ({
               </p>
 
               <div className="mt-2 px-4 py-1.5 rounded-full bg-white/20 border border-white/30 text-white text-xs font-semibold tracking-wide uppercase">
-                {firstName}
+                {displayName}
               </div>
 
               <span className="mt-4 text-white/50 text-[10px] tracking-widest uppercase">

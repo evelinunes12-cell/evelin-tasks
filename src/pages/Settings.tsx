@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,7 +43,7 @@ import { ImageCropperDialog } from "@/components/ImageCropperDialog";
 import { TermsOfUseDialog } from "@/components/TermsOfUseDialog";
 import { CitySearchInput } from "@/components/CitySearchInput";
 import { formatPhoneBR } from "@/lib/phoneMask";
-import { format, parseISO } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import qrCodePix from "@/assets/qrcode-pix.jpeg";
@@ -51,6 +51,8 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { AchievementsList } from "@/components/AchievementsList";
 import { EDUCATION_LEVELS } from "@/lib/constants";
 import { lovable } from "@/integrations/lovable/index";
+import { UsernameInput } from "@/components/UsernameInput";
+import { USERNAME_REGEX, formatUsername } from "@/lib/username";
 
 interface ProfileData {
   full_name: string;
@@ -60,6 +62,8 @@ interface ProfileData {
   phone: string | null;
   education_level: string | null;
   terms_accepted: boolean | null;
+  username: string;
+  last_username_update: string | null;
 }
 
 export default function Settings() {
@@ -77,13 +81,17 @@ export default function Settings() {
     phone: null,
     education_level: null,
     terms_accepted: null,
+    username: "",
+    last_username_update: null,
   });
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [passwords, setPasswords] = useState({
     newPassword: "",
     confirmPassword: "",
   });
   const [copied, setCopied] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
+  const profileDataRef = useRef<string>("");
   
   // Image cropper state
   const [cropperOpen, setCropperOpen] = useState(false);
@@ -111,12 +119,13 @@ export default function Settings() {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name, avatar_url, birth_date, city, phone, education_level, terms_accepted")
+        .select("full_name, avatar_url, birth_date, city, phone, education_level, terms_accepted, username, last_username_update")
         .eq("id", user?.id)
         .single();
 
       if (error) throw error;
       if (data) {
+        profileDataRef.current = data.username || "";
         setProfile({
           full_name: data.full_name || "",
           avatar_url: data.avatar_url,
@@ -125,6 +134,8 @@ export default function Settings() {
           phone: data.phone ? formatPhoneBR(data.phone) : null,
           education_level: data.education_level,
           terms_accepted: data.terms_accepted,
+          username: data.username || "",
+          last_username_update: data.last_username_update,
         });
       }
     } catch (error) {
@@ -132,6 +143,14 @@ export default function Settings() {
       toast.error("Erro ao carregar perfil");
     }
   };
+
+  const usernameCooldownEnd = profile.last_username_update
+    ? addDays(new Date(profile.last_username_update), 14)
+    : null;
+  const isUsernameInCooldown = usernameCooldownEnd ? usernameCooldownEnd > new Date() : false;
+  const remainingCooldownDays = usernameCooldownEnd
+    ? Math.max(0, Math.ceil((usernameCooldownEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,21 +161,45 @@ export default function Settings() {
       return;
     }
     
+    if (!USERNAME_REGEX.test(profile.username)) {
+      toast.error("Username inválido");
+      return;
+    }
+
+    const usernameChanged = profile.username !== profileDataRef.current;
+    if (usernameChanged && usernameAvailable !== true) {
+      toast.error("Esse username já está em uso");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ 
+      const updates: any = { 
           full_name: validation.data.full_name,
           birth_date: profile.birth_date,
           city: profile.city,
           phone: profile.phone?.replace(/\D/g, "") || null,
           education_level: profile.education_level,
-        })
+          username: profile.username,
+        };
+
+      if (usernameChanged) {
+        if (isUsernameInCooldown) {
+          toast.error(`Você poderá alterar o username em ${remainingCooldownDays} dia(s).`);
+          setLoading(false);
+          return;
+        }
+        updates.last_username_update = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update(updates)
         .eq("id", user?.id);
 
       if (error) throw error;
+      profileDataRef.current = profile.username;
       toast.success("Perfil atualizado com sucesso!");
     } catch (error) {
       logError("Error updating profile", error);
@@ -451,12 +494,24 @@ export default function Settings() {
                       id="full_name"
                       type="text"
                       value={profile.full_name}
-                      onChange={(e) =>
-                        setProfile({ ...profile, full_name: e.target.value })
-                      }
+                      onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
                       placeholder="Como você quer ser chamado?"
                     />
                   </div>
+
+                  <UsernameInput
+                    value={profile.username}
+                    currentUsername={profileDataRef.current}
+                    disabled={isUsernameInCooldown}
+                    onAvailabilityChange={setUsernameAvailable}
+                    onChange={(username) => setProfile({ ...profile, username })}
+                    label="@username"
+                  />
+                  {isUsernameInCooldown && (
+                    <p className="text-sm text-amber-600">
+                      Você poderá alterar seu username novamente em {remainingCooldownDays} dia(s).
+                    </p>
+                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -500,9 +555,7 @@ export default function Settings() {
                       <CitySearchInput
                         id="city"
                         value={profile.city || ""}
-                        onChange={(value) =>
-                          setProfile({ ...profile, city: value })
-                        }
+                        onChange={(value) => setProfile({ ...profile, city: value })}
                         placeholder="Buscar cidade..."
                       />
                     </div>
@@ -607,7 +660,7 @@ export default function Settings() {
             </Card>
 
             {/* Achievements */}
-            <AchievementsList userName={profile.full_name} />
+            <AchievementsList userName={formatUsername(profile.username)} />
 
             {/* Password Section */}
             <Card>

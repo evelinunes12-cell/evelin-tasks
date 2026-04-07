@@ -53,6 +53,7 @@ export const useAuth = () => {
     email: string;
     password: string;
     fullName: string;
+    username?: string;
     birthDate?: string;
     city?: string;
     phone?: string;
@@ -84,6 +85,8 @@ export const useAuth = () => {
           phone: data.phone || null,
           education_level: data.educationLevel || null,
           terms_accepted: data.termsAccepted || false,
+          username: data.username || undefined,
+          last_username_update: data.username ? new Date().toISOString() : undefined,
         })
         .eq("id", authData.user.id);
 
