@@ -1186,6 +1186,7 @@ export type Database = {
           full_name: string
           total_xp: number
           user_id: string
+          username: string
         }[]
       }
       has_environment_permission: {
