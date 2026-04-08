@@ -37,6 +37,20 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      // Auto-reload on stale chunk errors after deploy
+      window.addEventListener('error', function(e) {
+        if (e.message && e.message.includes('Failed to fetch dynamically imported module')) {
+          var reloaded = sessionStorage.getItem('chunk-reload');
+          if (!reloaded) {
+            sessionStorage.setItem('chunk-reload', '1');
+            window.location.reload();
+          } else {
+            sessionStorage.removeItem('chunk-reload');
+          }
+        }
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
