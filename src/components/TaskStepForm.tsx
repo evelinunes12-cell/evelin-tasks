@@ -7,11 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, X, ChevronDown, ChevronUp, Upload, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, X, ChevronDown, ChevronUp, Upload, Trash2, Sparkles, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import ChecklistManager, { ChecklistItem } from "@/components/ChecklistManager";
 
 export interface TaskStep {
@@ -31,9 +34,13 @@ export interface TaskStep {
 interface TaskStepFormProps {
   steps: TaskStep[];
   onStepsChange: (steps: TaskStep[]) => void;
+  taskTitle?: string;
+  taskDescription?: string;
 }
 
-const TaskStepForm = ({ steps, onStepsChange }: TaskStepFormProps) => {
+const TaskStepForm = ({ steps, onStepsChange, taskTitle = "", taskDescription = "" }: TaskStepFormProps) => {
+  const [aiLoading, setAiLoading] = useState(false);
+
   const addStep = () => {
     const newStep: TaskStep = {
       title: "",
@@ -99,13 +106,97 @@ const TaskStepForm = ({ steps, onStepsChange }: TaskStepFormProps) => {
     updateStep(stepIndex, "links", updatedLinks);
   };
 
+  const isAiEnabled = taskDescription.trim().length >= 40;
+
+  const handleGenerateSteps = async () => {
+    if (!isAiEnabled) return;
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-subtasks", {
+        body: { title: taskTitle.trim(), description: taskDescription.trim() },
+      });
+
+      if (error) {
+        console.error("Edge function error:", error);
+        toast.error("Erro ao gerar etapas com IA. Tente novamente.");
+        return;
+      }
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      const aiSteps = data?.steps as string[] | undefined;
+      if (!aiSteps || aiSteps.length === 0) {
+        toast.error("Nenhuma etapa retornada pela IA.");
+        return;
+      }
+
+      const newSteps: TaskStep[] = aiSteps.map((text) => ({
+        title: text,
+        description: "",
+        status: "Não Iniciado",
+        googleDocsLink: "",
+        canvaLink: "",
+        files: [],
+        links: [],
+        checklist: [],
+        isExpanded: false,
+      }));
+
+      onStepsChange([...steps, ...newSteps]);
+      toast.success("✅ Etapas geradas com sucesso! Você pode editar ou remover cada etapa.");
+    } catch (err) {
+      console.error("AI steps error:", err);
+      toast.error("Erro inesperado ao gerar etapas.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const aiButton = (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      disabled={!isAiEnabled || aiLoading}
+      onClick={handleGenerateSteps}
+      className="gap-2 border-primary/40 text-primary hover:bg-primary/5 hover:border-primary/60 transition-all"
+    >
+      {aiLoading ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Pensando...
+        </>
+      ) : (
+        <>
+          <Sparkles className="h-4 w-4" />
+          Gerar Etapas com IA
+        </>
+      )}
+    </Button>
+  );
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <Label className="text-base font-semibold">Etapas do Trabalho</Label>
-        <Button type="button" onClick={addStep} variant="outline" size="sm">
-          ➕ Adicionar Etapa
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {isAiEnabled ? (
+            aiButton
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>{aiButton}</TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[250px] text-center">
+                Descreva a tarefa com mais detalhes (mín. 40 caracteres) para a IA sugerir etapas.
+              </TooltipContent>
+            </Tooltip>
+          )}
+          <Button type="button" onClick={addStep} variant="outline" size="sm">
+            ➕ Adicionar Etapa
+          </Button>
+        </div>
       </div>
 
       {steps.map((step, index) => (
