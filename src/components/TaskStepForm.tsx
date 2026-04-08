@@ -7,11 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, X, ChevronDown, ChevronUp, Upload, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, X, ChevronDown, ChevronUp, Upload, Trash2, Sparkles, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import ChecklistManager, { ChecklistItem } from "@/components/ChecklistManager";
 
 export interface TaskStep {
@@ -31,6 +34,8 @@ export interface TaskStep {
 interface TaskStepFormProps {
   steps: TaskStep[];
   onStepsChange: (steps: TaskStep[]) => void;
+  taskTitle?: string;
+  taskDescription?: string;
 }
 
 const TaskStepForm = ({ steps, onStepsChange }: TaskStepFormProps) => {
