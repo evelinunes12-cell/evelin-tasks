@@ -51,7 +51,7 @@ interface Task {
 interface Member {
   id: string;
   email: string;
-  username: string | null;
+  username?: string | null;
   permissions: string[];
   user_id: string | null;
 }
