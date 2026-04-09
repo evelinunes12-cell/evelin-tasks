@@ -25,6 +25,7 @@ const PushNotificationToggle = () => {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sendingTest, setSendingTest] = useState(false);
 
   useEffect(() => {
     const supported =
