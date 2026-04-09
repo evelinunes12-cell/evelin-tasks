@@ -35,6 +35,7 @@ import {
   CalendarIcon,
   Link2,
   Sparkles,
+  Bell,
 } from "lucide-react";
 import { logError } from "@/lib/logger";
 import { profileSchema, passwordSchema } from "@/lib/validation";
@@ -53,6 +54,7 @@ import { EDUCATION_LEVELS } from "@/lib/constants";
 import { lovable } from "@/integrations/lovable/index";
 import { UsernameInput } from "@/components/UsernameInput";
 import { USERNAME_REGEX, formatUsername } from "@/lib/username";
+import PushNotificationToggle from "@/components/PushNotificationToggle";
 
 interface ProfileData {
   full_name: string;
@@ -380,9 +382,12 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" /> <span className="hidden sm:inline">Perfil</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="gap-2">
+              <Bell className="h-4 w-4" /> <span className="hidden sm:inline">Alertas</span>
             </TabsTrigger>
             <TabsTrigger value="accounts" className="gap-2">
               <Link2 className="h-4 w-4" /> <span className="hidden sm:inline">Contas</span>
@@ -719,6 +724,11 @@ export default function Settings() {
 
             {/* Onboarding Section */}
             <OnboardingResetCard />
+          </TabsContent>
+
+          {/* NOTIFICATIONS TAB */}
+          <TabsContent value="notifications" className="space-y-6">
+            <PushNotificationToggle />
           </TabsContent>
 
           {/* ACCOUNTS & INTEGRATIONS TAB */}
