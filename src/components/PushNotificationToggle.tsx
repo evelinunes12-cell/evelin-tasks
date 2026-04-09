@@ -196,8 +196,30 @@ const PushNotificationToggle = () => {
             checked={isSubscribed}
             onCheckedChange={handleToggle}
             disabled={loading}
-          />
+         />
         </div>
+
+        {isSubscribed && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSendTest}
+              disabled={sendingTest}
+              className="gap-2"
+            >
+              {sendingTest ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {sendingTest ? "Enviando..." : "🔔 Enviar Notificação de Teste"}
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2">
+              Envia uma notificação push de teste para este dispositivo.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
