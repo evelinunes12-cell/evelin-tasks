@@ -726,6 +726,11 @@ export default function Settings() {
             <OnboardingResetCard />
           </TabsContent>
 
+          {/* NOTIFICATIONS TAB */}
+          <TabsContent value="notifications" className="space-y-6">
+            <PushNotificationToggle />
+          </TabsContent>
+
           {/* ACCOUNTS & INTEGRATIONS TAB */}
           <TabsContent value="accounts" className="space-y-6">
             <GoogleAccountCard />
