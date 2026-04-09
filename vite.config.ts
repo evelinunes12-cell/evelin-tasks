@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
+        importScripts: ["/custom-sw.js"],
       },
       manifest: {
         name: "Zenit",
