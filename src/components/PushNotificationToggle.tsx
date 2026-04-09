@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Bell, BellOff } from "lucide-react";
+import { Bell, BellOff, Loader2, Send } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { sendTestPushNotification } from "@/services/push";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -23,6 +25,7 @@ const PushNotificationToggle = () => {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sendingTest, setSendingTest] = useState(false);
 
   useEffect(() => {
     const supported =
@@ -135,6 +138,20 @@ const PushNotificationToggle = () => {
     }
   };
 
+  const handleSendTest = async () => {
+    if (!user) return;
+    setSendingTest(true);
+    try {
+      await sendTestPushNotification(user.id);
+      toast.success("Notificação de teste enviada! 🔔 Verifique seu dispositivo.");
+    } catch (err: any) {
+      console.error("Test push error:", err);
+      toast.error("Falha ao enviar notificação de teste.");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   if (!isSupported) {
     return (
       <Card>
@@ -179,8 +196,30 @@ const PushNotificationToggle = () => {
             checked={isSubscribed}
             onCheckedChange={handleToggle}
             disabled={loading}
-          />
+         />
         </div>
+
+        {isSubscribed && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSendTest}
+              disabled={sendingTest}
+              className="gap-2"
+            >
+              {sendingTest ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {sendingTest ? "Enviando..." : "🔔 Enviar Notificação de Teste"}
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2">
+              Envia uma notificação push de teste para este dispositivo.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
