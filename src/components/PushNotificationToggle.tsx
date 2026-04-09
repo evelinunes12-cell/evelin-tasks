@@ -138,6 +138,20 @@ const PushNotificationToggle = () => {
     }
   };
 
+  const handleSendTest = async () => {
+    if (!user) return;
+    setSendingTest(true);
+    try {
+      await sendTestPushNotification(user.id);
+      toast.success("Notificação de teste enviada! 🔔 Verifique seu dispositivo.");
+    } catch (err: any) {
+      console.error("Test push error:", err);
+      toast.error("Falha ao enviar notificação de teste.");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   if (!isSupported) {
     return (
       <Card>
