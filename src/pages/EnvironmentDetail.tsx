@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History } from "lucide-react";
+import { LogOut } from "lucide-react";
 import EnvironmentActivityTimeline from "@/components/EnvironmentActivityTimeline";
 import InviteManager from "@/components/InviteManager";
 import { toast } from "sonner";
@@ -67,6 +68,27 @@ const EnvironmentDetail = () => {
   const [expandedStatuses, setExpandedStatuses] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+
+  const handleLeaveGroup = async () => {
+    if (!user || !id) return;
+    try {
+      const myMembership = members.find((m) => m.user_id === user.id);
+      if (!myMembership) {
+        toast.error("Você não é membro deste grupo");
+        return;
+      }
+      const { error } = await supabase
+        .from("environment_members")
+        .delete()
+        .eq("id", myMembership.id);
+      if (error) throw error;
+      toast.success("Você saiu do grupo");
+      navigate("/shared-environments");
+    } catch (error) {
+      logError("Error leaving group", error);
+      toast.error("Erro ao sair do grupo");
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -202,6 +224,30 @@ const EnvironmentDetail = () => {
             )}
           </div>
           <div className="flex gap-2">
+            {!isOwner && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <LogOut className="w-4 h-4" />
+                    <span className="hidden sm:inline ml-2">Sair do Grupo</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Sair do grupo</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja sair deste grupo? Você perderá o acesso às tarefas e precisará de um novo convite para voltar.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLeaveGroup}>
+                      Sair
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
             {isOwner && (
               <>
                 <Button
