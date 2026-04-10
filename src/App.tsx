@@ -10,6 +10,7 @@ import { SwipeToOpenSidebar } from "@/components/SwipeToOpenSidebar";
 import { ConfettiProvider } from "@/hooks/useConfetti";
 import { FocusTimerProvider } from "@/contexts/FocusTimerContext";
 import { lazy, Suspense, useState, useCallback } from "react";
+import ErrorBoundary from "./components/ErrorBoundary";
 import PageTransition from "./components/PageTransition";
 import PageLoadingFallback from "./components/PageLoadingFallback";
 import SplashScreen from "./components/SplashScreen";
