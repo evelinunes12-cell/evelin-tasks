@@ -99,7 +99,7 @@ const App = () => {
   }, []);
 
   return (
-    <>
+    <ErrorBoundary>
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <QueryClientProvider client={queryClient}>
@@ -151,7 +151,7 @@ const App = () => {
           </ConfettiProvider>
         </QueryClientProvider>
       </ThemeProvider>
-    </>
+    </ErrorBoundary>
   );
 };
 
