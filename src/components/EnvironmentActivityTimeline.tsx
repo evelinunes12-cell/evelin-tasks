@@ -46,6 +46,8 @@ const ACTION_CONFIG: Record<string, { icon: React.ElementType; label: string; co
   member_added: { icon: UserPlus, label: "adicionou membro", color: "text-green-500" },
   member_removed: { icon: UserMinus, label: "removeu membro", color: "text-red-500" },
   permissions_changed: { icon: Shield, label: "alterou permissões de", color: "text-violet-500" },
+  member_left: { icon: UserMinus, label: "saiu do grupo", color: "text-orange-500" },
+  member_joined: { icon: UserPlus, label: "entrou no grupo", color: "text-emerald-500" },
 };
 
 const ENTITY_LABELS: Record<string, string> = {
