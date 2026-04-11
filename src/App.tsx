@@ -13,6 +13,7 @@ import { lazy, Suspense, useState, useCallback } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PageTransition from "./components/PageTransition";
 import PageLoadingFallback from "./components/PageLoadingFallback";
+import { BottomNav } from "./components/BottomNav";
 import SplashScreen from "./components/SplashScreen";
 
 const Auth = lazy(() => import("./pages/Auth"));
@@ -81,7 +82,8 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
       <div className="flex min-h-screen w-full">
         {showSidebar ? <AppSidebar /> : null}
         <SwipeToOpenSidebar />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 pb-16 md:pb-0">{children}</main>
+        <BottomNav />
       </div>
     </SidebarProvider>
   );
