@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SwipeToOpenSidebar } from "@/components/SwipeToOpenSidebar";
 import { ConfettiProvider } from "@/hooks/useConfetti";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { FocusTimerProvider } from "@/contexts/FocusTimerContext";
 import { lazy, Suspense, useState, useCallback } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -82,7 +83,9 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
       <div className="flex min-h-screen w-full">
         {showSidebar ? <AppSidebar /> : null}
         <SwipeToOpenSidebar />
-        <main className="flex-1 pb-16 md:pb-0">{children}</main>
+        <main className="flex-1 pb-16 md:pb-0">
+          <PullToRefresh>{children}</PullToRefresh>
+        </main>
         <BottomNav />
       </div>
     </SidebarProvider>
