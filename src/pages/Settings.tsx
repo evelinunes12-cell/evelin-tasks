@@ -729,6 +729,7 @@ export default function Settings() {
 
           {/* NOTIFICATIONS TAB */}
           <TabsContent value="notifications" className="space-y-6">
+            <NotificationPreferences />
             <PushNotificationToggle />
           </TabsContent>
 
