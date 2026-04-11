@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { label: "Início", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Planner", icon: Calendar, path: "/planner" },
-  { label: "Grupos", icon: Users, path: "/environments" },
-  { label: "Estudos", icon: BookOpen, path: "/study-cycle" },
+  { label: "Grupos", icon: Users, path: "/shared-environments" },
+  { label: "Estudos", icon: BookOpen, path: "/estudos/ciclo" },
   { label: "Config", icon: Settings, path: "/settings" },
 ];
 
