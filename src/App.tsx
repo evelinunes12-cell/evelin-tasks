@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SwipeToOpenSidebar } from "@/components/SwipeToOpenSidebar";
 import { ConfettiProvider } from "@/hooks/useConfetti";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { FocusTimerProvider } from "@/contexts/FocusTimerContext";
 import { lazy, Suspense, useState, useCallback } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
