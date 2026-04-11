@@ -55,6 +55,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { UsernameInput } from "@/components/UsernameInput";
 import { USERNAME_REGEX, formatUsername } from "@/lib/username";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
+import NotificationPreferences from "@/components/NotificationPreferences";
 
 interface ProfileData {
   full_name: string;
