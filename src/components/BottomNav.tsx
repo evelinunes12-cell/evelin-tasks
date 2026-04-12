@@ -23,7 +23,8 @@ export function BottomNav() {
         {navItems.map((item) => {
           const isActive =
             location.pathname === item.path ||
-            (item.path !== "/dashboard" && location.pathname.startsWith(item.path));
+            (item.path === "/estudos/ciclo" && location.pathname.startsWith("/estudos")) ||
+            (item.path !== "/dashboard" && item.path !== "/estudos/ciclo" && location.pathname.startsWith(item.path));
 
           return (
             <button
