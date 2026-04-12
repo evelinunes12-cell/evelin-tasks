@@ -72,7 +72,11 @@ const EnvironmentDetail = () => {
   const handleLeaveGroup = async () => {
     if (!user || !id) return;
     try {
-      const myMembership = members.find((m) => m.user_id === user.id);
+      // Find membership by user_id or by email
+      const userEmail = user.email;
+      const myMembership = members.find(
+        (m) => m.user_id === user.id || (m.user_id === null && m.email === userEmail)
+      );
       if (!myMembership) {
         toast.error("Você não é membro deste grupo");
         return;
