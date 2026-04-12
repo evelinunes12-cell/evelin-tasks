@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,11 +32,15 @@ const SharedEnvironments = () => {
     }
   }, [user, authLoading, navigate]);
 
-  useEffect(() => {
+  const loadEnvironments = useCallback(() => {
     if (user) {
       fetchEnvironments();
     }
   }, [user]);
+
+  useEffect(() => {
+    loadEnvironments();
+  }, [loadEnvironments]);
 
   const fetchEnvironments = async () => {
     try {
