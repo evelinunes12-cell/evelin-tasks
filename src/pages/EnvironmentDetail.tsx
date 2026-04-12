@@ -83,7 +83,7 @@ const EnvironmentDetail = () => {
         .eq("id", myMembership.id);
       if (error) throw error;
       toast.success("Você saiu do grupo");
-      navigate("/shared-environments");
+      navigate("/shared-environments", { replace: true });
     } catch (error) {
       logError("Error leaving group", error);
       toast.error("Erro ao sair do grupo");
