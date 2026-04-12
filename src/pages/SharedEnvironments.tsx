@@ -32,11 +32,15 @@ const SharedEnvironments = () => {
     }
   }, [user, authLoading, navigate]);
 
-  useEffect(() => {
+  const loadEnvironments = useCallback(() => {
     if (user) {
       fetchEnvironments();
     }
   }, [user]);
+
+  useEffect(() => {
+    loadEnvironments();
+  }, [loadEnvironments]);
 
   const fetchEnvironments = async () => {
     try {
