@@ -271,6 +271,22 @@ const InviteManager = ({ environmentId, isOwner, onMemberAdded }: InviteManagerP
                   onKeyDown={(e) => e.key === "Enter" && handleAddMemberDirectly()}
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Permissões</Label>
+                <div className="flex flex-wrap gap-4">
+                  {ALL_PERMISSIONS.map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={newMemberPermissions.includes(key)}
+                        disabled={key === "view"}
+                        onCheckedChange={() => handleToggleNewMemberPermission(key)}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">"Ver" é sempre obrigatória</p>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowAddMemberDialog(false)}>
