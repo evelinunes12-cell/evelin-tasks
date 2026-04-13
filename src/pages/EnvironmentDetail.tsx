@@ -172,6 +172,14 @@ const EnvironmentDetail = () => {
       setEnvironment(envData);
       setIsOwner(envData.owner_id === user?.id);
 
+      // Fetch owner profile
+      const { data: ownerData } = await supabase
+        .from("profiles")
+        .select("username, full_name, avatar_url, email")
+        .eq("id", envData.owner_id)
+        .single();
+      setOwnerProfile(ownerData);
+
       // Fetch tasks
       const { data: tasksData, error: tasksError } = await supabase
         .from("tasks")
