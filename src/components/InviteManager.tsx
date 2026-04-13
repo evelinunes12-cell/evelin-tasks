@@ -154,12 +154,13 @@ const InviteManager = ({ environmentId, isOwner, onMemberAdded }: InviteManagerP
         environment_id: environmentId,
         email: inviteEmail,
         user_id: inviteUserId,
-        permissions: ["view"],
+        permissions: newMemberPermissions,
       } as any);
 
       if (insertError) throw insertError;
 
       setInviteTarget("");
+      setNewMemberPermissions(["view"]);
       setShowAddMemberDialog(false);
       toast.success("Membro adicionado com sucesso!");
       onMemberAdded?.();
