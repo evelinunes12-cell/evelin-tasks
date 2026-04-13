@@ -9,7 +9,7 @@ import {
   type Invite,
 } from "@/services/invites";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,7 +34,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Link2, Copy, Check, Trash2, Ban, Plus, Clock, Users, ExternalLink } from "lucide-react";
+import { Link2, Copy, Check, Trash2, Ban, Plus, Clock, Users, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,21 +44,26 @@ import { ptBR } from "date-fns/locale";
 interface InviteManagerProps {
   environmentId: string;
   isOwner: boolean;
+  onMemberAdded?: () => void;
 }
 
-const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
+const InviteManager = ({ environmentId, isOwner, onMemberAdded }: InviteManagerProps) => {
   const { user } = useAuth();
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
 
-  // Create form state
+  // Link form state
   const [isUnlimited, setIsUnlimited] = useState(true);
   const [maxUses, setMaxUses] = useState(1);
   const [expiresInDays, setExpiresInDays] = useState(7);
+
+  // Add member form state
   const [inviteTarget, setInviteTarget] = useState("");
+  const [addingMember, setAddingMember] = useState(false);
 
   useEffect(() => {
     if (isOwner) {
@@ -78,62 +83,83 @@ const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
     }
   };
 
-  const handleCreateInvite = async () => {
+  const handleAddMemberDirectly = async () => {
+    if (!user || !inviteTarget.trim()) return;
+
+    try {
+      setAddingMember(true);
+      const rawTarget = inviteTarget.trim();
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawTarget);
+
+      let inviteEmail = rawTarget.toLowerCase();
+      let inviteUserId: string | null = null;
+
+      if (!isEmail) {
+        const normalizedUsername = rawTarget.replace(/^@/, "").toLowerCase();
+        const { data: profileByUsername } = await supabase
+          .from("profiles")
+          .select("id, email")
+          .eq("username", normalizedUsername)
+          .maybeSingle();
+
+        if (!profileByUsername) {
+          toast.error("Usuário não encontrado");
+          return;
+        }
+
+        inviteEmail = profileByUsername.email;
+        inviteUserId = profileByUsername.id;
+      } else {
+        // Try to find user by email
+        const { data: profileByEmail } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("email", inviteEmail)
+          .maybeSingle();
+
+        if (profileByEmail) {
+          inviteUserId = profileByEmail.id;
+        }
+      }
+
+      const { data: existingMember } = await supabase
+        .from("environment_members")
+        .select("id")
+        .eq("environment_id", environmentId)
+        .eq("email", inviteEmail)
+        .maybeSingle();
+
+      if (existingMember) {
+        toast.error("Este usuário já faz parte do grupo");
+        return;
+      }
+
+      const { error: insertError } = await supabase.from("environment_members").insert({
+        environment_id: environmentId,
+        email: inviteEmail,
+        user_id: inviteUserId,
+        permissions: ["view"],
+      } as any);
+
+      if (insertError) throw insertError;
+
+      setInviteTarget("");
+      setShowAddMemberDialog(false);
+      toast.success("Membro adicionado com sucesso!");
+      onMemberAdded?.();
+    } catch (error) {
+      logError("Error adding member", error);
+      toast.error("Erro ao adicionar membro");
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
+  const handleCreateLink = async () => {
     if (!user) return;
 
     try {
       setCreating(true);
-
-      if (inviteTarget.trim()) {
-        const rawTarget = inviteTarget.trim();
-        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawTarget);
-
-        let inviteEmail = rawTarget.toLowerCase();
-        let inviteUserId: string | null = null;
-
-        if (!isEmail) {
-          const normalizedUsername = rawTarget.replace(/^@/, "").toLowerCase();
-          const { data: profileByUsername } = await supabase
-            .from("profiles")
-            .select("id, email")
-            .eq("username", normalizedUsername)
-            .maybeSingle();
-
-          if (!profileByUsername) {
-            toast.error("Usuário não encontrado");
-            return;
-          }
-
-          inviteEmail = profileByUsername.email;
-          inviteUserId = profileByUsername.id;
-        }
-
-        const { data: existingMember } = await supabase
-          .from("environment_members")
-          .select("id")
-          .eq("environment_id", environmentId)
-          .eq("email", inviteEmail)
-          .maybeSingle();
-
-        if (existingMember) {
-          toast.error("Este usuário já foi convidado para o grupo");
-          return;
-        }
-
-        const { error: insertError } = await supabase.from("environment_members").insert({
-          environment_id: environmentId,
-          email: inviteEmail,
-          user_id: inviteUserId,
-          permissions: ["view"],
-        } as any);
-
-        if (insertError) throw insertError;
-
-        setInviteTarget("");
-        setShowCreateDialog(false);
-        toast.success("Convite enviado com sucesso!");
-        return;
-      }
 
       const invite = await createGroupInvite(environmentId, user.id, {
         maxUses: isUnlimited ? 0 : maxUses,
@@ -141,7 +167,7 @@ const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
       });
 
       setInvites((prev) => [invite, ...prev]);
-      setShowCreateDialog(false);
+      setShowLinkDialog(false);
       toast.success("Link de convite criado!");
 
       const link = buildInviteLink(invite.token);
@@ -193,57 +219,69 @@ const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
     }
   };
 
-  const getInviteStatus = (invite: Invite) => {
-    if (invite.revoked) return { label: "Revogado", variant: "destructive" as const };
-    if (new Date(invite.expires_at) < new Date()) return { label: "Expirado", variant: "secondary" as const };
-    if (invite.max_uses > 0 && invite.uses_count >= invite.max_uses)
-      return { label: "Esgotado", variant: "secondary" as const };
-    return { label: "Ativo", variant: "default" as const };
-  };
-
-  const isInviteActive = (invite: Invite) => {
-    const status = getInviteStatus(invite);
-    return status.label === "Ativo";
-  };
-
   if (!isOwner) return null;
 
-  const activeInvites = invites.filter(isInviteActive);
+  const activeInvites = invites.filter((inv) => isInviteActive(inv));
   const inactiveInvites = invites.filter((inv) => !isInviteActive(inv));
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Link2 className="w-5 h-5" />
-          Links de Convite
-        </h3>
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+    <div className="space-y-6">
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Add Member Directly */}
+        <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
-              <Plus className="w-4 h-4" />
-              Gerar Link
+            <Button variant="outline" className="gap-2 flex-1">
+              <UserPlus className="w-4 h-4" />
+              Adicionar Membro
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Adicionar Membro</DialogTitle>
+              <DialogDescription>
+                Adicione diretamente uma pessoa ao grupo usando e-mail ou username.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="addTarget">E-mail ou username</Label>
+                <Input
+                  id="addTarget"
+                  placeholder="nome@email.com ou @username"
+                  value={inviteTarget}
+                  onChange={(e) => setInviteTarget(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddMemberDirectly()}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAddMemberDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleAddMemberDirectly} disabled={addingMember || !inviteTarget.trim()}>
+                {addingMember ? "Adicionando..." : "Adicionar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Generate Invite Link */}
+        <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+          <DialogTrigger asChild>
+            <Button className="gap-2 flex-1">
+              <Link2 className="w-4 h-4" />
+              Gerar Link de Convite
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Gerar Link de Convite</DialogTitle>
               <DialogDescription>
-                Crie um link para convidar pessoas para este grupo.
+                Crie um link compartilhável para que pessoas possam entrar no grupo.
               </DialogDescription>
             </DialogHeader>
-
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="inviteTarget">Convidar por e-mail ou username</Label>
-                <Input
-                  id="inviteTarget"
-                  placeholder="Digite o e-mail ou @username do colega"
-                  value={inviteTarget}
-                  onChange={(e) => setInviteTarget(e.target.value)}
-                />
-              </div>
-
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Uso ilimitado</Label>
@@ -280,12 +318,11 @@ const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
                 />
               </div>
             </div>
-
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              <Button variant="outline" onClick={() => setShowLinkDialog(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleCreateInvite} disabled={creating}>
+              <Button onClick={handleCreateLink} disabled={creating}>
                 {creating ? "Gerando..." : "Gerar e Copiar Link"}
               </Button>
             </DialogFooter>
@@ -293,6 +330,7 @@ const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
         </Dialog>
       </div>
 
+      {/* Invite Links List */}
       {loading ? (
         <p className="text-sm text-muted-foreground">Carregando convites...</p>
       ) : invites.length === 0 ? (
@@ -300,15 +338,13 @@ const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
           <CardContent className="flex flex-col items-center justify-center py-8">
             <Link2 className="w-10 h-10 text-muted-foreground mb-3" />
             <p className="text-muted-foreground text-sm text-center">
-              Nenhum link de convite criado.
-              <br />
-              Gere um link para convidar pessoas ao grupo.
+              Nenhum link de convite criado ainda.
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
-          {/* Active invites */}
+          <h3 className="text-sm font-medium text-muted-foreground">Links de convite</h3>
           {activeInvites.map((invite) => (
             <InviteCard
               key={invite.id}
@@ -320,7 +356,6 @@ const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
             />
           ))}
 
-          {/* Inactive invites (collapsed) */}
           {inactiveInvites.length > 0 && (
             <details className="group">
               <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors py-2">
@@ -345,6 +380,8 @@ const InviteManager = ({ environmentId, isOwner }: InviteManagerProps) => {
     </div>
   );
 };
+
+// --- Helper components ---
 
 interface InviteCardProps {
   invite: Invite;
@@ -386,12 +423,7 @@ const InviteCard = ({ invite, copiedId, onCopy, onRevoke, onDelete }: InviteCard
 
           <div className="flex items-center gap-1 shrink-0">
             {isActive && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onCopy(invite)}
-                className="gap-1"
-              >
+              <Button variant="ghost" size="sm" onClick={() => onCopy(invite)} className="gap-1">
                 {copiedId === invite.id ? (
                   <Check className="w-4 h-4 text-primary" />
                 ) : (
@@ -411,7 +443,7 @@ const InviteCard = ({ invite, copiedId, onCopy, onRevoke, onDelete }: InviteCard
                   <AlertDialogHeader>
                     <AlertDialogTitle>Revogar convite</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Ao revogar, ninguém mais poderá usar este link. Esta ação não pode ser desfeita.
+                      Ao revogar, ninguém mais poderá usar este link.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -458,6 +490,10 @@ function getStatusInfo(invite: Invite) {
   if (invite.max_uses > 0 && invite.uses_count >= invite.max_uses)
     return { label: "Esgotado", variant: "secondary" as const };
   return { label: "Ativo", variant: "default" as const };
+}
+
+function isInviteActive(invite: Invite) {
+  return getStatusInfo(invite).label === "Ativo";
 }
 
 export default InviteManager;
