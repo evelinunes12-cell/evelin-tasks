@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History } from "lucide-react";
+import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History, Clock } from "lucide-react";
 import { LogOut } from "lucide-react";
 import EnvironmentActivityTimeline from "@/components/EnvironmentActivityTimeline";
 import InviteManager from "@/components/InviteManager";
