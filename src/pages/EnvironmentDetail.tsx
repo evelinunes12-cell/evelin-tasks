@@ -565,6 +565,7 @@ const EnvironmentDetail = () => {
                 const displayName = member.username ? `@${member.username}` : member.full_name || member.email;
                 const isCurrentUser = member.user_id === user?.id;
                 const initials = (member.full_name || member.email || "?").charAt(0).toUpperCase();
+                const isEditing = editingMemberId === member.id;
 
                 return (
                   <Card key={member.id}>
@@ -588,38 +589,69 @@ const EnvironmentDetail = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <div className="flex flex-wrap gap-1">
-                            {member.permissions.map((perm) => (
-                              <Badge key={perm} variant="secondary" className="text-xs">
-                                {perm === "view" ? "Ver" : perm === "create" ? "Criar" : perm === "edit" ? "Editar" : perm === "delete" ? "Excluir" : perm}
-                              </Badge>
-                            ))}
-                          </div>
-                          {isOwner && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <Trash2 className="w-4 h-4 text-muted-foreground" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Remover membro</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Tem certeza que deseja remover {displayName} deste grupo?
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleRemoveMember(member.id)}>
-                                    Remover
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                          {!isEditing && (
+                            <div className="flex flex-wrap gap-1">
+                              {member.permissions.map((perm) => (
+                                <Badge key={perm} variant="secondary" className="text-xs">
+                                  {perm === "view" ? "Ver" : perm === "create" ? "Criar" : perm === "edit" ? "Editar" : perm === "delete" ? "Excluir" : perm}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          {isOwner && !isEditing && (
+                            <>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleStartEditPermissions(member)}>
+                                <Pencil className="w-4 h-4 text-muted-foreground" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <Trash2 className="w-4 h-4 text-muted-foreground" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Remover membro</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja remover {displayName} deste grupo?
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleRemoveMember(member.id)}>
+                                      Remover
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+                          {isOwner && isEditing && (
+                            <>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={handleCancelEditPermissions}>
+                                <X className="w-4 h-4 text-muted-foreground" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={savingPermissions} onClick={() => handleSavePermissions(member.id)}>
+                                <Save className="w-4 h-4 text-primary" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
+                      {isEditing && (
+                        <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t">
+                          {ALL_PERMISSIONS.map(({ key, label }) => (
+                            <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                              <Checkbox
+                                checked={editingPermissions.includes(key)}
+                                disabled={key === "view"}
+                                onCheckedChange={() => handleTogglePermission(key)}
+                              />
+                              {label}
+                            </label>
+                          ))}
+                        </div>
+                      )}
                     </CardHeader>
                   </Card>
                 );
