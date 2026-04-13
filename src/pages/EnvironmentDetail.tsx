@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History, Clock } from "lucide-react";
+import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History, Clock, Pencil, X, Save } from "lucide-react";
 import { LogOut } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import EnvironmentActivityTimeline from "@/components/EnvironmentActivityTimeline";
 import InviteManager from "@/components/InviteManager";
 import { toast } from "sonner";
@@ -70,6 +71,52 @@ const EnvironmentDetail = () => {
   const [expandedStatuses, setExpandedStatuses] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [editingPermissions, setEditingPermissions] = useState<string[]>([]);
+  const [savingPermissions, setSavingPermissions] = useState(false);
+
+  const ALL_PERMISSIONS = [
+    { key: "view", label: "Ver" },
+    { key: "create", label: "Criar" },
+    { key: "edit", label: "Editar" },
+    { key: "delete", label: "Excluir" },
+  ];
+
+  const handleStartEditPermissions = (member: Member) => {
+    setEditingMemberId(member.id);
+    setEditingPermissions([...member.permissions]);
+  };
+
+  const handleCancelEditPermissions = () => {
+    setEditingMemberId(null);
+    setEditingPermissions([]);
+  };
+
+  const handleTogglePermission = (perm: string) => {
+    if (perm === "view") return; // "view" is always required
+    setEditingPermissions(prev =>
+      prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]
+    );
+  };
+
+  const handleSavePermissions = async (memberId: string) => {
+    try {
+      setSavingPermissions(true);
+      const { error } = await supabase
+        .from("environment_members")
+        .update({ permissions: editingPermissions } as any)
+        .eq("id", memberId);
+      if (error) throw error;
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, permissions: editingPermissions } : m));
+      setEditingMemberId(null);
+      toast.success("Permissões atualizadas!");
+    } catch (error) {
+      logError("Error updating permissions", error);
+      toast.error("Erro ao atualizar permissões");
+    } finally {
+      setSavingPermissions(false);
+    }
+  };
 
   const handleLeaveGroup = async () => {
     if (!user || !id) return;
@@ -518,6 +565,7 @@ const EnvironmentDetail = () => {
                 const displayName = member.username ? `@${member.username}` : member.full_name || member.email;
                 const isCurrentUser = member.user_id === user?.id;
                 const initials = (member.full_name || member.email || "?").charAt(0).toUpperCase();
+                const isEditing = editingMemberId === member.id;
 
                 return (
                   <Card key={member.id}>
@@ -541,38 +589,69 @@ const EnvironmentDetail = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <div className="flex flex-wrap gap-1">
-                            {member.permissions.map((perm) => (
-                              <Badge key={perm} variant="secondary" className="text-xs">
-                                {perm === "view" ? "Ver" : perm === "create" ? "Criar" : perm === "edit" ? "Editar" : perm === "delete" ? "Excluir" : perm}
-                              </Badge>
-                            ))}
-                          </div>
-                          {isOwner && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <Trash2 className="w-4 h-4 text-muted-foreground" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Remover membro</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Tem certeza que deseja remover {displayName} deste grupo?
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleRemoveMember(member.id)}>
-                                    Remover
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                          {!isEditing && (
+                            <div className="flex flex-wrap gap-1">
+                              {member.permissions.map((perm) => (
+                                <Badge key={perm} variant="secondary" className="text-xs">
+                                  {perm === "view" ? "Ver" : perm === "create" ? "Criar" : perm === "edit" ? "Editar" : perm === "delete" ? "Excluir" : perm}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          {isOwner && !isEditing && (
+                            <>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleStartEditPermissions(member)}>
+                                <Pencil className="w-4 h-4 text-muted-foreground" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <Trash2 className="w-4 h-4 text-muted-foreground" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Remover membro</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja remover {displayName} deste grupo?
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleRemoveMember(member.id)}>
+                                      Remover
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+                          {isOwner && isEditing && (
+                            <>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={handleCancelEditPermissions}>
+                                <X className="w-4 h-4 text-muted-foreground" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={savingPermissions} onClick={() => handleSavePermissions(member.id)}>
+                                <Save className="w-4 h-4 text-primary" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
+                      {isEditing && (
+                        <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t">
+                          {ALL_PERMISSIONS.map(({ key, label }) => (
+                            <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                              <Checkbox
+                                checked={editingPermissions.includes(key)}
+                                disabled={key === "view"}
+                                onCheckedChange={() => handleTogglePermission(key)}
+                              />
+                              {label}
+                            </label>
+                          ))}
+                        </div>
+                      )}
                     </CardHeader>
                   </Card>
                 );
