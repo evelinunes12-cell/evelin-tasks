@@ -35,6 +35,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Link2, Copy, Check, Trash2, Ban, Plus, Clock, Users, UserPlus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,6 +65,21 @@ const InviteManager = ({ environmentId, isOwner, onMemberAdded }: InviteManagerP
   // Add member form state
   const [inviteTarget, setInviteTarget] = useState("");
   const [addingMember, setAddingMember] = useState(false);
+  const [newMemberPermissions, setNewMemberPermissions] = useState<string[]>(["view"]);
+
+  const ALL_PERMISSIONS = [
+    { key: "view", label: "Ver" },
+    { key: "create", label: "Criar" },
+    { key: "edit", label: "Editar" },
+    { key: "delete", label: "Excluir" },
+  ];
+
+  const handleToggleNewMemberPermission = (perm: string) => {
+    if (perm === "view") return;
+    setNewMemberPermissions(prev =>
+      prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]
+    );
+  };
 
   useEffect(() => {
     if (isOwner) {
