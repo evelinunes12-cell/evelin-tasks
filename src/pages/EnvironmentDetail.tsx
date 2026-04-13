@@ -553,13 +553,23 @@ const EnvironmentDetail = () => {
                 <CardHeader className="py-3 px-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm shrink-0">
-                        {isOwner ? "V" : (environment.owner_id.slice(0, 1).toUpperCase())}
-                      </div>
-                      <div>
-                        <CardTitle className="text-sm font-medium">
-                          {isOwner ? "Você (Proprietário)" : "Proprietário"}
+                      {ownerProfile?.avatar_url ? (
+                        <img src={ownerProfile.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm shrink-0">
+                          {(ownerProfile?.full_name || ownerProfile?.email || "P").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <CardTitle className="text-sm font-medium truncate">
+                          {isOwner
+                            ? `${ownerProfile?.username ? `@${ownerProfile.username}` : ownerProfile?.full_name || "Você"} (Você)`
+                            : ownerProfile?.username ? `@${ownerProfile.username}` : ownerProfile?.full_name || ownerProfile?.email || "Proprietário"
+                          }
                         </CardTitle>
+                        {ownerProfile?.username && (
+                          <CardDescription className="text-xs truncate">{ownerProfile.email}</CardDescription>
+                        )}
                       </div>
                     </div>
                     <Badge variant="outline" className="text-xs border-primary/30 text-primary">
