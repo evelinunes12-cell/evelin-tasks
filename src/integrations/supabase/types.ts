@@ -1257,12 +1257,15 @@ export type Database = {
       get_environment_members: {
         Args: { p_environment_id: string }
         Returns: {
+          avatar_url: string
           created_at: string
           email: string
           environment_id: string
+          full_name: string
           id: string
           permissions: string[]
           user_id: string
+          username: string
         }[]
       }
       get_leaderboard: {
