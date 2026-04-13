@@ -71,6 +71,52 @@ const EnvironmentDetail = () => {
   const [expandedStatuses, setExpandedStatuses] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [editingPermissions, setEditingPermissions] = useState<string[]>([]);
+  const [savingPermissions, setSavingPermissions] = useState(false);
+
+  const ALL_PERMISSIONS = [
+    { key: "view", label: "Ver" },
+    { key: "create", label: "Criar" },
+    { key: "edit", label: "Editar" },
+    { key: "delete", label: "Excluir" },
+  ];
+
+  const handleStartEditPermissions = (member: Member) => {
+    setEditingMemberId(member.id);
+    setEditingPermissions([...member.permissions]);
+  };
+
+  const handleCancelEditPermissions = () => {
+    setEditingMemberId(null);
+    setEditingPermissions([]);
+  };
+
+  const handleTogglePermission = (perm: string) => {
+    if (perm === "view") return; // "view" is always required
+    setEditingPermissions(prev =>
+      prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]
+    );
+  };
+
+  const handleSavePermissions = async (memberId: string) => {
+    try {
+      setSavingPermissions(true);
+      const { error } = await supabase
+        .from("environment_members")
+        .update({ permissions: editingPermissions } as any)
+        .eq("id", memberId);
+      if (error) throw error;
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, permissions: editingPermissions } : m));
+      setEditingMemberId(null);
+      toast.success("Permissões atualizadas!");
+    } catch (error) {
+      logError("Error updating permissions", error);
+      toast.error("Erro ao atualizar permissões");
+    } finally {
+      setSavingPermissions(false);
+    }
+  };
 
   const handleLeaveGroup = async () => {
     if (!user || !id) return;
