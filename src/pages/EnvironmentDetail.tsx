@@ -646,7 +646,7 @@ const EnvironmentDetail = () => {
 
           {isOwner && (
             <TabsContent value="invites" className="space-y-6">
-              <InviteManager environmentId={id!} isOwner={isOwner} />
+              <InviteManager environmentId={id!} isOwner={isOwner} onMemberAdded={fetchEnvironmentData} />
             </TabsContent>
           )}
         </Tabs>
