@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History } from "lucide-react";
+import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History, Clock } from "lucide-react";
 import { LogOut } from "lucide-react";
 import EnvironmentActivityTimeline from "@/components/EnvironmentActivityTimeline";
 import InviteManager from "@/components/InviteManager";
@@ -53,6 +53,8 @@ interface Member {
   id: string;
   email: string;
   username?: string | null;
+  full_name?: string | null;
+  avatar_url?: string | null;
   permissions: string[];
   user_id: string | null;
 }
@@ -487,86 +489,150 @@ const EnvironmentDetail = () => {
           <TabsContent value="members" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Membros do Grupo</h2>
-              {isOwner && (
-                <Button size="sm" onClick={() => navigate(`/environment/${id}/edit`)}>
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline ml-2">Adicionar Membro</span>
-                </Button>
-              )}
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Owner Card */}
-              <Card>
-                <CardHeader>
+              <Card className="border-primary/30">
+                <CardHeader className="py-3 px-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Users className="w-5 h-5" />
+                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm shrink-0">
+                        {isOwner ? "V" : (environment.owner_id.slice(0, 1).toUpperCase())}
+                      </div>
                       <div>
-                        <CardTitle className="text-base">
-                          {isOwner ? "Você" : user?.email}
+                        <CardTitle className="text-sm font-medium">
+                          {isOwner ? "Você (Proprietário)" : "Proprietário"}
                         </CardTitle>
-                        <CardDescription>{isOwner ? "Proprietário" : "Membro"}</CardDescription>
                       </div>
                     </div>
-                    <Badge>Todas as permissões</Badge>
+                    <Badge variant="outline" className="text-xs border-primary/30 text-primary">
+                      Proprietário
+                    </Badge>
                   </div>
                 </CardHeader>
               </Card>
 
-              {/* Members Cards */}
-              {members.map((member) => (
-                <Card key={member.id}>
-                  <CardHeader>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <Users className="w-5 h-5 shrink-0" />
-                        <div className="min-w-0">
-                          <CardTitle className="text-base truncate">{member.username ? `@${member.username}` : member.email}</CardTitle>
-                          <CardDescription>
-                            {member.user_id ? "Membro ativo" : "Convite pendente"}
-                          </CardDescription>
+              {/* Active Members */}
+              {members.filter(m => m.user_id !== null).map((member) => {
+                const displayName = member.username ? `@${member.username}` : member.full_name || member.email;
+                const isCurrentUser = member.user_id === user?.id;
+                const initials = (member.full_name || member.email || "?").charAt(0).toUpperCase();
+
+                return (
+                  <Card key={member.id}>
+                    <CardHeader className="py-3 px-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {member.avatar_url ? (
+                            <img src={member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-semibold text-sm shrink-0">
+                              {initials}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <CardTitle className="text-sm font-medium truncate">
+                              {displayName}{isCurrentUser ? " (Você)" : ""}
+                            </CardTitle>
+                            {member.username && (
+                              <CardDescription className="text-xs truncate">{member.email}</CardDescription>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex flex-wrap gap-1">
+                            {member.permissions.map((perm) => (
+                              <Badge key={perm} variant="secondary" className="text-xs">
+                                {perm === "view" ? "Ver" : perm === "create" ? "Criar" : perm === "edit" ? "Editar" : perm === "delete" ? "Excluir" : perm}
+                              </Badge>
+                            ))}
+                          </div>
+                          {isOwner && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <Trash2 className="w-4 h-4 text-muted-foreground" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Remover membro</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja remover {displayName} deste grupo?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleRemoveMember(member.id)}>
+                                    Remover
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex flex-wrap gap-1">
-                          {member.permissions.map((perm) => (
-                            <Badge key={perm} variant="secondary" className="text-xs">
-                              {perm === "view" && "Visualizar"}
-                              {perm === "create" && "Criar"}
-                              {perm === "edit" && "Editar"}
-                              {perm === "delete" && "Excluir"}
-                            </Badge>
-                          ))}
+                    </CardHeader>
+                  </Card>
+                );
+              })}
+
+              {/* Pending Members (no user_id yet) */}
+              {members.filter(m => m.user_id === null).length > 0 && (
+                <div className="space-y-2 pt-2">
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Convites pendentes
+                  </p>
+                  {members.filter(m => m.user_id === null).map((member) => (
+                    <Card key={member.id} className="opacity-70">
+                      <CardHeader className="py-3 px-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground text-sm shrink-0">
+                              ?
+                            </div>
+                            <div className="min-w-0">
+                              <CardTitle className="text-sm font-medium truncate text-muted-foreground">{member.email}</CardTitle>
+                              <CardDescription className="text-xs">Aguardando aceite</CardDescription>
+                            </div>
+                          </div>
+                          {isOwner && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <Trash2 className="w-4 h-4 text-muted-foreground" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Remover convite pendente</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja remover o convite de {member.email}?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleRemoveMember(member.id)}>
+                                    Remover
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
-                        {isOwner && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Remover membro</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja remover {member.username ? `@${member.username}` : member.email} deste ambiente?
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleRemoveMember(member.id)}>
-                                  Remover
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
+                      </CardHeader>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {members.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhum membro além do proprietário. Use a aba "Convites" para adicionar pessoas.
+                </p>
+              )}
             </div>
           </TabsContent>
 
@@ -580,7 +646,7 @@ const EnvironmentDetail = () => {
 
           {isOwner && (
             <TabsContent value="invites" className="space-y-6">
-              <InviteManager environmentId={id!} isOwner={isOwner} />
+              <InviteManager environmentId={id!} isOwner={isOwner} onMemberAdded={fetchEnvironmentData} />
             </TabsContent>
           )}
         </Tabs>
