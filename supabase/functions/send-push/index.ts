@@ -18,7 +18,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -27,23 +26,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabaseAuth = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const token = authHeader.replace("Bearer ", "");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const isServiceRole = token === serviceRoleKey;
 
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(
-      authHeader.replace("Bearer ", "")
-    );
-    if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let callerUserId: string | null = null;
+
+    if (!isServiceRole) {
+      const supabaseAuth = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+      if (claimsError || !claimsData?.claims) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      callerUserId = claimsData.claims.sub;
     }
-
-    const callerUserId = claimsData.claims.sub;
 
     const { userId, title, body, url } = await req.json();
 
@@ -54,18 +58,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Only allow users to send to themselves (or admins could send to anyone — future extension)
-    if (callerUserId !== userId) {
+    // Service role can send to any user; regular users can only send to themselves
+    if (!isServiceRole && callerUserId !== userId) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Use service role to read subscriptions (bypasses RLS)
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      serviceRoleKey
     );
 
     const { data: subscriptions, error: subError } = await supabaseAdmin
@@ -106,7 +109,6 @@ Deno.serve(async (req) => {
         sent++;
       } catch (err: any) {
         console.error(`Push failed for ${sub.id}:`, err?.statusCode, err?.body);
-        // 404 or 410 = subscription expired/invalid
         if (err?.statusCode === 404 || err?.statusCode === 410) {
           await supabaseAdmin
             .from("push_subscriptions")
