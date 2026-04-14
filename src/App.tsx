@@ -75,6 +75,7 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
     pathname === "/admin/users" ||
     pathname === "/admin/banners" ||
     pathname === "/admin/notifications" ||
+    pathname === "/admin/feedback" ||
     /^\/task\/edit\/.+/.test(pathname) ||
     /^\/environment\/[^/]+$/.test(pathname);
 
