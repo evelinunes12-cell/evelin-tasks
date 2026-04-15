@@ -26,6 +26,7 @@ import {
   EnvironmentStatus,
 } from "@/services/environmentData";
 import { registerActivity } from "@/services/activity";
+import { logXP, XP } from "@/services/scoring";
 
 
 interface Member {

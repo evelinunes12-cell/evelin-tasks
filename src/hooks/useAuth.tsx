@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { registerActivity } from "@/services/activity";
 import { logError } from "@/lib/logger";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";

@@ -22,6 +22,7 @@ import StudyCycleDialog from "@/components/StudyCycleDialog";
 import StudyCyclePlayer from "@/components/StudyCyclePlayer";
 import { toast } from "sonner";
 import { logXP, XP } from "@/services/scoring";
+import { registerActivity } from "@/services/activity";
 
 import {
   AlertDialog,
