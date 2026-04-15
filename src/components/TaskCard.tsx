@@ -112,7 +112,9 @@ const TaskCard = ({
               )}
             </div>
             {description && (
-              <p className="text-sm text-muted-foreground break-words line-clamp-3">{description}</p>
+              <p className="text-sm text-muted-foreground break-words line-clamp-3">
+                {description.replace(/<[^>]*>/g, '')}
+              </p>
             )}
           </div>
           
