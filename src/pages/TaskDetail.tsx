@@ -57,6 +57,7 @@ import TaskStepDisplay from "@/components/TaskStepDisplay";
 import { NoteDialog } from "@/components/planner/NoteDialog";
 import { createNote } from "@/services/planner";
 import { fetchSubjects, Subject } from "@/services/subjects";
+import RichTextEditor from "@/components/RichTextEditor";
 
 import { Input } from "@/components/ui/input";
 import {
