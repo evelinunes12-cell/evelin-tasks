@@ -491,7 +491,38 @@ const TaskDetail = () => {
     }
   };
 
-  // Resolve subject_id from subject_name
+  const handleSaveDescription = async () => {
+    if (!task || !id) return;
+    setIsSavingDescription(true);
+    try {
+      // Convert empty editor content to null
+      const isEmpty = descriptionDraft === "<p></p>" || descriptionDraft.trim() === "";
+      const newDescription = isEmpty ? null : descriptionDraft;
+
+      const { error } = await supabase
+        .from("tasks")
+        .update({ description: newDescription })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setTask({ ...task, description: newDescription });
+      setIsEditingDescription(false);
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      sonnerToast.success("Descrição atualizada!");
+
+      if (user?.id) {
+        registerActivity(user.id);
+        logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+      }
+    } catch (error) {
+      logError("Error updating description", error);
+      sonnerToast.error("Erro ao salvar descrição");
+    } finally {
+      setIsSavingDescription(false);
+    }
+  };
+
   useEffect(() => {
     if (task && subjects.length > 0) {
       const match = subjects.find((s) => s.name === task.subject_name);
