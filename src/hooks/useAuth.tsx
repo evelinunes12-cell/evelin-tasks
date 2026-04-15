@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { registerActivity } from "@/services/activity";
 import { logError } from "@/lib/logger";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,9 +33,11 @@ export const useAuth = () => {
           .lt("created_at", `${today}T23:59:59.999`)
           .limit(1)
           .then(({ data }) => {
-            if (!data || data.length === 0) {
+        if (!data || data.length === 0) {
               logXP(session.user.id, "login", XP.LOGIN);
             }
+            // Always register activity on login for streak
+            registerActivity(session.user.id);
           });
       }
     });

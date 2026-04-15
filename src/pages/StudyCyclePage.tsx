@@ -22,6 +22,7 @@ import StudyCycleDialog from "@/components/StudyCycleDialog";
 import StudyCyclePlayer from "@/components/StudyCyclePlayer";
 import { toast } from "sonner";
 import { logXP, XP } from "@/services/scoring";
+import { registerActivity } from "@/services/activity";
 
 import {
   AlertDialog,
@@ -69,10 +70,12 @@ const StudyCyclePage = () => {
       await updateStudyCycle(editingCycle.id, name, blocks);
       toast.success("Ciclo atualizado com sucesso!");
       logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+      registerActivity(user.id);
     } else {
       await createStudyCycle(user.id, name, blocks, advancedMeta);
       toast.success("Ciclo criado com sucesso!");
       logXP(user.id, "create_cycle", XP.CREATE_ITEM);
+      registerActivity(user.id);
     }
     setEditingCycle(null);
     loadData();

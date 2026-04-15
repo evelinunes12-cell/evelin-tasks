@@ -26,6 +26,7 @@ import {
   EnvironmentStatus,
 } from "@/services/environmentData";
 import { registerActivity } from "@/services/activity";
+import { logXP, XP } from "@/services/scoring";
 
 
 interface Member {
@@ -215,6 +216,7 @@ const EnvironmentForm = () => {
         // Registra atividade para a ofensiva
         if (user) {
           registerActivity(user.id);
+          logXP(user.id, "create_environment", XP.CREATE_ITEM);
         }
 
         toast.success("Grupo de trabalho criado!");

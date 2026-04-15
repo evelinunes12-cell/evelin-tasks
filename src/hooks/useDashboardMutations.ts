@@ -45,6 +45,8 @@ export const useDashboardMutations = () => {
           queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
           logXP(user.id, "task_completed", XP.TASK_COMPLETED);
         } else {
+          await registerActivity(user.id);
+          queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
           logXP(user.id, "status_change", XP.STATUS_CHANGE);
         }
       }
