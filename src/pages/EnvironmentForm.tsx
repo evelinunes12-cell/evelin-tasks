@@ -216,6 +216,7 @@ const EnvironmentForm = () => {
         // Registra atividade para a ofensiva
         if (user) {
           registerActivity(user.id);
+          logXP(user.id, "create_environment", XP.CREATE_ITEM);
         }
 
         toast.success("Grupo de trabalho criado!");
