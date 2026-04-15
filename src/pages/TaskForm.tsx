@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/RichTextEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -806,13 +807,12 @@ const TaskForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição da Tarefa</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                <Label>Descrição da Tarefa</Label>
+                <RichTextEditor
+                  content={description}
+                  onChange={setDescription}
                   placeholder="Descreva os detalhes da tarefa..."
-                  rows={4}
+                  minHeight="100px"
                 />
               </div>
 

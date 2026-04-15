@@ -71,7 +71,7 @@ const RichTextEditor = ({
         bulletList: { keepMarks: true },
         orderedList: { keepMarks: true },
       }),
-      Underline,
+      Underline.configure({ name: 'underline' }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Placeholder.configure({ placeholder }),
     ],
