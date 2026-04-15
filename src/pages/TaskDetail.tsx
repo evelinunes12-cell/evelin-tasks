@@ -57,6 +57,7 @@ import TaskStepDisplay from "@/components/TaskStepDisplay";
 import { NoteDialog } from "@/components/planner/NoteDialog";
 import { createNote } from "@/services/planner";
 import { fetchSubjects, Subject } from "@/services/subjects";
+import RichTextEditor from "@/components/RichTextEditor";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -105,6 +106,9 @@ const TaskDetail = () => {
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [taskSubjectId, setTaskSubjectId] = useState<string | null>(null);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [isSavingDescription, setIsSavingDescription] = useState(false);
   
   // Tipos de arquivo suportados para preview
   const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
@@ -487,7 +491,38 @@ const TaskDetail = () => {
     }
   };
 
-  // Resolve subject_id from subject_name
+  const handleSaveDescription = async () => {
+    if (!task || !id) return;
+    setIsSavingDescription(true);
+    try {
+      // Convert empty editor content to null
+      const isEmpty = descriptionDraft === "<p></p>" || descriptionDraft.trim() === "";
+      const newDescription = isEmpty ? null : descriptionDraft;
+
+      const { error } = await supabase
+        .from("tasks")
+        .update({ description: newDescription })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setTask({ ...task, description: newDescription });
+      setIsEditingDescription(false);
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      sonnerToast.success("Descrição atualizada!");
+
+      if (user?.id) {
+        registerActivity(user.id);
+        logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+      }
+    } catch (error) {
+      logError("Error updating description", error);
+      sonnerToast.error("Erro ao salvar descrição");
+    } finally {
+      setIsSavingDescription(false);
+    }
+  };
+
   useEffect(() => {
     if (task && subjects.length > 0) {
       const match = subjects.find((s) => s.name === task.subject_name);
@@ -624,19 +659,81 @@ const TaskDetail = () => {
             </CardContent>
           </Card>
 
-          {task.description && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <FileText className="w-5 h-5" />
                   Descrição
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm whitespace-pre-line">{task.description}</p>
-              </CardContent>
-            </Card>
-          )}
+                </div>
+                {!isEditingDescription ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setDescriptionDraft(task.description || "");
+                      setIsEditingDescription(true);
+                    }}
+                    className="h-8 gap-1.5 text-muted-foreground"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Editar
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingDescription(false)}
+                      className="h-8"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSaveDescription}
+                      disabled={isSavingDescription}
+                      className="h-8"
+                    >
+                      {isSavingDescription ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                      ) : null}
+                      Salvar
+                    </Button>
+                  </div>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isEditingDescription ? (
+                <RichTextEditor
+                  content={descriptionDraft}
+                  onChange={setDescriptionDraft}
+                  editable={true}
+                  placeholder="Adicione uma descrição..."
+                />
+              ) : task.description ? (
+                <div
+                  className="text-sm prose prose-sm dark:prose-invert max-w-none cursor-pointer rounded-md p-2 -m-2 hover:bg-muted/50 transition-colors"
+                  onClick={() => {
+                    setDescriptionDraft(task.description || "");
+                    setIsEditingDescription(true);
+                  }}
+                  dangerouslySetInnerHTML={{ __html: task.description }}
+                />
+              ) : (
+                <p
+                  className="text-sm text-muted-foreground cursor-pointer rounded-md p-2 -m-2 hover:bg-muted/50 transition-colors italic"
+                  onClick={() => {
+                    setDescriptionDraft("");
+                    setIsEditingDescription(true);
+                  }}
+                >
+                  Clique para adicionar uma descrição...
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
           {(task.google_docs_link || task.canva_link) && (
             <Card>
