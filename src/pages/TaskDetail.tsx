@@ -106,6 +106,9 @@ const TaskDetail = () => {
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [taskSubjectId, setTaskSubjectId] = useState<string | null>(null);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [isSavingDescription, setIsSavingDescription] = useState(false);
   
   // Tipos de arquivo suportados para preview
   const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
