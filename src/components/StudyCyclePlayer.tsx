@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, SkipForward, RotateCcw, X, Coffee, CheckCircle2, ClipboardEdit } from "lucide-react";
+import { Play, Pause, SkipForward, RotateCcw, X, Coffee, CheckCircle2, ClipboardEdit, PictureInPicture2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DonutTimer } from "@/components/DonutTimer";
 import { StudyCycle, saveCycleProgress } from "@/services/studyCycles";
@@ -11,6 +12,7 @@ import { logXP, XP } from "@/services/scoring";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import ManualStudyLogDialog from "@/components/ManualStudyLogDialog";
+import { useDocumentPiP } from "@/hooks/useDocumentPiP";
 
 interface StudyCyclePlayerProps {
   cycle: StudyCycle;
