@@ -10,30 +10,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RefreshCw, Sparkles, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-// How often (ms) to check for a new service worker / new build
+// How often (ms) to re-check for a new app version (fallback to polling
+// in case realtime is not available).
 const UPDATE_CHECK_INTERVAL = 60 * 1000; // 1 minute
 
-// URL of a JSON file we poll to detect critical updates.
-// Place /public/version.json in the project with shape:
-// { "version": "1.2.3", "critical": true, "message": "Optional custom message" }
-const VERSION_MANIFEST_URL = "/version.json";
-
-type VersionManifest = {
-  version?: string;
-  critical?: boolean;
-  message?: string;
-};
-
 /**
- * Listens for new app versions deployed to production and prompts the user
- * with a modal (AlertDialog) — much more visible than a toast, especially
- * on mobile / installed PWA.
+ * Listens for new app versions and prompts the user with a modal.
  *
- * - Uses vite-plugin-pwa's autoUpdate to detect a new service worker waiting.
- * - Polls /version.json every minute to detect a "critical" flag. When true,
- *   the modal is non-dismissible and the user MUST update to continue.
- * - On accept: clears all caches, activates the new SW (skipWaiting) and reloads.
+ * Two detection sources work together:
+ * 1. vite-plugin-pwa autoUpdate — detects a new service worker waiting.
+ * 2. `app_version` table in the database — admins bump the version from
+ *    the admin panel without redeploying. Realtime + 1-min polling.
+ *
+ * Critical updates (set by admin) make the modal non-dismissible.
  */
 const AppUpdatePrompt = () => {
   const [isCritical, setIsCritical] = useState(false);
@@ -49,14 +40,10 @@ const AppUpdatePrompt = () => {
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return;
 
-      // Periodically ask the browser to check for a new SW
       const interval = window.setInterval(() => {
-        registration.update().catch(() => {
-          /* network errors are fine, will retry */
-        });
+        registration.update().catch(() => {});
       }, UPDATE_CHECK_INTERVAL);
 
-      // Also re-check whenever the tab comes back to focus
       const onVisible = () => {
         if (document.visibilityState === "visible") {
           registration.update().catch(() => {});
@@ -74,45 +61,72 @@ const AppUpdatePrompt = () => {
     },
   });
 
-  // Poll /version.json to detect critical updates independently of the SW lifecycle
+  // Check the database-managed app version (admin-controlled).
   useEffect(() => {
     let cancelled = false;
 
-    const checkManifest = async () => {
-      try {
-        const res = await fetch(`${VERSION_MANIFEST_URL}?t=${Date.now()}`, {
-          cache: "no-store",
-        });
-        if (!res.ok) return;
-        const data: VersionManifest = await res.json();
-        if (cancelled) return;
-
-        if (data.version) {
-          if (lastSeenVersionRef.current === null) {
-            lastSeenVersionRef.current = data.version;
-          } else if (lastSeenVersionRef.current !== data.version) {
-            // New version detected via manifest
-            setNeedRefresh(true);
-            if (data.critical) setIsCritical(true);
-            if (data.message) setCustomMessage(data.message);
-          }
+    const apply = (data: {
+      version: string;
+      critical: boolean;
+      message: string | null;
+    }) => {
+      if (cancelled) return;
+      if (lastSeenVersionRef.current === null) {
+        lastSeenVersionRef.current = data.version;
+        // Even on first load, honor critical flag if it's set.
+        if (data.critical) {
+          setIsCritical(true);
+          if (data.message) setCustomMessage(data.message);
+          setNeedRefresh(true);
         }
-      } catch {
-        /* offline or 404 — silently ignore */
+        return;
+      }
+      if (lastSeenVersionRef.current !== data.version) {
+        lastSeenVersionRef.current = data.version;
+        setNeedRefresh(true);
+        setIsCritical(!!data.critical);
+        setCustomMessage(data.message ?? null);
       }
     };
 
-    checkManifest();
-    const id = window.setInterval(checkManifest, UPDATE_CHECK_INTERVAL);
+    const fetchVersion = async () => {
+      const { data, error } = await supabase
+        .from("app_version")
+        .select("version, critical, message")
+        .eq("id", true)
+        .maybeSingle();
+      if (!error && data) apply(data);
+    };
+
+    fetchVersion();
+    const id = window.setInterval(fetchVersion, UPDATE_CHECK_INTERVAL);
     const onVisible = () => {
-      if (document.visibilityState === "visible") checkManifest();
+      if (document.visibilityState === "visible") fetchVersion();
     };
     document.addEventListener("visibilitychange", onVisible);
+
+    // Realtime: react instantly when an admin updates the row.
+    const channel = supabase
+      .channel("app_version_changes")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "app_version" },
+        (payload) => {
+          const next = payload.new as {
+            version: string;
+            critical: boolean;
+            message: string | null;
+          };
+          if (next) apply(next);
+        }
+      )
+      .subscribe();
 
     return () => {
       cancelled = true;
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVisible);
+      supabase.removeChannel(channel);
     };
   }, [setNeedRefresh]);
 
@@ -129,21 +143,18 @@ const AppUpdatePrompt = () => {
     try {
       await updateServiceWorker(true);
     } catch {
-      // Fallback: hard reload if SW activation fails
       window.location.reload();
     }
   };
 
   const handleDismiss = () => {
-    if (isCritical) return; // cannot dismiss critical updates
+    if (isCritical) return;
     setNeedRefresh(false);
   };
 
-  const open = needRefresh;
-
   return (
     <AlertDialog
-      open={open}
+      open={needRefresh}
       onOpenChange={(next) => {
         if (!next) handleDismiss();
       }}
