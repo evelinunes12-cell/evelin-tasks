@@ -88,6 +88,15 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
   const breakEndTimeRef = useRef<number | null>(null);
 
   const [manualLogOpen, setManualLogOpen] = useState(false);
+  const { open: openPiP, isOpen: pipOpen, pipContainer, isSupported: pipSupported } = useDocumentPiP({ width: 280, height: 320 });
+
+  const handleTogglePiP = async () => {
+    try {
+      await openPiP();
+    } catch {
+      toast.error("Seu navegador não suporta janela flutuante. Tente Chrome ou Edge.");
+    }
+  };
 
   const currentBlock = blocks[currentIndex];
   const isBreak = mode === "break";
@@ -404,9 +413,23 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
             </span>
           )}
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={handleClose}>
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {pipSupported && !isBreak && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              onClick={handleTogglePiP}
+              title={pipOpen ? "Janela flutuante ativa" : "Abrir janela flutuante"}
+              disabled={pipOpen}
+            >
+              <PictureInPicture2 className="h-4 w-4" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={handleClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* ── Main content ───────────────────────────────────────────── */}
