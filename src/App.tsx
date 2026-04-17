@@ -47,6 +47,7 @@ import ZenitCommand from "./components/ZenitCommand";
 import { AdminRoute } from "./components/AdminRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import AppUpdatePrompt from "./components/AppUpdatePrompt";
 
 const queryClient = new QueryClient();
 
@@ -114,6 +115,7 @@ const App = () => {
               <Toaster />
               <Sonner />
               <PWAInstallPrompt />
+              <AppUpdatePrompt />
               <BrowserRouter>
                 <ZenitCommand />
                 <FocusTimerProvider>
