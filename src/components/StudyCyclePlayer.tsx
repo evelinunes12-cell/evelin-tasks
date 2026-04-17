@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, SkipForward, RotateCcw, X, Coffee, CheckCircle2 } from "lucide-react";
+import { Play, Pause, SkipForward, RotateCcw, X, Coffee, CheckCircle2, ClipboardEdit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DonutTimer } from "@/components/DonutTimer";
 import { StudyCycle, saveCycleProgress } from "@/services/studyCycles";
@@ -10,6 +10,7 @@ import { registerActivity } from "@/services/activity";
 import { logXP, XP } from "@/services/scoring";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import ManualStudyLogDialog from "@/components/ManualStudyLogDialog";
 
 interface StudyCyclePlayerProps {
   cycle: StudyCycle;
@@ -84,6 +85,8 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
   const [breakRemaining, setBreakRemaining] = useState(BREAK_SECONDS);
   const breakEndTimeRef = useRef<number | null>(null);
 
+  const [manualLogOpen, setManualLogOpen] = useState(false);
+
   const currentBlock = blocks[currentIndex];
   const isBreak = mode === "break";
   const targetSeconds = currentBlock ? currentBlock.allocated_minutes * 60 : 0;
@@ -119,6 +122,27 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     startTimeRef.current = null;
     breakEndTimeRef.current = null;
   }, []);
+
+  const handleManualLogged = useCallback(
+    ({ blockIndex, markCompleted }: { blockIndex: number; markCompleted: boolean }) => {
+      if (!markCompleted || blockIndex < 0) return;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      startTimeRef.current = null;
+      setIsRunning(false);
+      setIsPaused(false);
+      setCompletedBlocks((prev) => new Set(prev).add(blockIndex));
+      if (blockIndex === currentIndex) {
+        const nextIdx = currentIndex + 1 < blocks.length ? currentIndex + 1 : 0;
+        setCurrentIndex(nextIdx);
+        setElapsedSeconds(0);
+        setTargetReached(false);
+        setMode("study");
+        saveCycleProgress(cycle.id, nextIdx, null).catch(() => {});
+      }
+    },
+    [currentIndex, blocks.length, cycle.id]
+  );
 
   const playAlarm = useCallback(() => {
     try {
@@ -462,6 +486,19 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
           </p>
         )}
 
+        {/* Manual log */}
+        {!isBreak && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setManualLogOpen(true)}
+            className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <ClipboardEdit className="h-3.5 w-3.5" />
+            Registrar estudo manualmente
+          </Button>
+        )}
+
         {/* Skip break shortcut */}
         {isBreak && (
           <Button variant="ghost" size="sm" onClick={handleSkip} className="text-xs text-muted-foreground hover:text-foreground">
@@ -502,6 +539,14 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
           })}
         </div>
       </div>
+
+      <ManualStudyLogDialog
+        open={manualLogOpen}
+        onOpenChange={setManualLogOpen}
+        cycle={cycle}
+        defaultBlockIndex={currentIndex}
+        onLogged={handleManualLogged}
+      />
     </div>
   );
 };
