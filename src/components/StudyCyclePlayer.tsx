@@ -85,6 +85,8 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
   const [breakRemaining, setBreakRemaining] = useState(BREAK_SECONDS);
   const breakEndTimeRef = useRef<number | null>(null);
 
+  const [manualLogOpen, setManualLogOpen] = useState(false);
+
   const currentBlock = blocks[currentIndex];
   const isBreak = mode === "break";
   const targetSeconds = currentBlock ? currentBlock.allocated_minutes * 60 : 0;
