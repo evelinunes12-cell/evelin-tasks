@@ -47,6 +47,33 @@ export type Database = {
         }
         Relationships: []
       }
+      app_version: {
+        Row: {
+          critical: boolean
+          id: boolean
+          message: string | null
+          updated_at: string
+          updated_by: string | null
+          version: string
+        }
+        Insert: {
+          critical?: boolean
+          id?: boolean
+          message?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          version?: string
+        }
+        Update: {
+          critical?: boolean
+          id?: boolean
+          message?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       environment_activity_log: {
         Row: {
           action: string
