@@ -539,6 +539,14 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
           })}
         </div>
       </div>
+
+      <ManualStudyLogDialog
+        open={manualLogOpen}
+        onOpenChange={setManualLogOpen}
+        cycle={cycle}
+        defaultBlockIndex={currentIndex}
+        onLogged={handleManualLogged}
+      />
     </div>
   );
 };
