@@ -486,6 +486,19 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
           </p>
         )}
 
+        {/* Manual log */}
+        {!isBreak && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setManualLogOpen(true)}
+            className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <ClipboardEdit className="h-3.5 w-3.5" />
+            Registrar estudo manualmente
+          </Button>
+        )}
+
         {/* Skip break shortcut */}
         {isBreak && (
           <Button variant="ghost" size="sm" onClick={handleSkip} className="text-xs text-muted-foreground hover:text-foreground">
