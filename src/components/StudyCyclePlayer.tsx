@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, SkipForward, RotateCcw, X, Coffee, CheckCircle2, ClipboardEdit } from "lucide-react";
+import { Play, Pause, SkipForward, RotateCcw, X, Coffee, CheckCircle2, ClipboardEdit, PictureInPicture2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DonutTimer } from "@/components/DonutTimer";
 import { StudyCycle, saveCycleProgress } from "@/services/studyCycles";
@@ -11,6 +12,7 @@ import { logXP, XP } from "@/services/scoring";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import ManualStudyLogDialog from "@/components/ManualStudyLogDialog";
+import { useDocumentPiP } from "@/hooks/useDocumentPiP";
 
 interface StudyCyclePlayerProps {
   cycle: StudyCycle;
@@ -86,6 +88,15 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
   const breakEndTimeRef = useRef<number | null>(null);
 
   const [manualLogOpen, setManualLogOpen] = useState(false);
+  const { open: openPiP, isOpen: pipOpen, pipContainer, isSupported: pipSupported } = useDocumentPiP({ width: 280, height: 320 });
+
+  const handleTogglePiP = async () => {
+    try {
+      await openPiP();
+    } catch {
+      toast.error("Seu navegador não suporta janela flutuante. Tente Chrome ou Edge.");
+    }
+  };
 
   const currentBlock = blocks[currentIndex];
   const isBreak = mode === "break";
@@ -402,9 +413,23 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
             </span>
           )}
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={handleClose}>
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {pipSupported && !isBreak && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              onClick={handleTogglePiP}
+              title={pipOpen ? "Janela flutuante ativa" : "Abrir janela flutuante"}
+              disabled={pipOpen}
+            >
+              <PictureInPicture2 className="h-4 w-4" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={handleClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* ── Main content ───────────────────────────────────────────── */}
@@ -547,6 +572,40 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
         defaultBlockIndex={currentIndex}
         onLogged={handleManualLogged}
       />
+
+      {pipContainer && createPortal(
+        <div className="flex flex-col items-center justify-center gap-4 h-screen w-screen p-4 bg-background text-foreground">
+          <div className="text-[11px] uppercase tracking-widest text-muted-foreground/70 truncate max-w-full text-center px-2">
+            {currentBlock?.subject?.name || "Disciplina"}
+          </div>
+          <div
+            className="text-5xl font-bold tabular-nums"
+            style={{ color: isOvertime ? "hsl(var(--destructive))" : subjectColor }}
+          >
+            {formattedTime}
+          </div>
+          {isOvertime && overtimeText && (
+            <div className="text-xs text-destructive">+{overtimeText}</div>
+          )}
+          <Button
+            size="icon"
+            className="h-14 w-14 rounded-full shadow-lg"
+            style={{ backgroundColor: subjectColor }}
+            onClick={handlePlayPause}
+            disabled={allDone && !isBreak}
+          >
+            {isRunning ? (
+              <Pause className="h-6 w-6 text-white" />
+            ) : (
+              <Play className="h-6 w-6 text-white ml-0.5" />
+            )}
+          </Button>
+          <div className="text-[10px] text-muted-foreground/60">
+            {isBreak ? "Intervalo" : isRunning ? "Estudando" : isPaused ? "Pausado" : "Pronto"}
+          </div>
+        </div>,
+        pipContainer
+      )}
     </div>
   );
 };
