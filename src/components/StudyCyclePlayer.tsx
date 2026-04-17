@@ -123,6 +123,27 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     breakEndTimeRef.current = null;
   }, []);
 
+  const handleManualLogged = useCallback(
+    ({ blockIndex, markCompleted }: { blockIndex: number; markCompleted: boolean }) => {
+      if (!markCompleted || blockIndex < 0) return;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      startTimeRef.current = null;
+      setIsRunning(false);
+      setIsPaused(false);
+      setCompletedBlocks((prev) => new Set(prev).add(blockIndex));
+      if (blockIndex === currentIndex) {
+        const nextIdx = currentIndex + 1 < blocks.length ? currentIndex + 1 : 0;
+        setCurrentIndex(nextIdx);
+        setElapsedSeconds(0);
+        setTargetReached(false);
+        setMode("study");
+        saveCycleProgress(cycle.id, nextIdx, null).catch(() => {});
+      }
+    },
+    [currentIndex, blocks.length, cycle.id]
+  );
+
   const playAlarm = useCallback(() => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
