@@ -572,6 +572,40 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
         defaultBlockIndex={currentIndex}
         onLogged={handleManualLogged}
       />
+
+      {pipContainer && createPortal(
+        <div className="flex flex-col items-center justify-center gap-4 h-screen w-screen p-4 bg-background text-foreground">
+          <div className="text-[11px] uppercase tracking-widest text-muted-foreground/70 truncate max-w-full text-center px-2">
+            {currentBlock?.subject?.name || "Disciplina"}
+          </div>
+          <div
+            className="text-5xl font-bold tabular-nums"
+            style={{ color: isOvertime ? "hsl(var(--destructive))" : subjectColor }}
+          >
+            {formattedTime}
+          </div>
+          {isOvertime && overtimeText && (
+            <div className="text-xs text-destructive">+{overtimeText}</div>
+          )}
+          <Button
+            size="icon"
+            className="h-14 w-14 rounded-full shadow-lg"
+            style={{ backgroundColor: subjectColor }}
+            onClick={handlePlayPause}
+            disabled={allDone && !isBreak}
+          >
+            {isRunning ? (
+              <Pause className="h-6 w-6 text-white" />
+            ) : (
+              <Play className="h-6 w-6 text-white ml-0.5" />
+            )}
+          </Button>
+          <div className="text-[10px] text-muted-foreground/60">
+            {isBreak ? "Intervalo" : isRunning ? "Estudando" : isPaused ? "Pausado" : "Pronto"}
+          </div>
+        </div>,
+        pipContainer
+      )}
     </div>
   );
 };
