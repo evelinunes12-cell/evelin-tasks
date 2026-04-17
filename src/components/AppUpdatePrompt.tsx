@@ -153,12 +153,6 @@ const AppUpdatePrompt = () => {
         onEscapeKeyDown={(e) => {
           if (isCritical) e.preventDefault();
         }}
-        onPointerDownOutside={(e) => {
-          if (isCritical) e.preventDefault();
-        }}
-        onInteractOutside={(e) => {
-          if (isCritical) e.preventDefault();
-        }}
       >
         <AlertDialogHeader>
           <div className="flex items-center justify-center mb-2">
