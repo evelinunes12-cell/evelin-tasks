@@ -38,6 +38,7 @@ const AdminBanners = lazy(() => import("./pages/AdminBanners"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const AdminFeedback = lazy(() => import("./pages/admin/AdminFeedback"));
+const AdminVersion = lazy(() => import("./pages/admin/AdminVersion"));
 const PomodoroPage = lazy(() => import("./pages/PomodoroPage"));
 const StudyCyclePage = lazy(() => import("./pages/StudyCyclePage"));
 const StudyAnalyticsPage = lazy(() => import("./pages/StudyAnalyticsPage"));
@@ -77,6 +78,7 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
     pathname === "/admin/banners" ||
     pathname === "/admin/notifications" ||
     pathname === "/admin/feedback" ||
+    pathname === "/admin/version" ||
     /^\/task\/edit\/.+/.test(pathname) ||
     /^\/environment\/[^/]+$/.test(pathname);
 
@@ -149,6 +151,7 @@ const App = () => {
                         <Route path="/admin/banners" element={<AdminRoute><PageTransition><AdminBanners /></PageTransition></AdminRoute>} />
                         <Route path="/admin/notifications" element={<AdminRoute><PageTransition><AdminNotifications /></PageTransition></AdminRoute>} />
                         <Route path="/admin/feedback" element={<AdminRoute><PageTransition><AdminFeedback /></PageTransition></AdminRoute>} />
+                        <Route path="/admin/version" element={<AdminRoute><PageTransition><AdminVersion /></PageTransition></AdminRoute>} />
                         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
                       </Routes>
                     </SidebarShell>
