@@ -50,7 +50,7 @@ const SwipeableTaskCard = ({
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const x = useMotionValue(0);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   // Background opacity based on swipe distance
@@ -70,20 +70,19 @@ const SwipeableTaskCard = ({
     // Swipe right - complete task
     if (swipeDistance > SWIPE_THRESHOLD && !isCompleted && onStatusChange) {
       onStatusChange(id, completedStatusName);
-      // Register activity for mobile swipe completion
       if (user) {
         await registerActivity(user.id);
       }
     }
-    // Swipe left - delete task
-    else if (swipeDistance < -SWIPE_THRESHOLD) {
-      setShowDeleteConfirm(true);
+    // Swipe left - archive task
+    else if (swipeDistance < -SWIPE_THRESHOLD && onArchive) {
+      setShowArchiveConfirm(true);
     }
   };
 
-  const handleConfirmDelete = () => {
-    setShowDeleteConfirm(false);
-    onDelete(id);
+  const handleConfirmArchive = () => {
+    setShowArchiveConfirm(false);
+    onArchive?.(id);
   };
 
   // On desktop, just render the normal TaskCard
