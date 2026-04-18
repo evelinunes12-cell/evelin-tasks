@@ -96,18 +96,19 @@ function SortableStatusCard({
         open={expandedParents.has(status.id)}
         onOpenChange={() => toggleExpand(status.id)}
       >
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+        <CardHeader className="p-3 sm:p-4 pb-2 sm:pb-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
               <div
                 {...attributes}
                 {...listeners}
-                className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-muted"
+                className="cursor-grab active:cursor-grabbing p-1.5 -m-1 rounded hover:bg-muted touch-none shrink-0"
+                aria-label="Arrastar para reordenar"
               >
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
               </div>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6">
+                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
                   {expandedParents.has(status.id) ? (
                     <ChevronDown className="h-4 w-4" />
                   ) : (
@@ -116,48 +117,34 @@ function SortableStatusCard({
                 </Button>
               </CollapsibleTrigger>
               <div
-                className="w-4 h-4 rounded-full shrink-0"
+                className="w-3.5 h-3.5 rounded-full shrink-0"
                 style={{ backgroundColor: status.color || "#3b82f6" }}
               />
-              <CardTitle className="text-lg">{status.name}</CardTitle>
-              {status.is_default && (
-                <Badge variant="secondary" className="text-xs">Padrão</Badge>
-              )}
-              {status.children && status.children.length > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  {status.children.length} {status.children.length === 1 ? 'filho' : 'filhos'}
-                </Badge>
-              )}
-              {status.show_in_dashboard && (
-                <Badge variant="outline" className="text-xs flex items-center gap-1">
-                  <LayoutDashboard className="h-3 w-3" />
-                </Badge>
-              )}
-              {status.show_in_kanban && (
-                <Badge variant="outline" className="text-xs flex items-center gap-1">
-                  <Columns3 className="h-3 w-3" />
-                </Badge>
-              )}
+              <CardTitle className="text-base sm:text-lg truncate">{status.name}</CardTitle>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-0.5 sm:gap-1 shrink-0">
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
+                className="h-9 w-9 sm:h-9 sm:w-9"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleOpenDialog(undefined, true, status.id);
                 }}
                 title="Adicionar status filho"
+                aria-label="Adicionar status filho"
               >
                 <Plus className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-9 w-9"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleOpenDialog(status);
                 }}
+                aria-label="Editar"
               >
                 <Pencil className="h-4 w-4" />
               </Button>
@@ -165,58 +152,83 @@ function SortableStatusCard({
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="h-9 w-9"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeleteStatus(status.id);
                   }}
+                  aria-label="Excluir"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               )}
             </div>
           </div>
+          {/* Badges row — wraps below on mobile to keep header tidy */}
+          <div className="flex flex-wrap gap-1 mt-1 ml-9 sm:ml-12">
+            {status.is_default && (
+              <Badge variant="secondary" className="text-[10px] h-5 px-1.5">Padrão</Badge>
+            )}
+            {status.children && status.children.length > 0 && (
+              <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+                {status.children.length} {status.children.length === 1 ? 'filho' : 'filhos'}
+              </Badge>
+            )}
+            {status.show_in_dashboard && (
+              <Badge variant="outline" className="text-[10px] h-5 px-1.5 flex items-center gap-1">
+                <LayoutDashboard className="h-3 w-3" />
+              </Badge>
+            )}
+            {status.show_in_kanban && (
+              <Badge variant="outline" className="text-[10px] h-5 px-1.5 flex items-center gap-1">
+                <Columns3 className="h-3 w-3" />
+              </Badge>
+            )}
+          </div>
         </CardHeader>
-        
+
         <CollapsibleContent>
-          <CardContent className="pt-0 pb-4">
+          <CardContent className="pt-0 pb-3 sm:pb-4 px-3 sm:px-4">
             {status.children && status.children.length > 0 ? (
-              <div className="ml-8 space-y-2">
+              <div className="ml-6 sm:ml-8 space-y-2">
                 {status.children.map((child) => (
                   <div
                     key={child.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border"
+                    className="flex items-center justify-between gap-2 p-2.5 sm:p-3 rounded-lg bg-muted/50 border"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <div
                         className="w-3 h-3 rounded-full shrink-0"
                         style={{ backgroundColor: child.color || "#3b82f6" }}
                       />
-                      <span className="font-medium">{child.name}</span>
+                      <span className="font-medium text-sm truncate">{child.name}</span>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-0.5 shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-9 w-9"
                         onClick={() => handleOpenDialog(child)}
+                        aria-label="Editar"
                       >
-                        <Pencil className="h-3 w-3" />
+                        <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-9 w-9"
                         onClick={() => handleDeleteStatus(child.id)}
+                        aria-label="Excluir"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="ml-8 text-sm text-muted-foreground">
-                Nenhum status filho. Clique em + para adicionar.
+              <p className="ml-6 sm:ml-8 text-sm text-muted-foreground">
+                Nenhum status filho. Toque em + para adicionar.
               </p>
             )}
           </CardContent>
@@ -462,24 +474,24 @@ export default function TaskStatuses() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container flex h-16 items-center gap-4 px-4">
+    <div className="min-h-screen bg-background pb-8">
+      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 sm:h-16 items-center gap-3 px-3 sm:px-4">
           <SidebarTrigger className="md:hidden" />
-          <h1 className="text-2xl font-bold">Status de Tarefas</h1>
+          <h1 className="text-lg sm:text-2xl font-bold truncate">Status de Tarefas</h1>
         </div>
       </header>
 
-      <main className="container py-8 px-4">
-        <div className="mb-6 flex flex-col gap-2">
+      <main className="container py-4 sm:py-8 px-3 sm:px-4">
+        <div className="mb-4 sm:mb-6 flex flex-col gap-2">
           <div className="flex gap-2 flex-wrap">
-            <Button onClick={() => handleOpenDialog()} size="sm">
+            <Button onClick={() => handleOpenDialog()} size="sm" className="w-full sm:w-auto">
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Novo Status Pai</span>
+              <span className="ml-1">Novo Status Pai</span>
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Arraste os status pelo ícone <GripVertical className="h-4 w-4 inline" /> para reordenar a exibição na Dashboard e Kanban.
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Arraste pelo ícone <GripVertical className="h-3.5 w-3.5 inline" /> para reordenar.
           </p>
         </div>
 
