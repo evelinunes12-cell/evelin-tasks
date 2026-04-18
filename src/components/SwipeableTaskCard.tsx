@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { Check, Trash2 } from "lucide-react";
+import { Check, Archive } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/useAuth";
 import { registerActivity } from "@/services/activity";
@@ -50,7 +50,7 @@ const SwipeableTaskCard = ({
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const x = useMotionValue(0);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   // Background opacity based on swipe distance
@@ -70,20 +70,19 @@ const SwipeableTaskCard = ({
     // Swipe right - complete task
     if (swipeDistance > SWIPE_THRESHOLD && !isCompleted && onStatusChange) {
       onStatusChange(id, completedStatusName);
-      // Register activity for mobile swipe completion
       if (user) {
         await registerActivity(user.id);
       }
     }
-    // Swipe left - delete task
-    else if (swipeDistance < -SWIPE_THRESHOLD) {
-      setShowDeleteConfirm(true);
+    // Swipe left - archive task
+    else if (swipeDistance < -SWIPE_THRESHOLD && onArchive) {
+      setShowArchiveConfirm(true);
     }
   };
 
-  const handleConfirmDelete = () => {
-    setShowDeleteConfirm(false);
-    onDelete(id);
+  const handleConfirmArchive = () => {
+    setShowArchiveConfirm(false);
+    onArchive?.(id);
   };
 
   // On desktop, just render the normal TaskCard
@@ -119,14 +118,14 @@ const SwipeableTaskCard = ({
           <span className="text-success-foreground font-medium ml-2">Concluir</span>
         </motion.div>
 
-        {/* Left swipe background (destructive - delete) */}
+        {/* Left swipe background (archive) */}
         <motion.div
-          className="absolute inset-0 bg-destructive flex items-center justify-end pr-6 rounded-lg"
+          className="absolute inset-0 bg-warning flex items-center justify-end pr-6 rounded-lg"
           style={{ opacity: leftOpacity }}
         >
-          <span className="text-destructive-foreground font-medium mr-2">Excluir</span>
+          <span className="text-warning-foreground font-medium mr-2">Arquivar</span>
           <motion.div style={{ scale: leftScale }}>
-            <Trash2 className="w-8 h-8 text-destructive-foreground" />
+            <Archive className="w-8 h-8 text-warning-foreground" />
           </motion.div>
         </motion.div>
 
@@ -168,22 +167,19 @@ const SwipeableTaskCard = ({
         </motion.div>
       </div>
 
-      {/* Delete confirmation dialog */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      {/* Archive confirmation dialog */}
+      <AlertDialog open={showArchiveConfirm} onOpenChange={setShowArchiveConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir tarefa?</AlertDialogTitle>
+            <AlertDialogTitle>Arquivar tarefa?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir "{subjectName}"? Esta ação pode ser desfeita.
+              Tem certeza que deseja arquivar "{subjectName}"? Você pode restaurá-la em Tarefas Arquivadas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
+            <AlertDialogAction onClick={handleConfirmArchive}>
+              Arquivar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
