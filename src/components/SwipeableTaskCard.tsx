@@ -118,14 +118,14 @@ const SwipeableTaskCard = ({
           <span className="text-success-foreground font-medium ml-2">Concluir</span>
         </motion.div>
 
-        {/* Left swipe background (destructive - delete) */}
+        {/* Left swipe background (archive) */}
         <motion.div
-          className="absolute inset-0 bg-destructive flex items-center justify-end pr-6 rounded-lg"
+          className="absolute inset-0 bg-warning flex items-center justify-end pr-6 rounded-lg"
           style={{ opacity: leftOpacity }}
         >
-          <span className="text-destructive-foreground font-medium mr-2">Excluir</span>
+          <span className="text-warning-foreground font-medium mr-2">Arquivar</span>
           <motion.div style={{ scale: leftScale }}>
-            <Trash2 className="w-8 h-8 text-destructive-foreground" />
+            <Archive className="w-8 h-8 text-warning-foreground" />
           </motion.div>
         </motion.div>
 
