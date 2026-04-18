@@ -6,6 +6,7 @@ import { useAdminRole } from "@/hooks/useAdminRole";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatUsername } from "@/lib/username";
+import { prefetchRoute } from "@/lib/routePrefetch";
 import {
   Sidebar,
   SidebarContent,
@@ -102,6 +103,9 @@ export function AppSidebar() {
             <NavLink
               to={item.url}
               onClick={handleLinkClick}
+              onMouseEnter={() => prefetchRoute(item.url)}
+              onFocus={() => prefetchRoute(item.url)}
+              onTouchStart={() => prefetchRoute(item.url)}
               className={({ isActive }) =>
                 isActive
                   ? "bg-accent text-accent-foreground"

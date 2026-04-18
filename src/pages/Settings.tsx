@@ -370,40 +370,43 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 flex-1">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6 flex-1">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+        <div className="flex items-center gap-3 sm:gap-4">
           <SidebarTrigger className="md:hidden" />
-          <div>
-            <h1 className="text-3xl font-bold">Configurações</h1>
-            <p className="text-muted-foreground mt-1">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold">Configurações</h1>
+            <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
               Gerencie sua conta e preferências do Zenit.
             </p>
           </div>
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
-            <TabsTrigger value="profile" className="gap-2">
-              <User className="h-4 w-4" /> <span className="hidden sm:inline">Perfil</span>
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-2">
-              <Bell className="h-4 w-4" /> <span className="hidden sm:inline">Alertas</span>
-            </TabsTrigger>
-            <TabsTrigger value="accounts" className="gap-2">
-              <Link2 className="h-4 w-4" /> <span className="hidden sm:inline">Contas</span>
-            </TabsTrigger>
-            <TabsTrigger value="appearance" className="gap-2">
-              <Palette className="h-4 w-4" /> <span className="hidden sm:inline">Aparência</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="support"
-              className="gap-2 animate-pulse ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/30"
-            >
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="hidden sm:inline font-semibold">Apoie</span>
-            </TabsTrigger>
-          </TabsList>
+          {/* Mobile: scrollable tabs. Desktop: grid 5 cols. */}
+          <div className="-mx-3 sm:mx-0 mb-4 sm:mb-6 overflow-x-auto scrollbar-none">
+            <TabsList className="inline-flex w-max sm:grid sm:w-full sm:grid-cols-5 px-3 sm:px-0">
+              <TabsTrigger value="profile" className="gap-2 shrink-0">
+                <User className="h-4 w-4" /> <span className="sm:inline">Perfil</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="gap-2 shrink-0">
+                <Bell className="h-4 w-4" /> <span className="sm:inline">Alertas</span>
+              </TabsTrigger>
+              <TabsTrigger value="accounts" className="gap-2 shrink-0">
+                <Link2 className="h-4 w-4" /> <span className="sm:inline">Contas</span>
+              </TabsTrigger>
+              <TabsTrigger value="appearance" className="gap-2 shrink-0">
+                <Palette className="h-4 w-4" /> <span className="sm:inline">Aparência</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="support"
+                className="gap-2 shrink-0 animate-pulse ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/30"
+              >
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="sm:inline font-semibold">Apoie</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* PROFILE TAB */}
           <TabsContent value="profile" className="space-y-6">
@@ -416,16 +419,16 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-6">
-                  <Avatar className="h-24 w-24">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+                  <Avatar className="h-20 w-20 sm:h-24 sm:w-24 self-center sm:self-auto">
                     <AvatarImage src={profile.avatar_url || undefined} />
                     <AvatarFallback className="text-2xl bg-primary/10 text-primary">
                       {getInitials()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
+                  <div className="flex-1 text-center sm:text-left">
                     <Label htmlFor="avatar-upload" className="cursor-pointer">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center sm:justify-start gap-2">
                         <Button
                           type="button"
                           variant="outline"
@@ -451,7 +454,7 @@ export default function Settings() {
                       onChange={handleFileSelect}
                       disabled={uploading}
                     />
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="text-xs text-muted-foreground mt-2">
                       JPG, PNG ou WEBP. Máximo 10MB.
                     </p>
                   </div>

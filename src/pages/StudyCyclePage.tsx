@@ -134,13 +134,17 @@ const StudyCyclePage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border px-4 py-3 flex items-center gap-3">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-3 sm:px-4 py-3 flex items-center gap-3">
         <SidebarTrigger className="md:hidden" />
-        <h1 className="text-lg font-bold text-foreground">Ciclo de Estudos</h1>
+        <h1 className="text-base sm:text-lg font-bold text-foreground truncate">Ciclo de Estudos</h1>
+        <Button onClick={handleOpenCreate} size="sm" className="ml-auto gap-1.5 sm:hidden">
+          <Plus className="h-4 w-4" />
+          Novo
+        </Button>
       </header>
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="hidden sm:flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-primary/10">
               <Repeat className="h-6 w-6 text-primary" />
@@ -152,15 +156,15 @@ const StudyCyclePage = () => {
           </div>
           <Button onClick={handleOpenCreate} size="sm" className="gap-1.5">
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Criar Ciclo</span>
+            Criar Ciclo
           </Button>
         </div>
 
         {/* Loading */}
         {loading && (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 rounded-xl border bg-card p-5 shadow-sm">
+              <div key={i} className="flex items-center gap-3 sm:gap-4 rounded-xl border bg-card p-4 sm:p-5 shadow-sm">
                 <Skeleton className="h-10 w-10 rounded-lg" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-3/4" />
@@ -173,12 +177,12 @@ const StudyCyclePage = () => {
 
         {/* Empty State */}
         {!loading && cycles.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center">
             <div className="p-4 rounded-2xl bg-primary/10 mb-6">
               <BookOpen className="h-10 w-10 text-primary" />
             </div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">Nenhum ciclo criado</h2>
-            <p className="text-muted-foreground mb-6 max-w-sm">
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-2">Nenhum ciclo criado</h2>
+            <p className="text-sm text-muted-foreground mb-6 max-w-sm px-4">
               Crie seu primeiro ciclo de estudos adicionando suas disciplinas e definindo o tempo dedicado a cada uma.
             </p>
             <Button onClick={handleOpenCreate} className="gap-1.5">
@@ -190,7 +194,7 @@ const StudyCyclePage = () => {
 
         {/* Cycles List */}
         {!loading && cycles.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {cycles.map((cycle) => {
               const blockCount = cycle.blocks?.length || 0;
               const totalMin = getTotalMinutes(cycle);
@@ -200,11 +204,11 @@ const StudyCyclePage = () => {
                   key={cycle.id}
                   className={`transition-all hover:shadow-md ${!cycle.is_active ? "opacity-60" : ""}`}
                 >
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-3">
+                  <CardContent className="p-3 sm:p-5">
+                    <div className="flex items-start justify-between gap-2 sm:gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <h3 className="font-semibold text-foreground truncate">{cycle.name}</h3>
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <h3 className="font-semibold text-sm sm:text-base text-foreground truncate min-w-0">{cycle.name}</h3>
                           <Badge
                             variant={cycle.is_active ? "default" : "secondary"}
                             className="shrink-0 text-[10px] px-1.5 py-0 h-5"
@@ -213,10 +217,10 @@ const StudyCyclePage = () => {
                           </Badge>
                         </div>
 
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <BookOpen className="h-3.5 w-3.5" />
-                            {blockCount} disciplina{blockCount !== 1 ? "s" : ""}
+                            {blockCount} disc.
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="h-3.5 w-3.5" />
@@ -226,11 +230,11 @@ const StudyCyclePage = () => {
 
                         {/* Block chips */}
                         {cycle.blocks && cycle.blocks.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mt-3">
-                            {cycle.blocks.map((block) => (
+                          <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-2 sm:mt-3">
+                            {cycle.blocks.slice(0, 6).map((block) => (
                               <span
                                 key={block.id}
-                                className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+                                className="inline-flex items-center gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
                               >
                                 {block.subject?.color && (
                                   <span
@@ -238,56 +242,67 @@ const StudyCyclePage = () => {
                                     style={{ backgroundColor: block.subject.color }}
                                   />
                                 )}
-                                {block.subject?.name || "—"}
-                                <span className="text-muted-foreground">· {block.allocated_minutes}min</span>
+                                <span className="truncate max-w-[80px] sm:max-w-none">{block.subject?.name || "—"}</span>
+                                <span className="text-muted-foreground hidden sm:inline">· {block.allocated_minutes}min</span>
                               </span>
                             ))}
+                            {cycle.blocks.length > 6 && (
+                              <span className="text-[10px] sm:text-xs text-muted-foreground self-center">
+                                +{cycle.blocks.length - 6}
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleOpenEdit(cycle)}
-                          title="Editar ciclo"
-                        >
-                          <Pencil className="h-4 w-4 text-muted-foreground" />
-                        </Button>
+                      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 shrink-0">
                         {cycle.is_active && (cycle.blocks?.length || 0) > 0 && (
                           <Button
                             variant="default"
                             size="icon"
-                            className="h-8 w-8 rounded-full"
+                            className="h-9 w-9 rounded-full"
                             onClick={() => setPlayingCycle(cycle)}
                             title="Iniciar ciclo"
+                            aria-label="Iniciar ciclo"
                           >
                             <Play className="h-4 w-4 ml-0.5" />
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleToggle(cycle)}
-                          title={cycle.is_active ? "Desativar" : "Ativar"}
-                        >
-                          {cycle.is_active ? (
-                            <PowerOff className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Power className="h-4 w-4 text-primary" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => setDeleteId(cycle.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-0.5 sm:gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9"
+                            onClick={() => handleOpenEdit(cycle)}
+                            title="Editar ciclo"
+                            aria-label="Editar"
+                          >
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9"
+                            onClick={() => handleToggle(cycle)}
+                            title={cycle.is_active ? "Desativar" : "Ativar"}
+                            aria-label={cycle.is_active ? "Desativar" : "Ativar"}
+                          >
+                            {cycle.is_active ? (
+                              <PowerOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Power className="h-4 w-4 text-primary" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                            onClick={() => setDeleteId(cycle.id)}
+                            aria-label="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

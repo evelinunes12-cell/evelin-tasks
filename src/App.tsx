@@ -50,7 +50,16 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import AppUpdatePrompt from "./components/AppUpdatePrompt";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000, // 1 min — reduces refetch storms on navigation
+      gcTime: 5 * 60_000, // keep cached data 5 min after unmount
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const SidebarShell = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
