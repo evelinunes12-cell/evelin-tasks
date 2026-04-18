@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Calendar, Users, BookOpen, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { prefetchRoute } from "@/lib/routePrefetch";
 
 const navItems = [
   { label: "Início", icon: LayoutDashboard, path: "/dashboard" },
@@ -30,6 +31,8 @@ export function BottomNav() {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
+              onTouchStart={() => prefetchRoute(item.path)}
+              onMouseEnter={() => prefetchRoute(item.path)}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors min-w-[3.5rem]",
                 isActive
