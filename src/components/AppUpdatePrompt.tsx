@@ -130,8 +130,18 @@ const AppUpdatePrompt = () => {
     };
   }, [setNeedRefresh]);
 
+  const hardReload = () => {
+    // Cache-bust query param garante que o navegador busque o HTML novo,
+    // ignorando qualquer cache HTTP/SW residual.
+    const url = new URL(window.location.href);
+    url.searchParams.set("_v", Date.now().toString());
+    window.location.replace(url.toString());
+  };
+
   const handleUpdate = async () => {
     setUpdating(true);
+
+    // Limpa caches do navegador (best-effort).
     try {
       if ("caches" in window) {
         const keys = await caches.keys();
@@ -140,10 +150,29 @@ const AppUpdatePrompt = () => {
     } catch {
       /* ignore */
     }
+
+    // Tenta desregistrar SWs para garantir que o próximo load pegue tudo novo.
+    try {
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister().catch(() => false)));
+      }
+    } catch {
+      /* ignore */
+    }
+
+    // updateServiceWorker(true) só resolve quando existe um SW em "waiting".
+    // Quando a versão é trocada apenas via DB (sem redeploy), isso nunca
+    // resolve e o botão fica girando para sempre. Garantimos um reload
+    // após um timeout curto como fallback.
+    const fallback = window.setTimeout(hardReload, 1500);
     try {
       await updateServiceWorker(true);
     } catch {
-      window.location.reload();
+      /* ignore */
+    } finally {
+      clearTimeout(fallback);
+      hardReload();
     }
   };
 
