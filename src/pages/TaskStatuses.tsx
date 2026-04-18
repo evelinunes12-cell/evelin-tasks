@@ -527,7 +527,7 @@ export default function TaskStatuses() {
       </main>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[calc(100vw-1.5rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingStatus ? "Editar Status" : parentId ? "Novo Status Filho" : "Novo Status Pai"}
