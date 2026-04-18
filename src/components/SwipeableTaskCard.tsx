@@ -167,22 +167,19 @@ const SwipeableTaskCard = ({
         </motion.div>
       </div>
 
-      {/* Delete confirmation dialog */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      {/* Archive confirmation dialog */}
+      <AlertDialog open={showArchiveConfirm} onOpenChange={setShowArchiveConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir tarefa?</AlertDialogTitle>
+            <AlertDialogTitle>Arquivar tarefa?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir "{subjectName}"? Esta ação pode ser desfeita.
+              Tem certeza que deseja arquivar "{subjectName}"? Você pode restaurá-la em Tarefas Arquivadas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
+            <AlertDialogAction onClick={handleConfirmArchive}>
+              Arquivar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
