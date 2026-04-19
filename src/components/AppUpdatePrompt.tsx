@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RefreshCw, Sparkles, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // How often (ms) to re-check for a new app version (fallback to polling
 // in case realtime is not available).
@@ -38,6 +39,27 @@ const AppUpdatePrompt = () => {
   // re-prompt on the next visit (as long as that version is still the current one).
   const POSTPONED_VERSION_KEY = "zenit:postponed-version";
   const POSTPONED_MESSAGE_KEY = "zenit:postponed-message";
+  // Track the last version we already showed a "new version" toast for on this
+  // device, so we don't re-toast on every reload of the same version.
+  const TOASTED_VERSION_KEY = "zenit:toasted-version";
+
+  const showNewVersionToast = (version: string, message: string | null) => {
+    toast.success(`Nova versão ${version} disponível`, {
+      description:
+        message?.trim() ||
+        "Atualize agora para receber as últimas melhorias e correções.",
+      duration: 8000,
+      action: {
+        label: "Atualizar",
+        onClick: () => setNeedRefresh(true),
+      },
+    });
+    try {
+      localStorage.setItem(TOASTED_VERSION_KEY, version);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -92,8 +114,9 @@ const AppUpdatePrompt = () => {
         }
 
         // Re-prompt if the user previously postponed this same version.
+        let postponed: string | null = null;
         try {
-          const postponed = localStorage.getItem(POSTPONED_VERSION_KEY);
+          postponed = localStorage.getItem(POSTPONED_VERSION_KEY);
           if (postponed && postponed === data.version) {
             const savedMsg = localStorage.getItem(POSTPONED_MESSAGE_KEY);
             setCustomMessage(savedMsg ?? data.message ?? null);
@@ -102,6 +125,21 @@ const AppUpdatePrompt = () => {
           }
         } catch {
           /* ignore storage errors */
+        }
+
+        // Show a subtle toast if this device hasn't acknowledged this version
+        // yet (and the modal isn't already taking over).
+        try {
+          const lastToasted = localStorage.getItem(TOASTED_VERSION_KEY);
+          const modalWillShow = postponed === data.version;
+          if (!modalWillShow && lastToasted !== data.version) {
+            showNewVersionToast(data.version, data.message);
+          } else if (lastToasted !== data.version) {
+            // Modal is showing; still mark as acknowledged so we don't toast later.
+            localStorage.setItem(TOASTED_VERSION_KEY, data.version);
+          }
+        } catch {
+          /* ignore */
         }
         return;
       }
@@ -117,6 +155,10 @@ const AppUpdatePrompt = () => {
         setNeedRefresh(true);
         setIsCritical(!!data.critical);
         setCustomMessage(data.message ?? null);
+        // Also surface a toast for realtime/poll-detected updates.
+        if (!data.critical) {
+          showNewVersionToast(data.version, data.message);
+        }
       }
     };
 
