@@ -172,6 +172,14 @@ const AppUpdatePrompt = () => {
   const handleUpdate = async () => {
     setUpdating(true);
 
+    // Clear postponed reminder — user is updating now.
+    try {
+      localStorage.removeItem(POSTPONED_VERSION_KEY);
+      localStorage.removeItem(POSTPONED_MESSAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+
     // Limpa caches do navegador (best-effort).
     try {
       if ("caches" in window) {
