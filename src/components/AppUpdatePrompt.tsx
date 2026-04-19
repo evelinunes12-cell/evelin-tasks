@@ -105,7 +105,7 @@ const AppUpdatePrompt = () => {
       if (lastSeenVersionRef.current === null) {
         lastSeenVersionRef.current = data.version;
 
-        // Honor critical flag on first load.
+        // Critical updates: show the blocking modal only (no toast).
         if (data.critical) {
           setIsCritical(true);
           if (data.message) setCustomMessage(data.message);
@@ -113,30 +113,13 @@ const AppUpdatePrompt = () => {
           return;
         }
 
-        // Re-prompt if the user previously postponed this same version.
-        let postponed: string | null = null;
-        try {
-          postponed = localStorage.getItem(POSTPONED_VERSION_KEY);
-          if (postponed && postponed === data.version) {
-            const savedMsg = localStorage.getItem(POSTPONED_MESSAGE_KEY);
-            setCustomMessage(savedMsg ?? data.message ?? null);
-            setIsCritical(false);
-            setNeedRefresh(true);
-          }
-        } catch {
-          /* ignore storage errors */
-        }
-
-        // Show a subtle toast if this device hasn't acknowledged this version
-        // yet (and the modal isn't already taking over).
+        // Non-critical: only show the lateral toast (no modal on first load),
+        // even if the user previously postponed it. The toast itself has an
+        // "Atualizar" action that opens the modal on demand.
         try {
           const lastToasted = localStorage.getItem(TOASTED_VERSION_KEY);
-          const modalWillShow = postponed === data.version;
-          if (!modalWillShow && lastToasted !== data.version) {
+          if (lastToasted !== data.version) {
             showNewVersionToast(data.version, data.message);
-          } else if (lastToasted !== data.version) {
-            // Modal is showing; still mark as acknowledged so we don't toast later.
-            localStorage.setItem(TOASTED_VERSION_KEY, data.version);
           }
         } catch {
           /* ignore */
@@ -152,11 +135,14 @@ const AppUpdatePrompt = () => {
         } catch {
           /* ignore */
         }
-        setNeedRefresh(true);
-        setIsCritical(!!data.critical);
-        setCustomMessage(data.message ?? null);
-        // Also surface a toast for realtime/poll-detected updates.
-        if (!data.critical) {
+
+        if (data.critical) {
+          // Critical: blocking modal, no toast.
+          setIsCritical(true);
+          setCustomMessage(data.message ?? null);
+          setNeedRefresh(true);
+        } else {
+          // Non-critical: toast only.
           showNewVersionToast(data.version, data.message);
         }
       }
