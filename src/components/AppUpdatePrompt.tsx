@@ -209,6 +209,20 @@ const AppUpdatePrompt = () => {
 
   const handleDismiss = () => {
     if (isCritical) return;
+    // Persist the postponed version so we re-prompt on the next load.
+    try {
+      const v = pendingVersionRef.current ?? lastSeenVersionRef.current;
+      if (v) {
+        localStorage.setItem(POSTPONED_VERSION_KEY, v);
+        if (customMessage) {
+          localStorage.setItem(POSTPONED_MESSAGE_KEY, customMessage);
+        } else {
+          localStorage.removeItem(POSTPONED_MESSAGE_KEY);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
     setNeedRefresh(false);
   };
 
