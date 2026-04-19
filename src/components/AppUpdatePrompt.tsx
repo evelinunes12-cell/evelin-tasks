@@ -39,6 +39,27 @@ const AppUpdatePrompt = () => {
   // re-prompt on the next visit (as long as that version is still the current one).
   const POSTPONED_VERSION_KEY = "zenit:postponed-version";
   const POSTPONED_MESSAGE_KEY = "zenit:postponed-message";
+  // Track the last version we already showed a "new version" toast for on this
+  // device, so we don't re-toast on every reload of the same version.
+  const TOASTED_VERSION_KEY = "zenit:toasted-version";
+
+  const showNewVersionToast = (version: string, message: string | null) => {
+    toast.success(`Nova versão ${version} disponível`, {
+      description:
+        message?.trim() ||
+        "Atualize agora para receber as últimas melhorias e correções.",
+      duration: 8000,
+      action: {
+        label: "Atualizar",
+        onClick: () => setNeedRefresh(true),
+      },
+    });
+    try {
+      localStorage.setItem(TOASTED_VERSION_KEY, version);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
