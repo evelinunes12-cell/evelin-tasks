@@ -323,7 +323,7 @@ const Planner = () => {
   };
 
   const handleClickTask = (task: Task) => {
-    navigate(`/tasks/${task.id}`);
+    navigate(`/task/${task.id}`);
   };
 
   const handleFilterChange = (key: "schedules" | "notes" | "goals" | "tasks", value: boolean) => {
