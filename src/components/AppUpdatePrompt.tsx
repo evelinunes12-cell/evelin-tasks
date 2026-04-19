@@ -31,6 +31,13 @@ const AppUpdatePrompt = () => {
   const [customMessage, setCustomMessage] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
   const lastSeenVersionRef = useRef<string | null>(null);
+  const pendingVersionRef = useRef<string | null>(null);
+
+  // localStorage keys: persist a "pending update" reminder across reloads/sessions.
+  // If the user clicks "Mais tarde", we store the version they postponed so we can
+  // re-prompt on the next visit (as long as that version is still the current one).
+  const POSTPONED_VERSION_KEY = "zenit:postponed-version";
+  const POSTPONED_MESSAGE_KEY = "zenit:postponed-message";
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -71,18 +78,42 @@ const AppUpdatePrompt = () => {
       message: string | null;
     }) => {
       if (cancelled) return;
+      pendingVersionRef.current = data.version;
+
       if (lastSeenVersionRef.current === null) {
         lastSeenVersionRef.current = data.version;
-        // Even on first load, honor critical flag if it's set.
+
+        // Honor critical flag on first load.
         if (data.critical) {
           setIsCritical(true);
           if (data.message) setCustomMessage(data.message);
           setNeedRefresh(true);
+          return;
+        }
+
+        // Re-prompt if the user previously postponed this same version.
+        try {
+          const postponed = localStorage.getItem(POSTPONED_VERSION_KEY);
+          if (postponed && postponed === data.version) {
+            const savedMsg = localStorage.getItem(POSTPONED_MESSAGE_KEY);
+            setCustomMessage(savedMsg ?? data.message ?? null);
+            setIsCritical(false);
+            setNeedRefresh(true);
+          }
+        } catch {
+          /* ignore storage errors */
         }
         return;
       }
       if (lastSeenVersionRef.current !== data.version) {
         lastSeenVersionRef.current = data.version;
+        // New version supersedes any previously postponed one.
+        try {
+          localStorage.removeItem(POSTPONED_VERSION_KEY);
+          localStorage.removeItem(POSTPONED_MESSAGE_KEY);
+        } catch {
+          /* ignore */
+        }
         setNeedRefresh(true);
         setIsCritical(!!data.critical);
         setCustomMessage(data.message ?? null);
@@ -141,6 +172,14 @@ const AppUpdatePrompt = () => {
   const handleUpdate = async () => {
     setUpdating(true);
 
+    // Clear postponed reminder — user is updating now.
+    try {
+      localStorage.removeItem(POSTPONED_VERSION_KEY);
+      localStorage.removeItem(POSTPONED_MESSAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+
     // Limpa caches do navegador (best-effort).
     try {
       if ("caches" in window) {
@@ -178,6 +217,20 @@ const AppUpdatePrompt = () => {
 
   const handleDismiss = () => {
     if (isCritical) return;
+    // Persist the postponed version so we re-prompt on the next load.
+    try {
+      const v = pendingVersionRef.current ?? lastSeenVersionRef.current;
+      if (v) {
+        localStorage.setItem(POSTPONED_VERSION_KEY, v);
+        if (customMessage) {
+          localStorage.setItem(POSTPONED_MESSAGE_KEY, customMessage);
+        } else {
+          localStorage.removeItem(POSTPONED_MESSAGE_KEY);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
     setNeedRefresh(false);
   };
 
