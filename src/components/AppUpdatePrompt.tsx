@@ -31,6 +31,13 @@ const AppUpdatePrompt = () => {
   const [customMessage, setCustomMessage] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
   const lastSeenVersionRef = useRef<string | null>(null);
+  const pendingVersionRef = useRef<string | null>(null);
+
+  // localStorage keys: persist a "pending update" reminder across reloads/sessions.
+  // If the user clicks "Mais tarde", we store the version they postponed so we can
+  // re-prompt on the next visit (as long as that version is still the current one).
+  const POSTPONED_VERSION_KEY = "zenit:postponed-version";
+  const POSTPONED_MESSAGE_KEY = "zenit:postponed-message";
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
