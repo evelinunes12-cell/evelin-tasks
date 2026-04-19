@@ -78,18 +78,42 @@ const AppUpdatePrompt = () => {
       message: string | null;
     }) => {
       if (cancelled) return;
+      pendingVersionRef.current = data.version;
+
       if (lastSeenVersionRef.current === null) {
         lastSeenVersionRef.current = data.version;
-        // Even on first load, honor critical flag if it's set.
+
+        // Honor critical flag on first load.
         if (data.critical) {
           setIsCritical(true);
           if (data.message) setCustomMessage(data.message);
           setNeedRefresh(true);
+          return;
+        }
+
+        // Re-prompt if the user previously postponed this same version.
+        try {
+          const postponed = localStorage.getItem(POSTPONED_VERSION_KEY);
+          if (postponed && postponed === data.version) {
+            const savedMsg = localStorage.getItem(POSTPONED_MESSAGE_KEY);
+            setCustomMessage(savedMsg ?? data.message ?? null);
+            setIsCritical(false);
+            setNeedRefresh(true);
+          }
+        } catch {
+          /* ignore storage errors */
         }
         return;
       }
       if (lastSeenVersionRef.current !== data.version) {
         lastSeenVersionRef.current = data.version;
+        // New version supersedes any previously postponed one.
+        try {
+          localStorage.removeItem(POSTPONED_VERSION_KEY);
+          localStorage.removeItem(POSTPONED_MESSAGE_KEY);
+        } catch {
+          /* ignore */
+        }
         setNeedRefresh(true);
         setIsCritical(!!data.critical);
         setCustomMessage(data.message ?? null);
