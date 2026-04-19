@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RefreshCw, Sparkles, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // How often (ms) to re-check for a new app version (fallback to polling
 // in case realtime is not available).
