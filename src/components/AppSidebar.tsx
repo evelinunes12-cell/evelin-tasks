@@ -96,7 +96,7 @@ export function AppSidebar() {
     await signOut();
   };
 
-  const renderMenuItem = (item: typeof menuItems[0]) => (
+  const renderMenuItem = (item: { title: string; url: string; icon: any; description: string; comingSoon?: boolean }) => (
     <SidebarMenuItem key={item.title}>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -114,13 +114,18 @@ export function AppSidebar() {
               }
             >
               <item.icon className="h-4 w-4" />
-              {open && <span>{item.title}</span>}
+              {open && <span className="flex-1">{item.title}</span>}
+              {open && item.comingSoon && (
+                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 ml-auto">
+                  Em breve
+                </Badge>
+              )}
             </NavLink>
           </SidebarMenuButton>
         </TooltipTrigger>
         {!open && (
           <TooltipContent side="right">
-            <p className="font-medium">{item.title}</p>
+            <p className="font-medium">{item.title}{item.comingSoon ? " (Em breve)" : ""}</p>
             <p className="text-xs text-muted-foreground">{item.description}</p>
           </TooltipContent>
         )}
