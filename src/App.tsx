@@ -44,8 +44,7 @@ const StudyCyclePage = lazy(() => import("./pages/StudyCyclePage"));
 const StudyAnalyticsPage = lazy(() => import("./pages/StudyAnalyticsPage"));
 
 const RankingPage = lazy(() => import("./pages/RankingPage"));
-const StudyGroups = lazy(() => import("./pages/StudyGroups"));
-const StudyGroupDetail = lazy(() => import("./pages/StudyGroupDetail"));
+const StudyGroupsComingSoon = lazy(() => import("./pages/StudyGroupsComingSoon"));
 import ZenitCommand from "./components/ZenitCommand";
 import { AdminRoute } from "./components/AdminRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
