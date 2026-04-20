@@ -44,6 +44,8 @@ const StudyCyclePage = lazy(() => import("./pages/StudyCyclePage"));
 const StudyAnalyticsPage = lazy(() => import("./pages/StudyAnalyticsPage"));
 
 const RankingPage = lazy(() => import("./pages/RankingPage"));
+const StudyGroups = lazy(() => import("./pages/StudyGroups"));
+const StudyGroupDetail = lazy(() => import("./pages/StudyGroupDetail"));
 import ZenitCommand from "./components/ZenitCommand";
 import { AdminRoute } from "./components/AdminRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -81,6 +83,7 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
     pathname === "/estudos/pomodoro" ||
     pathname === "/estudos/ciclo" ||
     pathname === "/estudos/desempenho" ||
+    pathname === "/grupos-de-estudo" ||
     
     pathname === "/admin" ||
     pathname === "/admin/users" ||
@@ -155,6 +158,8 @@ const App = () => {
                         <Route path="/estudos/pomodoro" element={<ProtectedRoute><PageTransition><PomodoroPage /></PageTransition></ProtectedRoute>} />
                         <Route path="/estudos/ciclo" element={<ProtectedRoute><PageTransition><StudyCyclePage /></PageTransition></ProtectedRoute>} />
                         <Route path="/estudos/desempenho" element={<ProtectedRoute><PageTransition><StudyAnalyticsPage /></PageTransition></ProtectedRoute>} />
+                        <Route path="/grupos-de-estudo" element={<ProtectedRoute><PageTransition><StudyGroups /></PageTransition></ProtectedRoute>} />
+                        <Route path="/grupos-de-estudo/:id" element={<ProtectedRoute><StudyGroupDetail /></ProtectedRoute>} />
                         <Route path="/admin" element={<AdminRoute><PageTransition><AdminDashboard /></PageTransition></AdminRoute>} />
                         <Route path="/admin/users" element={<AdminRoute><PageTransition><AdminUsers /></PageTransition></AdminRoute>} />
                         <Route path="/admin/banners" element={<AdminRoute><PageTransition><AdminBanners /></PageTransition></AdminRoute>} />

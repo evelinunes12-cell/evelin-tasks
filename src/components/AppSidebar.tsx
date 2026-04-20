@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat, Sparkles, Trophy, TrendingUp, LogOut, MessageSquarePlus, RefreshCw } from "lucide-react";
+import { Home, BookOpen, Settings, ListChecks, Users, BarChart3, Archive, NotebookPen, ShieldCheck, Image, ChevronDown, LayoutDashboard, Bell, Timer, Repeat, Sparkles, Trophy, TrendingUp, LogOut, MessageSquarePlus, RefreshCw, GraduationCap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAdminRole } from "@/hooks/useAdminRole";
@@ -43,6 +43,7 @@ const studySubItems = [
   { title: "Pomodoro", url: "/estudos/pomodoro", icon: Timer, description: "Timer de foco Pomodoro" },
   { title: "Ciclo de Estudos", url: "/estudos/ciclo", icon: Repeat, description: "Configure seu ciclo ideal de estudos" },
   { title: "Desempenho", url: "/estudos/desempenho", icon: BarChart3, description: "Métricas e relatórios de estudo" },
+  { title: "Grupos de Estudo", url: "/grupos-de-estudo", icon: GraduationCap, description: "Estude junto com chat e ranking em tempo real" },
 ];
 
 const adminSubItems = [

@@ -811,6 +811,103 @@ export type Database = {
           },
         ]
       }
+      study_group_members: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          role: Database["public"]["Enums"]["study_group_role"]
+          share_metrics: boolean
+          share_status: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          role?: Database["public"]["Enums"]["study_group_role"]
+          share_metrics?: boolean
+          share_status?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          role?: Database["public"]["Enums"]["study_group_role"]
+          share_metrics?: boolean
+          share_status?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_group_messages: {
+        Row: {
+          content: string
+          created_at: string
+          group_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          group_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_group_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_groups: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       study_schedules: {
         Row: {
           color: string | null
@@ -1305,6 +1402,17 @@ export type Database = {
           username: string
         }[]
       }
+      get_study_group_weekly_ranking: {
+        Args: { p_group_id: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          shares_metrics: boolean
+          total_minutes: number
+          user_id: string
+          username: string
+        }[]
+      }
       has_environment_permission: {
         Args: {
           _environment_id: string
@@ -1322,6 +1430,14 @@ export type Database = {
       }
       is_environment_member: {
         Args: { _environment_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_study_group_admin: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_study_group_member: {
+        Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
       log_user_xp: { Args: { p_action_type: string }; Returns: undefined }
@@ -1369,6 +1485,7 @@ export type Database = {
       app_role: "admin" | "user"
       environment_permission: "view" | "create" | "edit" | "delete"
       notification_type: "info" | "warning" | "success"
+      study_group_role: "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1499,6 +1616,7 @@ export const Constants = {
       app_role: ["admin", "user"],
       environment_permission: ["view", "create", "edit", "delete"],
       notification_type: ["info", "warning", "success"],
+      study_group_role: ["admin", "member"],
     },
   },
 } as const

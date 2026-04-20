@@ -1,13 +1,13 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Calendar, Users, BookOpen, Settings } from "lucide-react";
+import { LayoutDashboard, Calendar, BookOpen, GraduationCap, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { prefetchRoute } from "@/lib/routePrefetch";
 
 const navItems = [
   { label: "Início", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Planner", icon: Calendar, path: "/planner" },
-  { label: "Grupos", icon: Users, path: "/shared-environments" },
   { label: "Estudos", icon: BookOpen, path: "/estudos/ciclo" },
+  { label: "Grupos", icon: GraduationCap, path: "/grupos-de-estudo" },
   { label: "Config", icon: Settings, path: "/settings" },
 ];
 
@@ -25,7 +25,8 @@ export function BottomNav() {
           const isActive =
             location.pathname === item.path ||
             (item.path === "/estudos/ciclo" && location.pathname.startsWith("/estudos")) ||
-            (item.path !== "/dashboard" && item.path !== "/estudos/ciclo" && location.pathname.startsWith(item.path));
+            (item.path === "/grupos-de-estudo" && location.pathname.startsWith("/grupos-de-estudo")) ||
+            (item.path !== "/dashboard" && item.path !== "/estudos/ciclo" && item.path !== "/grupos-de-estudo" && location.pathname.startsWith(item.path));
 
           return (
             <button
