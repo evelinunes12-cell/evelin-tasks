@@ -269,7 +269,7 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
                       "w-5 text-center font-bold",
                       i === 0 && "text-warning",
                       i === 1 && "text-muted-foreground",
-                      i === 2 && "text-orange-500",
+                      i === 2 && "text-warning/70",
                     )}>
                       {i + 1}
                     </span>
