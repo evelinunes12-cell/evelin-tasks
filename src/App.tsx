@@ -158,8 +158,8 @@ const App = () => {
                         <Route path="/estudos/pomodoro" element={<ProtectedRoute><PageTransition><PomodoroPage /></PageTransition></ProtectedRoute>} />
                         <Route path="/estudos/ciclo" element={<ProtectedRoute><PageTransition><StudyCyclePage /></PageTransition></ProtectedRoute>} />
                         <Route path="/estudos/desempenho" element={<ProtectedRoute><PageTransition><StudyAnalyticsPage /></PageTransition></ProtectedRoute>} />
-                        <Route path="/grupos-de-estudo" element={<ProtectedRoute><PageTransition><StudyGroups /></PageTransition></ProtectedRoute>} />
-                        <Route path="/grupos-de-estudo/:id" element={<ProtectedRoute><StudyGroupDetail /></ProtectedRoute>} />
+                        <Route path="/grupos-de-estudo" element={<ProtectedRoute><PageTransition><StudyGroupsComingSoon /></PageTransition></ProtectedRoute>} />
+                        <Route path="/grupos-de-estudo/:id" element={<ProtectedRoute><PageTransition><StudyGroupsComingSoon /></PageTransition></ProtectedRoute>} />
                         <Route path="/admin" element={<AdminRoute><PageTransition><AdminDashboard /></PageTransition></AdminRoute>} />
                         <Route path="/admin/users" element={<AdminRoute><PageTransition><AdminUsers /></PageTransition></AdminRoute>} />
                         <Route path="/admin/banners" element={<AdminRoute><PageTransition><AdminBanners /></PageTransition></AdminRoute>} />
