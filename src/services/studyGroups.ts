@@ -66,13 +66,22 @@ export async function listMyStudyGroups(): Promise<(StudyGroup & { member_count:
 export async function createStudyGroup(name: string, description: string) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error("Não autenticado");
-  const { data, error } = await supabase
-    .from("study_groups")
-    .insert({ name, description: description || null, created_by: auth.user.id })
-    .select()
-    .single();
+
+  const id = crypto.randomUUID();
+  const payload = {
+    id,
+    name,
+    description: description || null,
+    created_by: auth.user.id,
+  };
+
+  const { error } = await supabase.from("study_groups").insert(payload);
   if (error) throw error;
-  return data;
+
+  return {
+    ...payload,
+    created_at: new Date().toISOString(),
+  };
 }
 
 export async function getStudyGroup(id: string) {
