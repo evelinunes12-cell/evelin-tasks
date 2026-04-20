@@ -1,0 +1,173 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Users, GraduationCap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { listMyStudyGroups, createStudyGroup } from "@/services/studyGroups";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+
+export default function StudyGroups() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+
+  const { data: groups, isLoading } = useQuery({
+    queryKey: ["study-groups"],
+    queryFn: listMyStudyGroups,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: () => createStudyGroup(name.trim(), description.trim()),
+    onSuccess: (g) => {
+      toast.success("Grupo criado!");
+      qc.invalidateQueries({ queryKey: ["study-groups"] });
+      setOpen(false);
+      setName("");
+      setDescription("");
+      navigate(`/grupos-de-estudo/${g.id}`);
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erro ao criar grupo"),
+  });
+
+  return (
+    <div className="container mx-auto p-4 md:p-6 max-w-5xl">
+      <div className="flex items-center gap-2 mb-6">
+        <SidebarTrigger className="md:hidden" />
+        <GraduationCap className="h-6 w-6 text-primary" />
+        <h1 className="text-2xl md:text-3xl font-bold">Grupos de Estudo</h1>
+      </div>
+
+      <div className="flex justify-between items-center mb-6">
+        <p className="text-muted-foreground text-sm">
+          Estude junto: compartilhe status, métricas e converse com seu grupo.
+        </p>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4" /> Criar grupo
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Criar novo grupo de estudo</DialogTitle>
+              <DialogDescription>
+                Você será automaticamente o administrador.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="g-name">Nome *</Label>
+                <Input
+                  id="g-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex: Galera do ENEM 2026"
+                  maxLength={80}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="g-desc">Descrição</Label>
+                <Textarea
+                  id="g-desc"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Sobre o que é o grupo?"
+                  maxLength={300}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => createMutation.mutate()}
+                disabled={!name.trim() || createMutation.isPending}
+              >
+                {createMutation.isPending ? "Criando..." : "Criar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-40" />
+          ))}
+        </div>
+      ) : !groups || groups.length === 0 ? (
+        <Card className="text-center py-12">
+          <CardContent className="space-y-4">
+            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Users className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold">Você ainda não tem grupos</h3>
+              <p className="text-sm text-muted-foreground">
+                Crie um grupo e convide amigos para estudar juntos.
+              </p>
+            </div>
+            <Button onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4" /> Criar meu primeiro grupo
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {groups.map((g) => (
+            <Card
+              key={g.id}
+              className="cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => navigate(`/grupos-de-estudo/${g.id}`)}
+            >
+              <CardHeader>
+                <CardTitle className="text-lg truncate">{g.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {g.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2 break-words">
+                    {g.description}
+                  </p>
+                )}
+                <div className="flex items-center justify-between">
+                  <div className="flex -space-x-2">
+                    {g.sample_avatars.length > 0 ? (
+                      g.sample_avatars.map((a, i) => (
+                        <Avatar key={i} className="h-7 w-7 border-2 border-background">
+                          <AvatarImage src={a} />
+                          <AvatarFallback>?</AvatarFallback>
+                        </Avatar>
+                      ))
+                    ) : (
+                      <Avatar className="h-7 w-7 border-2 border-background">
+                        <AvatarFallback><Users className="h-3 w-3" /></AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {g.member_count} {g.member_count === 1 ? "membro" : "membros"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
