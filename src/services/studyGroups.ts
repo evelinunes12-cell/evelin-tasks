@@ -44,22 +44,46 @@ export interface RankingRow {
 }
 
 export async function listMyStudyGroups(): Promise<(StudyGroup & { member_count: number; sample_avatars: string[] })[]> {
-  const { data, error } = await supabase
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return [];
+
+  // 1) Memberships do usuário
+  const { data: memberships, error: mErr } = await supabase
+    .from("study_group_members")
+    .select("group_id")
+    .eq("user_id", auth.user.id);
+  if (mErr) throw mErr;
+
+  const groupIds = (memberships ?? []).map((m: any) => m.group_id);
+  if (groupIds.length === 0) return [];
+
+  // 2) Detalhes dos grupos
+  const { data: groups, error: gErr } = await supabase
     .from("study_groups")
-    .select("*, study_group_members(user_id, profiles:user_id(avatar_url))")
+    .select("*")
+    .in("id", groupIds)
     .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map((g: any) => ({
+  if (gErr) throw gErr;
+
+  // 3) Contagem de membros (RLS permite ver co-membros)
+  const { data: allMembers } = await supabase
+    .from("study_group_members")
+    .select("group_id, user_id")
+    .in("group_id", groupIds);
+
+  const countByGroup = new Map<string, number>();
+  (allMembers ?? []).forEach((m: any) => {
+    countByGroup.set(m.group_id, (countByGroup.get(m.group_id) ?? 0) + 1);
+  });
+
+  return (groups ?? []).map((g: any) => ({
     id: g.id,
     name: g.name,
     description: g.description,
     created_by: g.created_by,
     created_at: g.created_at,
-    member_count: g.study_group_members?.length ?? 0,
-    sample_avatars: (g.study_group_members ?? [])
-      .slice(0, 4)
-      .map((m: any) => m.profiles?.avatar_url)
-      .filter(Boolean),
+    member_count: countByGroup.get(g.id) ?? 0,
+    sample_avatars: [],
   }));
 }
 
