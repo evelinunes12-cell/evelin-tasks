@@ -115,20 +115,23 @@ export async function getStudyGroup(id: string) {
 }
 
 export async function listGroupMembers(groupId: string): Promise<StudyGroupMember[]> {
-  const { data, error } = await supabase
-    .from("study_group_members")
-    .select("*, profile:profiles!study_group_members_user_id_fkey(full_name, username, avatar_url, email)")
-    .eq("group_id", groupId);
-  if (error) {
-    // fallback without explicit FK name
-    const fb = await supabase
-      .from("study_group_members")
-      .select("*, profile:user_id(full_name, username, avatar_url, email)")
-      .eq("group_id", groupId);
-    if (fb.error) throw fb.error;
-    return (fb.data as any) ?? [];
-  }
-  return (data as any) ?? [];
+  const { data, error } = await supabase.rpc("get_study_group_members", { p_group_id: groupId });
+  if (error) throw error;
+  return ((data as any[]) ?? []).map((r) => ({
+    id: r.id,
+    group_id: r.group_id,
+    user_id: r.user_id,
+    role: r.role,
+    share_status: r.share_status,
+    share_metrics: r.share_metrics,
+    created_at: r.created_at,
+    profile: {
+      full_name: r.full_name,
+      username: r.username,
+      avatar_url: r.avatar_url,
+      email: r.email,
+    },
+  }));
 }
 
 export async function updateMyMemberPrefs(
