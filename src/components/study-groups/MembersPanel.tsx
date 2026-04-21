@@ -32,11 +32,18 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
   const { user } = useAuth();
   const qc = useQueryClient();
   const myMember = members.find((m) => m.user_id === user?.id);
-  const [livePresence, setLivePresence] = useState<Set<string>>(new Set());
+  const [livePresence, setLivePresence] = useState<Map<string, number>>(new Map()); // user_id -> startedAt(ms)
+  const [, setTick] = useState(0); // forces re-render every 30s for elapsed counter
   const [inviteOpen, setInviteOpen] = useState(false);
   const [identifier, setIdentifier] = useState("");
 
-  // Realtime presence: track who is studying right now
+  // Re-render every 30s to update "studying for Xmin" counter
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Realtime presence: track who is studying right now (with start timestamp)
   useEffect(() => {
     if (!user) return;
     const channel = supabase.channel(`study-group-presence-${groupId}`, {
@@ -45,33 +52,33 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
 
     channel
       .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState<{ studying: boolean }>();
-        const studyingUsers = new Set<string>();
+        const state = channel.presenceState<{ studying: boolean; startedAt?: number }>();
+        const studyingUsers = new Map<string, number>();
         Object.entries(state).forEach(([uid, metas]) => {
-          if (metas.some((m) => m.studying)) studyingUsers.add(uid);
+          const meta = metas.find((m) => m.studying);
+          if (meta) studyingUsers.set(uid, meta.startedAt ?? Date.now());
         });
         setLivePresence(studyingUsers);
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          // Track current user. We don't have direct access to the timer here,
-          // so we publish presence and let the FocusTimerContext bridge update it.
-          // For now, mark "studying" based on a sessionStorage flag set by timer.
-          const isStudying = await detectIsStudying();
-          if (myMember?.share_status) {
-            await channel.track({ studying: isStudying });
-          } else {
-            await channel.track({ studying: false });
-          }
+          const info = detectStudying();
+          await channel.track({
+            studying: myMember?.share_status ? info.studying : false,
+            startedAt: info.startedAt,
+          });
         }
       });
 
-    // Listen to focus timer state changes via storage events / interval
+    // Re-publish presence periodically so peers stay in sync with timer state
     const interval = setInterval(async () => {
       if (channel.state !== "joined") return;
-      const isStudying = await detectIsStudying();
-      await channel.track({ studying: myMember?.share_status ? isStudying : false });
-    }, 15000);
+      const info = detectStudying();
+      await channel.track({
+        studying: myMember?.share_status ? info.studying : false,
+        startedAt: info.startedAt,
+      });
+    }, 15_000);
 
     return () => {
       clearInterval(interval);
@@ -198,7 +205,9 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
       {/* Members list */}
       <div className="space-y-2">
         {members.map((m) => {
-          const isLive = livePresence.has(m.user_id) && m.share_status;
+          const startedAt = livePresence.get(m.user_id);
+          const isLive = !!startedAt && m.share_status;
+          const elapsedMin = startedAt ? Math.max(0, Math.floor((Date.now() - startedAt) / 60_000)) : 0;
           const isMe = m.user_id === user?.id;
           return (
             <div
@@ -223,7 +232,11 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
                 </div>
                 <p className="text-xs text-muted-foreground truncate">
                   {formatUsername(m.profile?.username)}
-                  {isLive && <span className="text-success ml-1.5">• Estudando agora</span>}
+                  {isLive && (
+                    <span className="text-success ml-1.5">
+                      • Estudando agora{elapsedMin > 0 ? ` · há ${elapsedMin} min` : ""}
+                    </span>
+                  )}
                 </p>
               </div>
               {isAdmin && !isMe && (
@@ -301,13 +314,17 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
 }
 
 // Helper to detect if user is currently in a focus session
-async function detectIsStudying(): Promise<boolean> {
+function detectStudying(): { studying: boolean; startedAt?: number } {
   try {
     const stored = sessionStorage.getItem("focus_timer_state");
     if (stored) {
       const s = JSON.parse(stored);
-      if (s.isRunning && s.endTime && s.endTime > Date.now() && !s.isBreak) return true;
+      if (s.isRunning && s.endTime && s.endTime > Date.now() && !s.isBreak) {
+        // Pomodoro default = 25 min; derive start from endTime
+        const startedAt = s.endTime - 25 * 60 * 1000;
+        return { studying: true, startedAt };
+      }
     }
   } catch {}
-  return false;
+  return { studying: false };
 }
