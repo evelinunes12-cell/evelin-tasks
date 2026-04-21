@@ -474,6 +474,14 @@ const TaskDetail = () => {
         queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
       }
 
+      // 1 XP por item novo adicionado (limite diário de 20 XP enforce no servidor)
+      const addedCount = newItems.length - previousChecklist.length;
+      if (addedCount > 0 && user?.id) {
+        for (let i = 0; i < addedCount; i++) {
+          logXP(user.id, "checklist_item_added", XP.CHECKLIST_ITEM_ADDED);
+        }
+      }
+
       // Verifica se todas as etapas foram concluídas
       const allCompleted = newItems.every(item => item.completed);
       if (allCompleted && newItems.length > 0 && previousCompletedCount < newItems.length) {
