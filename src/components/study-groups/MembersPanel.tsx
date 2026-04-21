@@ -205,7 +205,9 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
       {/* Members list */}
       <div className="space-y-2">
         {members.map((m) => {
-          const isLive = livePresence.has(m.user_id) && m.share_status;
+          const startedAt = livePresence.get(m.user_id);
+          const isLive = !!startedAt && m.share_status;
+          const elapsedMin = startedAt ? Math.max(0, Math.floor((Date.now() - startedAt) / 60_000)) : 0;
           const isMe = m.user_id === user?.id;
           return (
             <div
@@ -230,7 +232,11 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
                 </div>
                 <p className="text-xs text-muted-foreground truncate">
                   {formatUsername(m.profile?.username)}
-                  {isLive && <span className="text-success ml-1.5">• Estudando agora</span>}
+                  {isLive && (
+                    <span className="text-success ml-1.5">
+                      • Estudando agora{elapsedMin > 0 ? ` · há ${elapsedMin} min` : ""}
+                    </span>
+                  )}
                 </p>
               </div>
               {isAdmin && !isMe && (
