@@ -91,16 +91,34 @@ export async function createStudyGroup(name: string, description: string) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error("Não autenticado");
 
+  const trimmedName = name.trim();
+  if (!trimmedName) throw new Error("Informe um nome para o grupo");
+  if (trimmedName.length > 80) throw new Error("Nome deve ter no máximo 80 caracteres");
+
+  // Pre-check: avoid duplicate name (case-insensitive) for the same creator
+  const { data: existing } = await supabase
+    .from("study_groups")
+    .select("id")
+    .eq("created_by", auth.user.id)
+    .ilike("name", trimmedName)
+    .maybeSingle();
+  if (existing) {
+    throw new Error("Você já tem um grupo com esse nome");
+  }
+
   const id = crypto.randomUUID();
   const payload = {
     id,
-    name,
-    description: description || null,
+    name: trimmedName,
+    description: description?.trim() || null,
     created_by: auth.user.id,
   };
 
   const { error } = await supabase.from("study_groups").insert(payload);
-  if (error) throw error;
+  if (error) {
+    if (error.code === "23505") throw new Error("Você já tem um grupo com esse nome");
+    throw error;
+  }
 
   return {
     ...payload,
