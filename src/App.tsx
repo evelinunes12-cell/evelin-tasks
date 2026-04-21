@@ -44,7 +44,8 @@ const StudyCyclePage = lazy(() => import("./pages/StudyCyclePage"));
 const StudyAnalyticsPage = lazy(() => import("./pages/StudyAnalyticsPage"));
 
 const RankingPage = lazy(() => import("./pages/RankingPage"));
-const StudyGroupsComingSoon = lazy(() => import("./pages/StudyGroupsComingSoon"));
+const StudyGroups = lazy(() => import("./pages/StudyGroups"));
+const StudyGroupDetail = lazy(() => import("./pages/StudyGroupDetail"));
 import ZenitCommand from "./components/ZenitCommand";
 import { AdminRoute } from "./components/AdminRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -157,8 +158,8 @@ const App = () => {
                         <Route path="/estudos/pomodoro" element={<ProtectedRoute><PageTransition><PomodoroPage /></PageTransition></ProtectedRoute>} />
                         <Route path="/estudos/ciclo" element={<ProtectedRoute><PageTransition><StudyCyclePage /></PageTransition></ProtectedRoute>} />
                         <Route path="/estudos/desempenho" element={<ProtectedRoute><PageTransition><StudyAnalyticsPage /></PageTransition></ProtectedRoute>} />
-                        <Route path="/grupos-de-estudo" element={<ProtectedRoute><PageTransition><StudyGroupsComingSoon /></PageTransition></ProtectedRoute>} />
-                        <Route path="/grupos-de-estudo/:id" element={<ProtectedRoute><PageTransition><StudyGroupsComingSoon /></PageTransition></ProtectedRoute>} />
+                        <Route path="/grupos-de-estudo" element={<ProtectedRoute><PageTransition><StudyGroups /></PageTransition></ProtectedRoute>} />
+                        <Route path="/grupos-de-estudo/:id" element={<ProtectedRoute><PageTransition><StudyGroupDetail /></PageTransition></ProtectedRoute>} />
                         <Route path="/admin" element={<AdminRoute><PageTransition><AdminDashboard /></PageTransition></AdminRoute>} />
                         <Route path="/admin/users" element={<AdminRoute><PageTransition><AdminUsers /></PageTransition></AdminRoute>} />
                         <Route path="/admin/banners" element={<AdminRoute><PageTransition><AdminBanners /></PageTransition></AdminRoute>} />
