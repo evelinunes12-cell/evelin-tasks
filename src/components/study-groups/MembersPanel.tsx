@@ -32,11 +32,18 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
   const { user } = useAuth();
   const qc = useQueryClient();
   const myMember = members.find((m) => m.user_id === user?.id);
-  const [livePresence, setLivePresence] = useState<Set<string>>(new Set());
+  const [livePresence, setLivePresence] = useState<Map<string, number>>(new Map()); // user_id -> startedAt(ms)
+  const [, setTick] = useState(0); // forces re-render every 30s for elapsed counter
   const [inviteOpen, setInviteOpen] = useState(false);
   const [identifier, setIdentifier] = useState("");
 
-  // Realtime presence: track who is studying right now
+  // Re-render every 30s to update "studying for Xmin" counter
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Realtime presence: track who is studying right now (with start timestamp)
   useEffect(() => {
     if (!user) return;
     const channel = supabase.channel(`study-group-presence-${groupId}`, {
@@ -45,33 +52,33 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
 
     channel
       .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState<{ studying: boolean }>();
-        const studyingUsers = new Set<string>();
+        const state = channel.presenceState<{ studying: boolean; startedAt?: number }>();
+        const studyingUsers = new Map<string, number>();
         Object.entries(state).forEach(([uid, metas]) => {
-          if (metas.some((m) => m.studying)) studyingUsers.add(uid);
+          const meta = metas.find((m) => m.studying);
+          if (meta) studyingUsers.set(uid, meta.startedAt ?? Date.now());
         });
         setLivePresence(studyingUsers);
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          // Track current user. We don't have direct access to the timer here,
-          // so we publish presence and let the FocusTimerContext bridge update it.
-          // For now, mark "studying" based on a sessionStorage flag set by timer.
-          const isStudying = await detectIsStudying();
-          if (myMember?.share_status) {
-            await channel.track({ studying: isStudying });
-          } else {
-            await channel.track({ studying: false });
-          }
+          const info = detectStudying();
+          await channel.track({
+            studying: myMember?.share_status ? info.studying : false,
+            startedAt: info.startedAt,
+          });
         }
       });
 
-    // Listen to focus timer state changes via storage events / interval
+    // Re-publish presence periodically so peers stay in sync with timer state
     const interval = setInterval(async () => {
       if (channel.state !== "joined") return;
-      const isStudying = await detectIsStudying();
-      await channel.track({ studying: myMember?.share_status ? isStudying : false });
-    }, 15000);
+      const info = detectStudying();
+      await channel.track({
+        studying: myMember?.share_status ? info.studying : false,
+        startedAt: info.startedAt,
+      });
+    }, 15_000);
 
     return () => {
       clearInterval(interval);
