@@ -314,13 +314,17 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
 }
 
 // Helper to detect if user is currently in a focus session
-async function detectIsStudying(): Promise<boolean> {
+function detectStudying(): { studying: boolean; startedAt?: number } {
   try {
     const stored = sessionStorage.getItem("focus_timer_state");
     if (stored) {
       const s = JSON.parse(stored);
-      if (s.isRunning && s.endTime && s.endTime > Date.now() && !s.isBreak) return true;
+      if (s.isRunning && s.endTime && s.endTime > Date.now() && !s.isBreak) {
+        // Pomodoro default = 25 min; derive start from endTime
+        const startedAt = s.endTime - 25 * 60 * 1000;
+        return { studying: true, startedAt };
+      }
     }
   } catch {}
-  return false;
+  return { studying: false };
 }
