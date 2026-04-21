@@ -1402,6 +1402,22 @@ export type Database = {
           username: string
         }[]
       }
+      get_study_group_members: {
+        Args: { p_group_id: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          email: string
+          full_name: string
+          group_id: string
+          id: string
+          role: Database["public"]["Enums"]["study_group_role"]
+          share_metrics: boolean
+          share_status: boolean
+          user_id: string
+          username: string
+        }[]
+      }
       get_study_group_weekly_ranking: {
         Args: { p_group_id: string }
         Returns: {
