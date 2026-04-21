@@ -1429,6 +1429,17 @@ export type Database = {
           username: string
         }[]
       }
+      get_study_groups_member_previews: {
+        Args: { p_group_ids: string[]; p_limit_per_group?: number }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          group_id: string
+          member_count: number
+          user_id: string
+          username: string
+        }[]
+      }
       has_environment_permission: {
         Args: {
           _environment_id: string
