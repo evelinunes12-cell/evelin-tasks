@@ -146,16 +146,29 @@ export default function StudyGroups() {
                 )}
                 <div className="flex items-center justify-between">
                   <div className="flex -space-x-2">
-                    {g.sample_avatars.length > 0 ? (
-                      g.sample_avatars.map((a, i) => (
-                        <Avatar key={i} className="h-7 w-7 border-2 border-background">
-                          <AvatarImage src={a} />
-                          <AvatarFallback>?</AvatarFallback>
+                    {g.sample_members.length > 0 ? (
+                      g.sample_members.map((m) => (
+                        <Avatar
+                          key={m.user_id}
+                          className="h-7 w-7 border-2 border-background"
+                          title={m.full_name ?? m.username ?? undefined}
+                        >
+                          <AvatarImage src={m.avatar_url ?? undefined} />
+                          <AvatarFallback className="text-[10px]">
+                            {(m.full_name ?? m.username ?? "?").charAt(0).toUpperCase()}
+                          </AvatarFallback>
                         </Avatar>
                       ))
                     ) : (
                       <Avatar className="h-7 w-7 border-2 border-background">
                         <AvatarFallback><Users className="h-3 w-3" /></AvatarFallback>
+                      </Avatar>
+                    )}
+                    {g.member_count > g.sample_members.length && g.sample_members.length > 0 && (
+                      <Avatar className="h-7 w-7 border-2 border-background">
+                        <AvatarFallback className="text-[10px]">
+                          +{g.member_count - g.sample_members.length}
+                        </AvatarFallback>
                       </Avatar>
                     )}
                   </div>
