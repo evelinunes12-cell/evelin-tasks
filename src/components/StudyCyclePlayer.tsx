@@ -179,6 +179,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
+    clearCurrentStudyInfo();
     setCompletedBlocks((prev) => new Set(prev).add(currentIndex));
 
     const realElapsed = elapsedSeconds;
