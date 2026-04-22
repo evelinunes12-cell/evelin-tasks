@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import ManualStudyLogDialog from "@/components/ManualStudyLogDialog";
 import { useDocumentPiP } from "@/hooks/useDocumentPiP";
+import { setCurrentStudyInfo, clearCurrentStudyInfo } from "@/lib/studyPresence";
 
 interface StudyCyclePlayerProps {
   cycle: StudyCycle;
@@ -178,6 +179,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
+    clearCurrentStudyInfo();
     setCompletedBlocks((prev) => new Set(prev).add(currentIndex));
 
     const realElapsed = elapsedSeconds;
@@ -281,9 +283,18 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
   const startTimer = () => {
     if (isBreak) {
       breakEndTimeRef.current = Date.now() + breakRemaining * 1000;
+      clearCurrentStudyInfo();
     } else {
       startTimeRef.current = Date.now();
       elapsedAtStartRef.current = elapsedSeconds;
+      const subjName = currentBlock?.subject?.name?.trim();
+      if (subjName) {
+        setCurrentStudyInfo({
+          source: "cycle",
+          subject: subjName,
+          startedAt: Date.now() - elapsedSeconds * 1000,
+        });
+      }
     }
     setIsRunning(true);
     setIsPaused(false);
@@ -293,6 +304,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
     clearTimer();
     setIsRunning(false);
     setIsPaused(true);
+    clearCurrentStudyInfo();
     if (mode === "study") {
       persistProgress(currentIndex, null);
     }
@@ -350,6 +362,7 @@ const StudyCyclePlayer = ({ cycle, onClose }: StudyCyclePlayerProps) => {
 
   const handleClose = () => {
     clearTimer();
+    clearCurrentStudyInfo();
     if (mode === "study") {
       persistProgress(currentIndex, null);
     }

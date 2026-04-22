@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { formatUsername } from "@/lib/username";
 import { cn } from "@/lib/utils";
+import { getCurrentStudyInfo } from "@/lib/studyPresence";
 
 interface Props {
   groupId: string;
@@ -32,7 +33,7 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
   const { user } = useAuth();
   const qc = useQueryClient();
   const myMember = members.find((m) => m.user_id === user?.id);
-  const [livePresence, setLivePresence] = useState<Map<string, number>>(new Map()); // user_id -> startedAt(ms)
+  const [livePresence, setLivePresence] = useState<Map<string, { startedAt: number; subject?: string }>>(new Map());
   const [, setTick] = useState(0); // forces re-render every 30s for elapsed counter
   const [inviteOpen, setInviteOpen] = useState(false);
   const [identifier, setIdentifier] = useState("");
@@ -43,7 +44,7 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
     return () => clearInterval(t);
   }, []);
 
-  // Realtime presence: track who is studying right now (with start timestamp)
+  // Realtime presence: track who is studying right now (with start timestamp + subject)
   useEffect(() => {
     if (!user) return;
     const channel = supabase.channel(`study-group-presence-${groupId}`, {
@@ -52,11 +53,11 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
 
     channel
       .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState<{ studying: boolean; startedAt?: number }>();
-        const studyingUsers = new Map<string, number>();
+        const state = channel.presenceState<{ studying: boolean; startedAt?: number; subject?: string }>();
+        const studyingUsers = new Map<string, { startedAt: number; subject?: string }>();
         Object.entries(state).forEach(([uid, metas]) => {
           const meta = metas.find((m) => m.studying);
-          if (meta) studyingUsers.set(uid, meta.startedAt ?? Date.now());
+          if (meta) studyingUsers.set(uid, { startedAt: meta.startedAt ?? Date.now(), subject: meta.subject });
         });
         setLivePresence(studyingUsers);
       })
@@ -66,6 +67,7 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
           await channel.track({
             studying: myMember?.share_status ? info.studying : false,
             startedAt: info.startedAt,
+            subject: info.subject,
           });
         }
       });
@@ -77,6 +79,7 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
       await channel.track({
         studying: myMember?.share_status ? info.studying : false,
         startedAt: info.startedAt,
+        subject: info.subject,
       });
     }, 15_000);
 
@@ -205,7 +208,8 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
       {/* Members list */}
       <div className="space-y-2">
         {members.map((m) => {
-          const startedAt = livePresence.get(m.user_id);
+          const presence = livePresence.get(m.user_id);
+          const startedAt = presence?.startedAt;
           const isLive = !!startedAt && m.share_status;
           const elapsedMin = startedAt ? Math.max(0, Math.floor((Date.now() - startedAt) / 60_000)) : 0;
           const isMe = m.user_id === user?.id;
@@ -234,7 +238,8 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
                   {formatUsername(m.profile?.username)}
                   {isLive && (
                     <span className="text-success ml-1.5">
-                      • Estudando agora{elapsedMin > 0 ? ` · há ${elapsedMin} min` : ""}
+                      • Estudando{presence?.subject ? ` ${presence.subject}` : " agora"}
+                      {elapsedMin > 0 ? ` · há ${elapsedMin} min` : ""}
                     </span>
                   )}
                 </p>
@@ -314,15 +319,20 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
 }
 
 // Helper to detect if user is currently in a focus session
-function detectStudying(): { studying: boolean; startedAt?: number } {
+function detectStudying(): { studying: boolean; startedAt?: number; subject?: string } {
+  // Prefer the unified study-presence sessionStorage entry (works for cycle + pomodoro)
+  const info = getCurrentStudyInfo();
+  if (info) {
+    return { studying: true, startedAt: info.startedAt, subject: info.subject };
+  }
+  // Fallback: legacy pomodoro state
   try {
     const stored = sessionStorage.getItem("focus_timer_state");
     if (stored) {
       const s = JSON.parse(stored);
       if (s.isRunning && s.endTime && s.endTime > Date.now() && !s.isBreak) {
-        // Pomodoro default = 25 min; derive start from endTime
         const startedAt = s.endTime - 25 * 60 * 1000;
-        return { studying: true, startedAt };
+        return { studying: true, startedAt, subject: "Pomodoro" };
       }
     }
   } catch {}
