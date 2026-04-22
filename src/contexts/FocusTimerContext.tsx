@@ -97,6 +97,7 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setIsRunning(false);
     setIsPaused(false);
     setIsCompleted(true);
+    clearCurrentStudyInfo();
 
     if (!wasBreak && user) {
       // Registra atividade para a ofensiva
