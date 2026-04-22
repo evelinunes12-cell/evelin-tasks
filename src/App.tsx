@@ -174,6 +174,7 @@ const App = () => {
                       </Routes>
                     </SidebarShell>
                   </Suspense>
+                  </StudyCyclePlayerProvider>
                 </FocusTimerProvider>
               </BrowserRouter>
             </TooltipProvider>
