@@ -261,7 +261,7 @@ const StudyCyclePage = () => {
                             variant="default"
                             size="icon"
                             className="h-9 w-9 rounded-full"
-                            onClick={() => setPlayingCycle(cycle)}
+                            onClick={() => playCycle(cycle)}
                             title="Iniciar ciclo"
                             aria-label="Iniciar ciclo"
                           >
@@ -343,10 +343,6 @@ const StudyCyclePage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Player */}
-      {playingCycle && (
-        <StudyCyclePlayer cycle={playingCycle} onClose={() => setPlayingCycle(null)} />
-      )}
     </div>
   );
 };
