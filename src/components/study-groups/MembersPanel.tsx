@@ -238,7 +238,8 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
                   {formatUsername(m.profile?.username)}
                   {isLive && (
                     <span className="text-success ml-1.5">
-                      • Estudando agora{elapsedMin > 0 ? ` · há ${elapsedMin} min` : ""}
+                      • Estudando{presence?.subject ? ` ${presence.subject}` : " agora"}
+                      {elapsedMin > 0 ? ` · há ${elapsedMin} min` : ""}
                     </span>
                   )}
                 </p>
