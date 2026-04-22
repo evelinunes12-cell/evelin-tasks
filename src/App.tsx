@@ -10,6 +10,8 @@ import { SwipeToOpenSidebar } from "@/components/SwipeToOpenSidebar";
 import { ConfettiProvider } from "@/hooks/useConfetti";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { FocusTimerProvider } from "@/contexts/FocusTimerContext";
+import { StudyCyclePlayerProvider } from "@/contexts/StudyCyclePlayerContext";
+import GlobalStudyCyclePlayer from "@/components/GlobalStudyCyclePlayer";
 import { lazy, Suspense, useState, useCallback } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PageTransition from "./components/PageTransition";
@@ -133,8 +135,10 @@ const App = () => {
               <BrowserRouter>
                 <ZenitCommand />
                 <FocusTimerProvider>
-                  <Suspense fallback={<PageLoadingFallback />}>
-                    <SidebarShell>
+                  <StudyCyclePlayerProvider>
+                    <GlobalStudyCyclePlayer />
+                    <Suspense fallback={<PageLoadingFallback />}>
+                      <SidebarShell>
                       <Routes>
                         <Route path="/" element={<Navigate to="/auth" replace />} />
                         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
