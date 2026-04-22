@@ -19,7 +19,7 @@ import {
   AdvancedCycleMetadata,
 } from "@/services/studyCycles";
 import StudyCycleDialog from "@/components/StudyCycleDialog";
-import StudyCyclePlayer from "@/components/StudyCyclePlayer";
+import { useStudyCyclePlayer } from "@/contexts/StudyCyclePlayerContext";
 import { toast } from "sonner";
 import { logXP, XP } from "@/services/scoring";
 import { registerActivity } from "@/services/activity";
