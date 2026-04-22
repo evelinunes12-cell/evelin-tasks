@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, MessageCircle, Users, Trash2, LogOut } from "lucide-react";
+import { ArrowLeft, MessageCircle, Users, Trash2, LogOut, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import MembersPanel from "@/components/study-groups/MembersPanel";
 import StudyGroupChat from "@/components/study-groups/StudyGroupChat";
+import StudyStatusPanel from "@/components/study-groups/StudyStatusPanel";
 
 export default function StudyGroupDetail() {
   const { id } = useParams<{ id: string }>();
@@ -142,12 +143,16 @@ export default function StudyGroupDetail() {
       <div className="flex-1 min-h-0">
         {isMobile ? (
           <Tabs defaultValue="chat" className="h-full flex flex-col">
-            <TabsList className="grid grid-cols-2 mx-3 mt-2">
+            <TabsList className="grid grid-cols-3 mx-3 mt-2">
               <TabsTrigger value="chat"><MessageCircle className="h-4 w-4 mr-1" /> Chat</TabsTrigger>
+              <TabsTrigger value="status"><Radio className="h-4 w-4 mr-1" /> Status</TabsTrigger>
               <TabsTrigger value="members"><Users className="h-4 w-4 mr-1" /> Membros</TabsTrigger>
             </TabsList>
             <TabsContent value="chat" className="flex-1 min-h-0 mt-0">
               <StudyGroupChat groupId={group.id} members={members} />
+            </TabsContent>
+            <TabsContent value="status" className="flex-1 min-h-0 mt-0 overflow-y-auto">
+              <StudyStatusPanel groupId={group.id} members={members} />
             </TabsContent>
             <TabsContent value="members" className="flex-1 min-h-0 mt-0 overflow-y-auto">
               <MembersPanel
@@ -161,12 +166,23 @@ export default function StudyGroupDetail() {
         ) : (
           <div className="grid grid-cols-[360px_1fr] h-full">
             <aside className="border-r overflow-y-auto">
-              <MembersPanel
-                groupId={group.id}
-                members={members}
-                isAdmin={isAdmin}
-                onMembersChange={refreshMembers}
-              />
+              <Tabs defaultValue="status" className="h-full flex flex-col">
+                <TabsList className="grid grid-cols-2 mx-3 mt-2">
+                  <TabsTrigger value="status"><Radio className="h-4 w-4 mr-1" /> Status</TabsTrigger>
+                  <TabsTrigger value="members"><Users className="h-4 w-4 mr-1" /> Membros</TabsTrigger>
+                </TabsList>
+                <TabsContent value="status" className="flex-1 min-h-0 mt-0 overflow-y-auto">
+                  <StudyStatusPanel groupId={group.id} members={members} />
+                </TabsContent>
+                <TabsContent value="members" className="flex-1 min-h-0 mt-0 overflow-y-auto">
+                  <MembersPanel
+                    groupId={group.id}
+                    members={members}
+                    isAdmin={isAdmin}
+                    onMembersChange={refreshMembers}
+                  />
+                </TabsContent>
+              </Tabs>
             </aside>
             <section className="min-h-0">
               <StudyGroupChat groupId={group.id} members={members} />
