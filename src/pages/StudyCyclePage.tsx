@@ -19,7 +19,7 @@ import {
   AdvancedCycleMetadata,
 } from "@/services/studyCycles";
 import StudyCycleDialog from "@/components/StudyCycleDialog";
-import StudyCyclePlayer from "@/components/StudyCyclePlayer";
+import { useStudyCyclePlayer } from "@/contexts/StudyCyclePlayerContext";
 import { toast } from "sonner";
 import { logXP, XP } from "@/services/scoring";
 import { registerActivity } from "@/services/activity";
@@ -44,7 +44,7 @@ const StudyCyclePage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCycle, setEditingCycle] = useState<StudyCycle | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [playingCycle, setPlayingCycle] = useState<StudyCycle | null>(null);
+  const { playCycle } = useStudyCyclePlayer();
 
   useEffect(() => {
     if (!user) return;
@@ -261,7 +261,7 @@ const StudyCyclePage = () => {
                             variant="default"
                             size="icon"
                             className="h-9 w-9 rounded-full"
-                            onClick={() => setPlayingCycle(cycle)}
+                            onClick={() => playCycle(cycle)}
                             title="Iniciar ciclo"
                             aria-label="Iniciar ciclo"
                           >
@@ -343,10 +343,6 @@ const StudyCyclePage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Player */}
-      {playingCycle && (
-        <StudyCyclePlayer cycle={playingCycle} onClose={() => setPlayingCycle(null)} />
-      )}
     </div>
   );
 };
