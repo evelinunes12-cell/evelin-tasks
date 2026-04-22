@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { registerActivity, incrementPomodoroCount } from "@/services/activity";
 import { createFocusSession } from "@/services/focusSessions";
 import { logXP, XP } from "@/services/scoring";
+import { setCurrentStudyInfo, clearCurrentStudyInfo } from "@/lib/studyPresence";
 import { toast } from "sonner";
 
 interface FocusTimerContextType {
@@ -168,6 +169,9 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     // Track session start time for focus sessions (not breaks)
     if (!isBreak) {
       setSessionStartTime(new Date());
+      setCurrentStudyInfo({ source: "pomodoro", subject: "Pomodoro", startedAt: now });
+    } else {
+      clearCurrentStudyInfo();
     }
   }, [isBreak]);
 
@@ -175,6 +179,7 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setIsRunning(false);
     setIsPaused(true);
     setEndTime(null);
+    clearCurrentStudyInfo();
   }, []);
 
   const resume = useCallback(() => {
@@ -183,7 +188,10 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setEndTime(newEndTime);
     setIsRunning(true);
     setIsPaused(false);
-  }, [timeRemaining]);
+    if (!isBreak) {
+      setCurrentStudyInfo({ source: "pomodoro", subject: "Pomodoro", startedAt: now });
+    }
+  }, [timeRemaining, isBreak]);
 
   const reset = useCallback(() => {
     setTimeRemaining(DEFAULT_TIME);
@@ -193,6 +201,7 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setIsCompleted(false);
     setEndTime(null);
     setSessionStartTime(null);
+    clearCurrentStudyInfo();
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
