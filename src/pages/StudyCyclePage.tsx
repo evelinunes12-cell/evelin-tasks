@@ -44,7 +44,7 @@ const StudyCyclePage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCycle, setEditingCycle] = useState<StudyCycle | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [playingCycle, setPlayingCycle] = useState<StudyCycle | null>(null);
+  const { playCycle } = useStudyCyclePlayer();
 
   useEffect(() => {
     if (!user) return;
