@@ -54,12 +54,12 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
     channel
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState<{ studying: boolean; startedAt?: number; subject?: string }>();
-        const studyingUsers = new Map<string, { startedAt: number; subject?: string }>();
+        const next = new Map<string, { studying: boolean; startedAt?: number; subject?: string }>();
         Object.entries(state).forEach(([uid, metas]) => {
-          const meta = metas.find((m) => m.studying);
-          if (meta) studyingUsers.set(uid, { startedAt: meta.startedAt ?? Date.now(), subject: meta.subject });
+          const meta = metas[metas.length - 1];
+          if (meta) next.set(uid, { studying: !!meta.studying, startedAt: meta.startedAt, subject: meta.subject });
         });
-        setLivePresence(studyingUsers);
+        setLivePresence(next);
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
