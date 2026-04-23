@@ -117,7 +117,6 @@ export function TaskQuickView({
       open={open}
       onOpenChange={onOpenChange}
       title={loading ? "Carregando..." : task?.subject_name || "Detalhes da Tarefa"}
-      description={loading ? "" : task?.description || undefined}
     >
       {loading ? (
         <div className="space-y-4">
