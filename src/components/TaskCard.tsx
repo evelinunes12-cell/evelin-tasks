@@ -96,6 +96,7 @@ const TaskCard = ({
   };
 
   return (
+    <>
     <Card 
       className={cn(
         "hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative overflow-hidden",
@@ -117,10 +118,24 @@ const TaskCard = ({
                 </Badge>
               )}
             </div>
-            {description && (
-              <p className="text-sm text-muted-foreground break-words line-clamp-3">
-                {description.replace(/<[^>]*>/g, '')}
-              </p>
+            {description && plainDescription && (
+              <div className="text-sm text-muted-foreground break-words">
+                <p className={cn(!isLongDescription && "line-clamp-3", isLongDescription && "line-clamp-3")}>
+                  {plainDescription}
+                </p>
+                {isLongDescription && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setQuickViewOpen(true);
+                    }}
+                    className="text-primary hover:underline text-xs font-medium mt-1"
+                  >
+                    Exibir mais
+                  </button>
+                )}
+              </div>
             )}
           </div>
           
@@ -201,7 +216,7 @@ const TaskCard = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate(`/task/${id}`)}
+          onClick={() => setQuickViewOpen(true)}
           className="flex-1 gap-2"
         >
           <Eye className="w-4 h-4" />
@@ -232,6 +247,14 @@ const TaskCard = ({
         </DropdownMenu>
       </CardFooter>
     </Card>
+    <TaskQuickView
+      taskId={quickViewOpen ? id : null}
+      open={quickViewOpen}
+      onOpenChange={setQuickViewOpen}
+      onStatusChange={onStatusChange}
+      availableStatuses={availableStatuses}
+    />
+    </>
   );
 };
 
