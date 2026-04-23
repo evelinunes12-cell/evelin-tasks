@@ -48,6 +48,7 @@ const TaskCard = ({
 }: TaskCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
 
   const handleStatusChangeWithActivity = (id: string, newStatus: string) => {
     if (onStatusChange) {
@@ -58,6 +59,9 @@ const TaskCard = ({
       }
     }
   };
+
+  const plainDescription = description ? description.replace(/<[^>]*>/g, "").trim() : "";
+  const isLongDescription = plainDescription.length > 140;
   
   const checklistProgress =
     checklist.length > 0
