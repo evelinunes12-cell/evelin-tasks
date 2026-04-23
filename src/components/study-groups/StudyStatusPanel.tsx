@@ -93,6 +93,9 @@ export default function StudyStatusPanel({ groupId, members }: Props) {
   const studyingCount = sorted.filter(
     (m) => m.share_status && presence.get(m.user_id)?.studying,
   ).length;
+  const onlineCount = sorted.filter(
+    (m) => m.share_status && presence.has(m.user_id),
+  ).length;
 
   return (
     <div className="space-y-4 p-4">
@@ -106,15 +109,21 @@ export default function StudyStatusPanel({ groupId, members }: Props) {
             Veja em tempo real quem está estudando agora.
           </p>
         </div>
-        <Badge variant="secondary" className="shrink-0">
-          {studyingCount} estudando
-        </Badge>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <Badge variant="secondary" className="shrink-0">
+            {studyingCount} estudando
+          </Badge>
+          <Badge variant="outline" className="shrink-0 text-xs">
+            {onlineCount} online
+          </Badge>
+        </div>
       </div>
 
       <div className="space-y-2">
         {sorted.map((m) => {
           const meta = presence.get(m.user_id);
           const sharing = m.share_status;
+          const isOnline = !!meta && sharing;
           const isLive = !!meta?.studying && sharing;
           const startedAt = meta?.startedAt;
           const elapsedMin = startedAt
@@ -129,7 +138,9 @@ export default function StudyStatusPanel({ groupId, members }: Props) {
                 "flex items-center gap-3 p-3 rounded-xl border transition-colors",
                 isLive
                   ? "border-success/30 bg-success/5"
-                  : "border-border/50 bg-card/40",
+                  : isOnline
+                    ? "border-primary/20 bg-primary/5"
+                    : "border-border/50 bg-card/40",
               )}
             >
               <div className="relative">
@@ -141,6 +152,8 @@ export default function StudyStatusPanel({ groupId, members }: Props) {
                 </Avatar>
                 {isLive ? (
                   <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-success border-2 border-background animate-pulse" />
+                ) : isOnline ? (
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-primary border-2 border-background" />
                 ) : (
                   <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-muted-foreground/40 border-2 border-background" />
                 )}
@@ -184,6 +197,11 @@ export default function StudyStatusPanel({ groupId, members }: Props) {
                       </span>
                     )}
                   </>
+                ) : isOnline ? (
+                  <Badge variant="outline" className="gap-1 border-primary/40 text-primary">
+                    <Radio className="h-3 w-3" />
+                    Online
+                  </Badge>
                 ) : (
                   <Badge variant="outline" className="gap-1 text-muted-foreground">
                     <Coffee className="h-3 w-3" />

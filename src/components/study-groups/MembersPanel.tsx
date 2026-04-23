@@ -33,7 +33,7 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
   const { user } = useAuth();
   const qc = useQueryClient();
   const myMember = members.find((m) => m.user_id === user?.id);
-  const [livePresence, setLivePresence] = useState<Map<string, { startedAt: number; subject?: string }>>(new Map());
+  const [livePresence, setLivePresence] = useState<Map<string, { studying: boolean; startedAt?: number; subject?: string }>>(new Map());
   const [, setTick] = useState(0); // forces re-render every 30s for elapsed counter
   const [inviteOpen, setInviteOpen] = useState(false);
   const [identifier, setIdentifier] = useState("");
@@ -54,12 +54,12 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
     channel
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState<{ studying: boolean; startedAt?: number; subject?: string }>();
-        const studyingUsers = new Map<string, { startedAt: number; subject?: string }>();
+        const next = new Map<string, { studying: boolean; startedAt?: number; subject?: string }>();
         Object.entries(state).forEach(([uid, metas]) => {
-          const meta = metas.find((m) => m.studying);
-          if (meta) studyingUsers.set(uid, { startedAt: meta.startedAt ?? Date.now(), subject: meta.subject });
+          const meta = metas[metas.length - 1];
+          if (meta) next.set(uid, { studying: !!meta.studying, startedAt: meta.startedAt, subject: meta.subject });
         });
-        setLivePresence(studyingUsers);
+        setLivePresence(next);
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
@@ -210,7 +210,8 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
         {members.map((m) => {
           const presence = livePresence.get(m.user_id);
           const startedAt = presence?.startedAt;
-          const isLive = !!startedAt && m.share_status;
+          const isOnline = !!presence && m.share_status;
+          const isLive = !!presence?.studying && !!startedAt && m.share_status;
           const elapsedMin = startedAt ? Math.max(0, Math.floor((Date.now() - startedAt) / 60_000)) : 0;
           const isMe = m.user_id === user?.id;
           return (
@@ -223,9 +224,11 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
                   <AvatarImage src={m.profile?.avatar_url ?? undefined} />
                   <AvatarFallback>{(m.profile?.full_name ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                {isLive && (
+                {isLive ? (
                   <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-success border-2 border-background animate-pulse" />
-                )}
+                ) : isOnline ? (
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-primary border-2 border-background" />
+                ) : null}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -236,12 +239,14 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
                 </div>
                 <p className="text-xs text-muted-foreground truncate">
                   {formatUsername(m.profile?.username)}
-                  {isLive && (
+                  {isLive ? (
                     <span className="text-success ml-1.5">
                       • Estudando{presence?.subject ? ` ${presence.subject}` : " agora"}
                       {elapsedMin > 0 ? ` · há ${elapsedMin} min` : ""}
                     </span>
-                  )}
+                  ) : isOnline ? (
+                    <span className="text-primary ml-1.5">• Online</span>
+                  ) : null}
                 </p>
               </div>
               {isAdmin && !isMe && (
