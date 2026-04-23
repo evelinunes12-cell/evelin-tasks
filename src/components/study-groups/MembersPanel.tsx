@@ -210,7 +210,8 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
         {members.map((m) => {
           const presence = livePresence.get(m.user_id);
           const startedAt = presence?.startedAt;
-          const isLive = !!startedAt && m.share_status;
+          const isOnline = !!presence && m.share_status;
+          const isLive = !!presence?.studying && !!startedAt && m.share_status;
           const elapsedMin = startedAt ? Math.max(0, Math.floor((Date.now() - startedAt) / 60_000)) : 0;
           const isMe = m.user_id === user?.id;
           return (
@@ -223,9 +224,11 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
                   <AvatarImage src={m.profile?.avatar_url ?? undefined} />
                   <AvatarFallback>{(m.profile?.full_name ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                {isLive && (
+                {isLive ? (
                   <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-success border-2 border-background animate-pulse" />
-                )}
+                ) : isOnline ? (
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-primary border-2 border-background" />
+                ) : null}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -236,12 +239,14 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
                 </div>
                 <p className="text-xs text-muted-foreground truncate">
                   {formatUsername(m.profile?.username)}
-                  {isLive && (
+                  {isLive ? (
                     <span className="text-success ml-1.5">
                       • Estudando{presence?.subject ? ` ${presence.subject}` : " agora"}
                       {elapsedMin > 0 ? ` · há ${elapsedMin} min` : ""}
                     </span>
-                  )}
+                  ) : isOnline ? (
+                    <span className="text-primary ml-1.5">• Online</span>
+                  ) : null}
                 </p>
               </div>
               {isAdmin && !isMe && (
