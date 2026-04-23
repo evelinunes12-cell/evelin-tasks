@@ -109,9 +109,14 @@ export default function StudyStatusPanel({ groupId, members }: Props) {
             Veja em tempo real quem está estudando agora.
           </p>
         </div>
-        <Badge variant="secondary" className="shrink-0">
-          {studyingCount} estudando
-        </Badge>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <Badge variant="secondary" className="shrink-0">
+            {studyingCount} estudando
+          </Badge>
+          <Badge variant="outline" className="shrink-0 text-xs">
+            {onlineCount} online
+          </Badge>
+        </div>
       </div>
 
       <div className="space-y-2">
