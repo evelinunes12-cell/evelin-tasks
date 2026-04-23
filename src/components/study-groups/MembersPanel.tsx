@@ -33,7 +33,7 @@ export default function MembersPanel({ groupId, members, isAdmin, onMembersChang
   const { user } = useAuth();
   const qc = useQueryClient();
   const myMember = members.find((m) => m.user_id === user?.id);
-  const [livePresence, setLivePresence] = useState<Map<string, { startedAt: number; subject?: string }>>(new Map());
+  const [livePresence, setLivePresence] = useState<Map<string, { studying: boolean; startedAt?: number; subject?: string }>>(new Map());
   const [, setTick] = useState(0); // forces re-render every 30s for elapsed counter
   const [inviteOpen, setInviteOpen] = useState(false);
   const [identifier, setIdentifier] = useState("");
