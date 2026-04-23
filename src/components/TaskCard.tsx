@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { registerActivity } from "@/services/activity";
+import { TaskQuickView } from "./TaskQuickView";
 
 interface TaskCardProps {
   id: string;
