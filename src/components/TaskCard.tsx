@@ -216,7 +216,7 @@ const TaskCard = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setQuickViewOpen(true)}
+          onClick={() => navigate(`/task/${id}`)}
           className="flex-1 gap-2"
         >
           <Eye className="w-4 h-4" />
