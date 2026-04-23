@@ -61,7 +61,6 @@ const TaskCard = ({
   };
 
   const plainDescription = description ? description.replace(/<[^>]*>/g, "").trim() : "";
-  const isLongDescription = plainDescription.length > 140;
   
   const checklistProgress =
     checklist.length > 0
@@ -120,21 +119,19 @@ const TaskCard = ({
             </div>
             {description && plainDescription && (
               <div className="text-sm text-muted-foreground break-words">
-                <p className={cn(!isLongDescription && "line-clamp-3", isLongDescription && "line-clamp-3")}>
+                <p className="line-clamp-3">
                   {plainDescription}
                 </p>
-                {isLongDescription && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setQuickViewOpen(true);
-                    }}
-                    className="text-primary hover:underline text-xs font-medium mt-1"
-                  >
-                    Exibir mais
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setQuickViewOpen(true);
+                  }}
+                  className="text-primary hover:underline text-xs font-medium mt-1"
+                >
+                  Exibir mais
+                </button>
               </div>
             )}
           </div>
@@ -220,7 +217,7 @@ const TaskCard = ({
           className="flex-1 gap-2"
         >
           <Eye className="w-4 h-4" />
-          Ver detalhes
+          Ver completo
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
