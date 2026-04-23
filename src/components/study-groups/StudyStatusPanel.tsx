@@ -93,6 +93,9 @@ export default function StudyStatusPanel({ groupId, members }: Props) {
   const studyingCount = sorted.filter(
     (m) => m.share_status && presence.get(m.user_id)?.studying,
   ).length;
+  const onlineCount = sorted.filter(
+    (m) => m.share_status && presence.has(m.user_id),
+  ).length;
 
   return (
     <div className="space-y-4 p-4">
