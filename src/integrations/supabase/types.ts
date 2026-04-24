@@ -1468,6 +1468,10 @@ export type Database = {
         Returns: boolean
       }
       log_user_xp: { Args: { p_action_type: string }; Returns: undefined }
+      mark_study_group_messages_notifications_read: {
+        Args: { p_group_id: string }
+        Returns: undefined
+      }
       purge_old_focus_sessions: { Args: never; Returns: undefined }
       reset_streak_achievements: { Args: never; Returns: undefined }
       send_broadcast_notification:

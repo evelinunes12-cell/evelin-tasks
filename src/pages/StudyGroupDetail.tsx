@@ -54,6 +54,49 @@ export default function StudyGroupDetail() {
     };
   }, [id, qc]);
 
+  // Mark group chat notifications as read while the group is open and visible
+  useEffect(() => {
+    if (!id || !user) return;
+
+    const markRead = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        await supabase.rpc("mark_study_group_messages_notifications_read", {
+          p_group_id: id,
+        });
+        qc.invalidateQueries({ queryKey: ["notifications"] });
+      } catch {
+        // silent
+      }
+    };
+
+    // Initial mark on mount
+    markRead();
+
+    // Re-mark when tab becomes visible again
+    document.addEventListener("visibilitychange", markRead);
+
+    // Re-mark when a new message arrives for this group
+    const ch = supabase
+      .channel(`sg-msg-read-${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "study_group_messages",
+          filter: `group_id=eq.${id}`,
+        },
+        () => markRead()
+      )
+      .subscribe();
+
+    return () => {
+      document.removeEventListener("visibilitychange", markRead);
+      supabase.removeChannel(ch);
+    };
+  }, [id, user, qc]);
+
   const myMember = members.find((m) => m.user_id === user?.id);
   const isAdmin = myMember?.role === "admin";
 
