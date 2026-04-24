@@ -65,6 +65,7 @@ export default function StudyGroupDetail() {
           p_group_id: id,
         });
         qc.invalidateQueries({ queryKey: ["notifications"] });
+        qc.invalidateQueries({ queryKey: ["study-groups-unread"] });
       } catch {
         // silent
       }
