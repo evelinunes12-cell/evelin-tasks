@@ -43,7 +43,7 @@ const studySubItems = [
   { title: "Pomodoro", url: "/estudos/pomodoro", icon: Timer, description: "Timer de foco Pomodoro" },
   { title: "Ciclo de Estudos", url: "/estudos/ciclo", icon: Repeat, description: "Configure seu ciclo ideal de estudos" },
   { title: "Desempenho", url: "/estudos/desempenho", icon: BarChart3, description: "Métricas e relatórios de estudo" },
-  { title: "Grupos de Estudo", url: "/grupos-de-estudo", icon: GraduationCap, description: "Chat e ranking semanal entre amigos" },
+  { title: "Grupos de Estudo", url: "/grupos-de-estudo", icon: GraduationCap, description: "Chat e ranking semanal entre amigos", isNew: true },
 ];
 
 const adminSubItems = [
@@ -96,7 +96,7 @@ export function AppSidebar() {
     await signOut();
   };
 
-  const renderMenuItem = (item: { title: string; url: string; icon: any; description: string; comingSoon?: boolean }) => (
+  const renderMenuItem = (item: { title: string; url: string; icon: any; description: string; comingSoon?: boolean; isNew?: boolean }) => (
     <SidebarMenuItem key={item.title}>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -118,6 +118,12 @@ export function AppSidebar() {
               {open && item.comingSoon && (
                 <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 ml-auto">
                   Em breve
+                </Badge>
+              )}
+              {open && item.isNew && (
+                <Badge variant="default" className="text-[9px] px-1.5 py-0 h-4 ml-auto bg-primary text-primary-foreground animate-pulse">
+                  <Sparkles className="h-3 w-3 mr-0.5" />
+                  Novo
                 </Badge>
               )}
             </NavLink>
@@ -163,12 +169,6 @@ export function AppSidebar() {
                     {open && "Estudos"}
                   </span>
                   <span className="flex items-center gap-1">
-                    {open && (
-                      <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 bg-primary text-primary-foreground animate-pulse">
-                        <Sparkles className="h-3 w-3 mr-0.5" />
-                        Novo
-                      </Badge>
-                    )}
                     {open && (
                       <ChevronDown className={`h-4 w-4 transition-transform ${studyOpen ? "rotate-180" : ""}`} />
                     )}
