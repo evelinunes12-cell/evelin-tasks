@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Users, GraduationCap } from "lucide-react";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -13,12 +14,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { listMyStudyGroups, createStudyGroup } from "@/services/studyGroups";
+import { listMyStudyGroups, createStudyGroup, getStudyGroupsUnreadCounts } from "@/services/studyGroups";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function StudyGroups() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -27,6 +31,29 @@ export default function StudyGroups() {
     queryKey: ["study-groups"],
     queryFn: listMyStudyGroups,
   });
+
+  const groupIds = (groups ?? []).map((g) => g.id);
+  const { data: unreadCounts } = useQuery({
+    queryKey: ["study-groups-unread", groupIds],
+    queryFn: () => getStudyGroupsUnreadCounts(groupIds),
+    enabled: groupIds.length > 0,
+  });
+
+  // Realtime: refresh unread counts when notifications change
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`sg-unread-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => qc.invalidateQueries({ queryKey: ["study-groups-unread"] })
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user, qc]);
 
   const createMutation = useMutation({
     mutationFn: () => createStudyGroup(name.trim(), description.trim()),
@@ -129,14 +156,27 @@ export default function StudyGroups() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {groups.map((g) => (
+          {groups.map((g) => {
+            const unread = unreadCounts?.[g.id] ?? 0;
+            return (
             <Card
               key={g.id}
-              className="cursor-pointer hover:border-primary/50 transition-colors"
+              className="cursor-pointer hover:border-primary/50 transition-colors relative"
               onClick={() => navigate(`/grupos-de-estudo/${g.id}`)}
             >
               <CardHeader>
-                <CardTitle className="text-lg truncate">{g.name}</CardTitle>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg truncate flex-1 min-w-0">{g.name}</CardTitle>
+                  {unread > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="shrink-0 h-5 min-w-5 px-1.5 rounded-full text-[10px] font-semibold"
+                      aria-label={`${unread} mensagens não lidas`}
+                    >
+                      {unread > 99 ? "99+" : unread}
+                    </Badge>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {g.description && (
@@ -178,7 +218,8 @@ export default function StudyGroups() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
