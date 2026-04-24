@@ -218,7 +218,8 @@ export default function StudyGroups() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
