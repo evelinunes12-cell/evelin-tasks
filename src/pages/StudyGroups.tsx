@@ -156,14 +156,27 @@ export default function StudyGroups() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {groups.map((g) => (
+          {groups.map((g) => {
+            const unread = unreadCounts?.[g.id] ?? 0;
+            return (
             <Card
               key={g.id}
-              className="cursor-pointer hover:border-primary/50 transition-colors"
+              className="cursor-pointer hover:border-primary/50 transition-colors relative"
               onClick={() => navigate(`/grupos-de-estudo/${g.id}`)}
             >
               <CardHeader>
-                <CardTitle className="text-lg truncate">{g.name}</CardTitle>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg truncate flex-1 min-w-0">{g.name}</CardTitle>
+                  {unread > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="shrink-0 h-5 min-w-5 px-1.5 rounded-full text-[10px] font-semibold"
+                      aria-label={`${unread} mensagens não lidas`}
+                    >
+                      {unread > 99 ? "99+" : unread}
+                    </Badge>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {g.description && (
