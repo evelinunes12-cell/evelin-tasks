@@ -108,6 +108,30 @@ export async function listMyStudyGroups(): Promise<
   });
 }
 
+export async function getStudyGroupsUnreadCounts(
+  groupIds: string[]
+): Promise<Record<string, number>> {
+  if (groupIds.length === 0) return {};
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return {};
+
+  const links = groupIds.map((id) => `/grupos-de-estudo/${id}`);
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("link")
+    .eq("user_id", auth.user.id)
+    .eq("read", false)
+    .in("link", links);
+  if (error) throw error;
+
+  const counts: Record<string, number> = {};
+  (data ?? []).forEach((row: any) => {
+    const id = String(row.link).replace("/grupos-de-estudo/", "");
+    counts[id] = (counts[id] ?? 0) + 1;
+  });
+  return counts;
+}
+
 export function normalizeStudyGroupName(name: string): string {
   return name.replace(/\s+/g, " ").trim();
 }
