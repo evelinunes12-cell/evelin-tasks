@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, useMemo, memo } from "react";
+import { useEffect, useRef, useState, useMemo, memo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { listMessages, sendMessage, type StudyGroupMessage, type StudyGroupMember } from "@/services/studyGroups";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +17,8 @@ interface Props {
   groupId: string;
   members: StudyGroupMember[];
 }
+
+const TYPING_TIMEOUT_MS = 3000;
 
 const MessageBubble = memo(function MessageBubble({
   msg,
@@ -61,12 +64,36 @@ const MessageBubble = memo(function MessageBubble({
   );
 });
 
+function TypingIndicator({ names }: { names: string[] }) {
+  if (names.length === 0) return null;
+  const label =
+    names.length === 1
+      ? `${names[0]} está digitando`
+      : names.length === 2
+      ? `${names[0]} e ${names[1]} estão digitando`
+      : `${names[0]}, ${names[1]} e mais ${names.length - 2} estão digitando`;
+  return (
+    <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
+      <span className="flex gap-0.5">
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/70 animate-bounce [animation-delay:-0.3s]" />
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/70 animate-bounce [animation-delay:-0.15s]" />
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/70 animate-bounce" />
+      </span>
+      <span className="truncate">{label}…</span>
+    </div>
+  );
+}
+
 export default function StudyGroupChat({ groupId, members }: Props) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
+  const typingChannelRef = useRef<RealtimeChannel | null>(null);
+  const lastSentTypingRef = useRef<number>(0);
+  const localTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: messages, isLoading } = useQuery({
     queryKey: ["study-group-messages", groupId],
@@ -79,7 +106,7 @@ export default function StudyGroupChat({ groupId, members }: Props) {
     return m;
   }, [members]);
 
-  // Realtime subscription
+  // Realtime: messages
   useEffect(() => {
     const channel = supabase
       .channel(`study-group-messages-${groupId}`)
@@ -100,18 +127,118 @@ export default function StudyGroupChat({ groupId, members }: Props) {
     };
   }, [groupId, qc]);
 
+  // Realtime: typing indicator (broadcast)
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase.channel(`study-group-typing-${groupId}`, {
+      config: { broadcast: { self: false } },
+    });
+
+    channel
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        const userId = payload?.userId as string | undefined;
+        if (!userId || userId === user.id) return;
+        setTypingUsers((prev) => ({ ...prev, [userId]: Date.now() }));
+      })
+      .on("broadcast", { event: "stop_typing" }, ({ payload }) => {
+        const userId = payload?.userId as string | undefined;
+        if (!userId) return;
+        setTypingUsers((prev) => {
+          if (!(userId in prev)) return prev;
+          const next = { ...prev };
+          delete next[userId];
+          return next;
+        });
+      })
+      .subscribe();
+
+    typingChannelRef.current = channel;
+    return () => {
+      supabase.removeChannel(channel);
+      typingChannelRef.current = null;
+    };
+  }, [groupId, user]);
+
+  // Expire stale typing entries
+  useEffect(() => {
+    if (Object.keys(typingUsers).length === 0) return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setTypingUsers((prev) => {
+        let changed = false;
+        const next: Record<string, number> = {};
+        for (const [uid, ts] of Object.entries(prev)) {
+          if (now - ts < TYPING_TIMEOUT_MS) {
+            next[uid] = ts;
+          } else {
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [typingUsers]);
+
   // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, typingUsers]);
+
+  const sendStopTyping = useCallback(() => {
+    if (!user || !typingChannelRef.current) return;
+    typingChannelRef.current.send({
+      type: "broadcast",
+      event: "stop_typing",
+      payload: { userId: user.id },
+    });
+    lastSentTypingRef.current = 0;
+    if (localTypingTimerRef.current) {
+      clearTimeout(localTypingTimerRef.current);
+      localTypingTimerRef.current = null;
+    }
+  }, [user]);
+
+  const handleInputChange = (value: string) => {
+    setInput(value);
+    if (!user || !typingChannelRef.current) return;
+
+    if (value.trim().length === 0) {
+      sendStopTyping();
+      return;
+    }
+
+    const now = Date.now();
+    // Throttle: re-send "typing" at most every 1.5s
+    if (now - lastSentTypingRef.current > 1500) {
+      typingChannelRef.current.send({
+        type: "broadcast",
+        event: "typing",
+        payload: { userId: user.id },
+      });
+      lastSentTypingRef.current = now;
+    }
+
+    // Reset auto-stop timer
+    if (localTypingTimerRef.current) clearTimeout(localTypingTimerRef.current);
+    localTypingTimerRef.current = setTimeout(sendStopTyping, TYPING_TIMEOUT_MS);
+  };
+
+  // Cleanup typing on unmount
+  useEffect(() => {
+    return () => {
+      if (localTypingTimerRef.current) clearTimeout(localTypingTimerRef.current);
+    };
+  }, []);
 
   const handleSend = async () => {
     const text = input.trim();
     if (!text || sending) return;
     setSending(true);
     setInput("");
+    sendStopTyping();
     try {
       await sendMessage(groupId, text);
     } catch (e: any) {
@@ -121,6 +248,20 @@ export default function StudyGroupChat({ groupId, members }: Props) {
       setSending(false);
     }
   };
+
+  const typingNames = useMemo(() => {
+    return Object.keys(typingUsers)
+      .map((uid) => {
+        const member = memberMap.get(uid);
+        const profile = member?.profile;
+        return (
+          profile?.full_name?.split(" ")[0] ||
+          formatUsername(profile?.username) ||
+          "Alguém"
+        );
+      })
+      .filter(Boolean);
+  }, [typingUsers, memberMap]);
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -148,6 +289,10 @@ export default function StudyGroupChat({ groupId, members }: Props) {
         )}
       </div>
 
+      <div className="px-4 h-5 flex items-center">
+        <TypingIndicator names={typingNames} />
+      </div>
+
       <form
         className="p-3 border-t flex gap-2 bg-card"
         onSubmit={(e) => {
@@ -157,7 +302,8 @@ export default function StudyGroupChat({ groupId, members }: Props) {
       >
         <Input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onBlur={sendStopTyping}
           placeholder="Digite uma mensagem..."
           maxLength={2000}
           disabled={sending}
