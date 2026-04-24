@@ -108,11 +108,15 @@ export async function listMyStudyGroups(): Promise<
   });
 }
 
+export function normalizeStudyGroupName(name: string): string {
+  return name.replace(/\s+/g, " ").trim();
+}
+
 export async function createStudyGroup(name: string, description: string) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error("Não autenticado");
 
-  const trimmedName = name.trim();
+  const trimmedName = normalizeStudyGroupName(name);
   if (!trimmedName) throw new Error("Informe um nome para o grupo");
   if (trimmedName.length > 80) throw new Error("Nome deve ter no máximo 80 caracteres");
 
