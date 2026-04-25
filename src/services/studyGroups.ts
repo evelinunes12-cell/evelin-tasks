@@ -225,6 +225,7 @@ export async function createStudyGroup(name: string, description: string) {
     throw error;
   }
 
+  invalidateGroupPreviewCache(id);
   return {
     ...payload,
     created_at: new Date().toISOString(),
