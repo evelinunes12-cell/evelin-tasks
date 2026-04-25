@@ -343,6 +343,29 @@ export default function StudyGroupChat({ groupId, members }: Props) {
           handleSend();
         }}
       >
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button type="button" size="icon" variant="ghost" disabled={sending} title="Emojis">
+              <Smile className="h-5 w-5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="start"
+            className="p-0 border-0 bg-transparent shadow-none w-auto"
+          >
+            <EmojiPicker
+              onEmojiClick={(e) => handleInputChange(input + e.emoji)}
+              theme={(resolvedTheme === "dark" ? "dark" : "light") as Theme}
+              emojiStyle={EmojiStyle.NATIVE}
+              lazyLoadEmojis
+              width={320}
+              height={400}
+              previewConfig={{ showPreview: false }}
+              searchPlaceHolder="Buscar emoji..."
+            />
+          </PopoverContent>
+        </Popover>
         <Input
           value={input}
           onChange={(e) => handleInputChange(e.target.value)}
