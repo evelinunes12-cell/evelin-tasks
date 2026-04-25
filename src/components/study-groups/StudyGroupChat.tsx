@@ -64,6 +64,37 @@ const MessageBubble = memo(function MessageBubble({
   );
 });
 
+function formatDateSeparator(date: Date): string {
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  const isSameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+  if (isSameDay(date, today)) return "Hoje";
+  if (isSameDay(date, yesterday)) return "Ontem";
+  const diffDays = Math.floor((today.getTime() - date.getTime()) / 86400000);
+  if (diffDays < 7) {
+    return date.toLocaleDateString("pt-BR", { weekday: "long" });
+  }
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+  });
+}
+
+function DateSeparator({ label }: { label: string }) {
+  return (
+    <div className="flex items-center justify-center my-2">
+      <span className="text-[11px] font-medium text-muted-foreground bg-muted/60 px-3 py-1 rounded-full capitalize">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 function TypingIndicator({ names }: { names: string[] }) {
   if (names.length === 0) return null;
   const label =
