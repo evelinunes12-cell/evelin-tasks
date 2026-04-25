@@ -120,6 +120,7 @@ function TypingIndicator({ names }: { names: string[] }) {
 
 export default function StudyGroupChat({ groupId, members }: Props) {
   const { user } = useAuth();
+  const { resolvedTheme } = useTheme();
   const qc = useQueryClient();
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
