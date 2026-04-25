@@ -27,6 +27,7 @@ export default function StudyGroups() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [membersDialogGroup, setMembersDialogGroup] = useState<{ id: string; name: string } | null>(null);
 
   const { data: groups, isLoading } = useQuery({
     queryKey: ["study-groups"],
