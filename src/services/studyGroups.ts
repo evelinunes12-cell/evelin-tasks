@@ -267,13 +267,21 @@ export async function updateMyMemberPrefs(
 }
 
 export async function leaveGroup(memberId: string) {
+  // Descobrir group_id antes de deletar para invalidar cache específico
+  const { data: row } = await supabase
+    .from("study_group_members")
+    .select("group_id")
+    .eq("id", memberId)
+    .maybeSingle();
   const { error } = await supabase.from("study_group_members").delete().eq("id", memberId);
   if (error) throw error;
+  invalidateGroupPreviewCache(row?.group_id);
 }
 
 export async function deleteGroup(groupId: string) {
   const { error } = await supabase.from("study_groups").delete().eq("id", groupId);
   if (error) throw error;
+  invalidateGroupPreviewCache(groupId);
 }
 
 export async function addMemberByIdentifier(groupId: string, identifier: string) {
@@ -298,11 +306,18 @@ export async function addMemberByIdentifier(groupId: string, identifier: string)
     if (error.code === "23505") throw new Error("Este usuário já é membro do grupo");
     throw error;
   }
+  invalidateGroupPreviewCache(groupId);
 }
 
 export async function removeMember(memberId: string) {
+  const { data: row } = await supabase
+    .from("study_group_members")
+    .select("group_id")
+    .eq("id", memberId)
+    .maybeSingle();
   const { error } = await supabase.from("study_group_members").delete().eq("id", memberId);
   if (error) throw error;
+  invalidateGroupPreviewCache(row?.group_id);
 }
 
 export async function listMessages(groupId: string, limit = 100): Promise<StudyGroupMessage[]> {
