@@ -18,6 +18,7 @@ import { listMyStudyGroups, createStudyGroup, getStudyGroupsUnreadCounts } from 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import GroupMembersDialog from "@/components/study-groups/GroupMembersDialog";
 
 export default function StudyGroups() {
   const navigate = useNavigate();
