@@ -19,6 +19,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import GroupMembersDialog from "@/components/study-groups/GroupMembersDialog";
+import { cn } from "@/lib/utils";
 
 export default function StudyGroups() {
   const navigate = useNavigate();
