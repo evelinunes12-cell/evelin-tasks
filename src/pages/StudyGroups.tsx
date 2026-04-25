@@ -18,6 +18,7 @@ import { listMyStudyGroups, createStudyGroup, getStudyGroupsUnreadCounts } from 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import GroupMembersDialog from "@/components/study-groups/GroupMembersDialog";
 
 export default function StudyGroups() {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ export default function StudyGroups() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [membersDialogGroup, setMembersDialogGroup] = useState<{ id: string; name: string } | null>(null);
 
   const { data: groups, isLoading } = useQuery({
     queryKey: ["study-groups"],
@@ -184,7 +186,15 @@ export default function StudyGroups() {
                     {g.description}
                   </p>
                 )}
-                <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between rounded-md p-1 -m-1 hover:bg-muted/50 transition-colors text-left"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMembersDialogGroup({ id: g.id, name: g.name });
+                  }}
+                  title="Ver e gerenciar membros"
+                >
                   <div className="flex -space-x-2">
                     {g.sample_members.length > 0 ? (
                       g.sample_members.map((m) => (
@@ -215,12 +225,21 @@ export default function StudyGroups() {
                   <span className="text-xs text-muted-foreground">
                     {g.member_count} {g.member_count === 1 ? "membro" : "membros"}
                   </span>
-                </div>
+                </button>
               </CardContent>
             </Card>
             );
           })}
         </div>
+      )}
+
+      {membersDialogGroup && (
+        <GroupMembersDialog
+          groupId={membersDialogGroup.id}
+          groupName={membersDialogGroup.name}
+          open={!!membersDialogGroup}
+          onOpenChange={(o) => { if (!o) setMembersDialogGroup(null); }}
+        />
       )}
     </div>
   );
