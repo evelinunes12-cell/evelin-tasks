@@ -309,14 +309,23 @@ export default function StudyGroupChat({ groupId, members }: Props) {
             <p className="text-sm">Nenhuma mensagem ainda. Quebre o gelo!</p>
           </div>
         ) : (
-          messages.map((m) => (
-            <MessageBubble
-              key={m.id}
-              msg={m}
-              isMe={m.user_id === user?.id}
-              member={memberMap.get(m.user_id)}
-            />
-          ))
+          messages.map((m, idx) => {
+            const currentDate = new Date(m.created_at);
+            const prev = idx > 0 ? messages[idx - 1] : null;
+            const showSeparator =
+              !prev ||
+              new Date(prev.created_at).toDateString() !== currentDate.toDateString();
+            return (
+              <div key={m.id} className="space-y-3">
+                {showSeparator && <DateSeparator label={formatDateSeparator(currentDate)} />}
+                <MessageBubble
+                  msg={m}
+                  isMe={m.user_id === user?.id}
+                  member={memberMap.get(m.user_id)}
+                />
+              </div>
+            );
+          })
         )}
       </div>
 
