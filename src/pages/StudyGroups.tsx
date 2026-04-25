@@ -163,22 +163,44 @@ export default function StudyGroups() {
             return (
             <Card
               key={g.id}
-              className="cursor-pointer hover:border-primary/50 transition-colors relative"
+              className={cn(
+                "cursor-pointer transition-all relative overflow-hidden",
+                unread > 0
+                  ? "border-primary ring-2 ring-primary/30 shadow-md hover:ring-primary/50"
+                  : "hover:border-primary/50"
+              )}
               onClick={() => navigate(`/grupos-de-estudo/${g.id}`)}
             >
+              {unread > 0 && (
+                <span className="absolute top-0 left-0 h-full w-1 bg-primary" aria-hidden />
+              )}
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-lg truncate flex-1 min-w-0">{g.name}</CardTitle>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {unread > 0 && (
+                      <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden>
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+                      </span>
+                    )}
+                    <CardTitle className="text-lg truncate flex-1 min-w-0">{g.name}</CardTitle>
+                  </div>
                   {unread > 0 && (
                     <Badge
-                      variant="destructive"
-                      className="shrink-0 h-5 min-w-5 px-1.5 rounded-full text-[10px] font-semibold"
+                      variant="default"
+                      className="shrink-0 h-6 min-w-6 px-2 rounded-full text-xs font-semibold gap-1 bg-primary text-primary-foreground"
                       aria-label={`${unread} mensagens não lidas`}
                     >
+                      <MessageCircle className="h-3 w-3" />
                       {unread > 99 ? "99+" : unread}
                     </Badge>
                   )}
                 </div>
+                {unread > 0 && (
+                  <p className="text-xs text-primary font-medium mt-1">
+                    {unread === 1 ? "1 nova mensagem" : `${unread} novas mensagens`}
+                  </p>
+                )}
               </CardHeader>
               <CardContent className="space-y-3">
                 {g.description && (
