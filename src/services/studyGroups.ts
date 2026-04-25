@@ -50,6 +50,79 @@ export interface MemberPreview {
   avatar_url: string | null;
 }
 
+// ---- Member previews cache (TTL em memória) -------------------------------
+type PreviewEntry = { count: number; members: MemberPreview[] };
+const PREVIEW_TTL_MS = 60_000; // 1 minuto
+const previewCache = new Map<string, { data: PreviewEntry; expiresAt: number }>();
+const inflight = new Map<string, Promise<void>>();
+
+export function invalidateGroupPreviewCache(groupId?: string) {
+  if (groupId) previewCache.delete(groupId);
+  else previewCache.clear();
+}
+
+async function fetchPreviewsFromRpc(groupIds: string[]): Promise<Map<string, PreviewEntry>> {
+  const result = new Map<string, PreviewEntry>();
+  if (groupIds.length === 0) return result;
+  const { data: previews, error } = await supabase.rpc(
+    "get_study_groups_member_previews",
+    { p_group_ids: groupIds, p_limit_per_group: 4 }
+  );
+  if (error) throw error;
+  groupIds.forEach((id) => result.set(id, { count: 0, members: [] }));
+  ((previews as any[]) ?? []).forEach((r) => {
+    const entry = result.get(r.group_id) ?? { count: 0, members: [] };
+    entry.count = Number(r.member_count) || entry.count;
+    entry.members.push({
+      user_id: r.user_id,
+      full_name: r.full_name,
+      username: r.username,
+      avatar_url: r.avatar_url,
+    });
+    result.set(r.group_id, entry);
+  });
+  return result;
+}
+
+async function getMemberPreviewsCached(
+  groupIds: string[]
+): Promise<Map<string, PreviewEntry>> {
+  const now = Date.now();
+  const out = new Map<string, PreviewEntry>();
+  const stale: string[] = [];
+
+  for (const id of groupIds) {
+    const cached = previewCache.get(id);
+    if (cached && cached.expiresAt > now) {
+      out.set(id, cached.data);
+    } else {
+      stale.push(id);
+    }
+  }
+
+  if (stale.length === 0) return out;
+
+  // Deduplica fetches concorrentes pelo conjunto de ids
+  const key = stale.slice().sort().join(",");
+  let pending = inflight.get(key);
+  if (!pending) {
+    pending = (async () => {
+      const fresh = await fetchPreviewsFromRpc(stale);
+      const expiresAt = Date.now() + PREVIEW_TTL_MS;
+      fresh.forEach((data, id) => previewCache.set(id, { data, expiresAt }));
+    })().finally(() => inflight.delete(key));
+    inflight.set(key, pending);
+  }
+  await pending;
+
+  for (const id of stale) {
+    const cached = previewCache.get(id);
+    if (cached) out.set(id, cached.data);
+  }
+  return out;
+}
+// ---------------------------------------------------------------------------
+
 export async function listMyStudyGroups(): Promise<
   (StudyGroup & { member_count: number; sample_members: MemberPreview[] })[]
 > {
@@ -74,25 +147,8 @@ export async function listMyStudyGroups(): Promise<
     .order("created_at", { ascending: false });
   if (gErr) throw gErr;
 
-  // 3) Prévias de membros + contagem via RPC SECURITY DEFINER
-  const { data: previews, error: pErr } = await supabase.rpc(
-    "get_study_groups_member_previews",
-    { p_group_ids: groupIds, p_limit_per_group: 4 }
-  );
-  if (pErr) throw pErr;
-
-  const byGroup = new Map<string, { count: number; members: MemberPreview[] }>();
-  ((previews as any[]) ?? []).forEach((r) => {
-    const entry = byGroup.get(r.group_id) ?? { count: Number(r.member_count) || 0, members: [] };
-    entry.count = Number(r.member_count) || entry.count;
-    entry.members.push({
-      user_id: r.user_id,
-      full_name: r.full_name,
-      username: r.username,
-      avatar_url: r.avatar_url,
-    });
-    byGroup.set(r.group_id, entry);
-  });
+  // 3) Prévias de membros + contagem — com cache em memória (TTL) por grupo
+  const byGroup = await getMemberPreviewsCached(groupIds);
 
   return (groups ?? []).map((g: any) => {
     const entry = byGroup.get(g.id);
@@ -169,6 +225,7 @@ export async function createStudyGroup(name: string, description: string) {
     throw error;
   }
 
+  invalidateGroupPreviewCache(id);
   return {
     ...payload,
     created_at: new Date().toISOString(),
@@ -210,13 +267,21 @@ export async function updateMyMemberPrefs(
 }
 
 export async function leaveGroup(memberId: string) {
+  // Descobrir group_id antes de deletar para invalidar cache específico
+  const { data: row } = await supabase
+    .from("study_group_members")
+    .select("group_id")
+    .eq("id", memberId)
+    .maybeSingle();
   const { error } = await supabase.from("study_group_members").delete().eq("id", memberId);
   if (error) throw error;
+  invalidateGroupPreviewCache(row?.group_id);
 }
 
 export async function deleteGroup(groupId: string) {
   const { error } = await supabase.from("study_groups").delete().eq("id", groupId);
   if (error) throw error;
+  invalidateGroupPreviewCache(groupId);
 }
 
 export async function addMemberByIdentifier(groupId: string, identifier: string) {
@@ -241,11 +306,18 @@ export async function addMemberByIdentifier(groupId: string, identifier: string)
     if (error.code === "23505") throw new Error("Este usuário já é membro do grupo");
     throw error;
   }
+  invalidateGroupPreviewCache(groupId);
 }
 
 export async function removeMember(memberId: string) {
+  const { data: row } = await supabase
+    .from("study_group_members")
+    .select("group_id")
+    .eq("id", memberId)
+    .maybeSingle();
   const { error } = await supabase.from("study_group_members").delete().eq("id", memberId);
   if (error) throw error;
+  invalidateGroupPreviewCache(row?.group_id);
 }
 
 export async function listMessages(groupId: string, limit = 100): Promise<StudyGroupMessage[]> {
