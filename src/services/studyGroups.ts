@@ -74,25 +74,8 @@ export async function listMyStudyGroups(): Promise<
     .order("created_at", { ascending: false });
   if (gErr) throw gErr;
 
-  // 3) Prévias de membros + contagem via RPC SECURITY DEFINER
-  const { data: previews, error: pErr } = await supabase.rpc(
-    "get_study_groups_member_previews",
-    { p_group_ids: groupIds, p_limit_per_group: 4 }
-  );
-  if (pErr) throw pErr;
-
-  const byGroup = new Map<string, { count: number; members: MemberPreview[] }>();
-  ((previews as any[]) ?? []).forEach((r) => {
-    const entry = byGroup.get(r.group_id) ?? { count: Number(r.member_count) || 0, members: [] };
-    entry.count = Number(r.member_count) || entry.count;
-    entry.members.push({
-      user_id: r.user_id,
-      full_name: r.full_name,
-      username: r.username,
-      avatar_url: r.avatar_url,
-    });
-    byGroup.set(r.group_id, entry);
-  });
+  // 3) Prévias de membros + contagem — com cache em memória (TTL) por grupo
+  const byGroup = await getMemberPreviewsCached(groupIds);
 
   return (groups ?? []).map((g: any) => {
     const entry = byGroup.get(g.id);
