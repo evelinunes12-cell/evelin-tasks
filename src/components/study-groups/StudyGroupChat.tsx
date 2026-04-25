@@ -7,7 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send } from "lucide-react";
+import { Send, Smile } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
+import { useTheme } from "next-themes";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -117,6 +120,7 @@ function TypingIndicator({ names }: { names: string[] }) {
 
 export default function StudyGroupChat({ groupId, members }: Props) {
   const { user } = useAuth();
+  const { resolvedTheme } = useTheme();
   const qc = useQueryClient();
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -340,6 +344,29 @@ export default function StudyGroupChat({ groupId, members }: Props) {
           handleSend();
         }}
       >
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button type="button" size="icon" variant="ghost" disabled={sending} title="Emojis">
+              <Smile className="h-5 w-5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="start"
+            className="p-0 border-0 bg-transparent shadow-none w-auto"
+          >
+            <EmojiPicker
+              onEmojiClick={(e) => handleInputChange(input + e.emoji)}
+              theme={(resolvedTheme === "dark" ? "dark" : "light") as Theme}
+              emojiStyle={EmojiStyle.NATIVE}
+              lazyLoadEmojis
+              width={320}
+              height={400}
+              previewConfig={{ showPreview: false }}
+              searchPlaceHolder="Buscar emoji..."
+            />
+          </PopoverContent>
+        </Popover>
         <Input
           value={input}
           onChange={(e) => handleInputChange(e.target.value)}
