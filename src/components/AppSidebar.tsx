@@ -24,6 +24,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useStudyGroupsUnreadTotal } from "@/hooks/useStudyGroupsUnreadTotal";
 
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: Home, description: "Painel principal com suas tarefas" },
@@ -60,6 +61,7 @@ export function AppSidebar() {
   const isMobile = useIsMobile();
   const { isAdmin } = useAdminRole();
   const { user, signOut } = useAuth();
+  const studyGroupsUnread = useStudyGroupsUnreadTotal();
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isStudyRoute = location.pathname.startsWith("/estudos");
