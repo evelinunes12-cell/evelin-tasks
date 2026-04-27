@@ -98,48 +98,69 @@ export function AppSidebar() {
     await signOut();
   };
 
-  const renderMenuItem = (item: { title: string; url: string; icon: any; description: string; comingSoon?: boolean; isNew?: boolean }) => (
-    <SidebarMenuItem key={item.title}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <SidebarMenuButton asChild>
-            <NavLink
-              to={item.url}
-              onClick={handleLinkClick}
-              onMouseEnter={() => prefetchRoute(item.url)}
-              onFocus={() => prefetchRoute(item.url)}
-              onTouchStart={() => prefetchRoute(item.url)}
-              className={({ isActive }) =>
-                isActive
-                  ? "bg-accent text-accent-foreground"
-                  : "hover:bg-accent/50"
-              }
-            >
-              <item.icon className="h-4 w-4" />
-              {open && <span className="flex-1">{item.title}</span>}
-              {open && item.comingSoon && (
-                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 ml-auto">
-                  Em breve
-                </Badge>
-              )}
-              {open && item.isNew && (
-                <Badge variant="default" className="text-[9px] px-1.5 py-0 h-4 ml-auto bg-primary text-primary-foreground animate-pulse">
-                  <Sparkles className="h-3 w-3 mr-0.5" />
-                  Novo
-                </Badge>
-              )}
-            </NavLink>
-          </SidebarMenuButton>
-        </TooltipTrigger>
-        {!open && (
-          <TooltipContent side="right">
-            <p className="font-medium">{item.title}{item.comingSoon ? " (Em breve)" : ""}</p>
-            <p className="text-xs text-muted-foreground">{item.description}</p>
-          </TooltipContent>
-        )}
-      </Tooltip>
-    </SidebarMenuItem>
-  );
+  const renderMenuItem = (item: { title: string; url: string; icon: any; description: string; comingSoon?: boolean; isNew?: boolean }) => {
+    const isStudyGroups = item.url === "/grupos-de-estudo";
+    const unread = isStudyGroups ? studyGroupsUnread : 0;
+    return (
+      <SidebarMenuItem key={item.title}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <SidebarMenuButton asChild>
+              <NavLink
+                to={item.url}
+                onClick={handleLinkClick}
+                onMouseEnter={() => prefetchRoute(item.url)}
+                onFocus={() => prefetchRoute(item.url)}
+                onTouchStart={() => prefetchRoute(item.url)}
+                className={({ isActive }) =>
+                  isActive
+                    ? "bg-accent text-accent-foreground relative"
+                    : "hover:bg-accent/50 relative"
+                }
+              >
+                <span className="relative inline-flex">
+                  <item.icon className="h-4 w-4" />
+                  {unread > 0 && !open && (
+                    <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary ring-2 ring-background" />
+                  )}
+                </span>
+                {open && <span className="flex-1">{item.title}</span>}
+                {open && unread > 0 && (
+                  <Badge
+                    variant="default"
+                    className="text-[10px] px-1.5 py-0 h-4 ml-auto bg-primary text-primary-foreground min-w-[1rem] justify-center"
+                  >
+                    {unread > 99 ? "99+" : unread}
+                  </Badge>
+                )}
+                {open && item.comingSoon && (
+                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 ml-auto">
+                    Em breve
+                  </Badge>
+                )}
+                {open && item.isNew && unread === 0 && (
+                  <Badge variant="default" className="text-[9px] px-1.5 py-0 h-4 ml-auto bg-primary text-primary-foreground animate-pulse">
+                    <Sparkles className="h-3 w-3 mr-0.5" />
+                    Novo
+                  </Badge>
+                )}
+              </NavLink>
+            </SidebarMenuButton>
+          </TooltipTrigger>
+          {!open && (
+            <TooltipContent side="right">
+              <p className="font-medium">
+                {item.title}
+                {item.comingSoon ? " (Em breve)" : ""}
+                {unread > 0 ? ` · ${unread} nova${unread > 1 ? "s" : ""}` : ""}
+              </p>
+              <p className="text-xs text-muted-foreground">{item.description}</p>
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </SidebarMenuItem>
+    );
+  };
 
   return (
     <>
