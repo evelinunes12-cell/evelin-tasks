@@ -11,7 +11,7 @@ import Navbar from "@/components/Navbar";
 import StatsCards from "@/components/StatsCards";
 import StreakCard from "@/components/StreakCard";
 import { StreakKeeper } from "@/components/StreakKeeper";
-import { AchievementUnlockChecker } from "@/components/AchievementUnlockChecker";
+
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { IncompleteProfileAlert } from "@/components/IncompleteProfileAlert";
 import DashboardBannerCarousel from "@/components/DashboardBannerCarousel";
@@ -93,7 +93,6 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background flex-1">
       <StreakKeeper />
-      <AchievementUnlockChecker />
       <Navbar />
       <main className="container mx-auto px-4 py-8 max-w-[1600px]">
         {/* Header */}

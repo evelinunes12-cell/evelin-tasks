@@ -20,20 +20,16 @@ export const StreakKeeper = () => {
         toast({
           variant: "destructive",
           title: "Sequência perdida... 🧊",
-          description: "Você ficou mais de um dia sem praticar. Sua ofensiva foi zerada e as conquistas de ofensiva precisarão ser reconquistadas.",
+          description: "Você ficou mais de um dia sem praticar. Sua ofensiva foi zerada.",
         });
-
-        // Use SECURITY DEFINER function to safely reset achievements
-        await supabase.rpc("reset_streak_achievements");
 
         const { error } = await supabase
           .from("profiles")
           .update({ current_streak: 0 })
           .eq("id", user.id);
-          
+
         if (!error) {
           queryClient.invalidateQueries({ queryKey: ["user-streak"] });
-          queryClient.invalidateQueries({ queryKey: ["user-achievements"] });
         }
       };
 
