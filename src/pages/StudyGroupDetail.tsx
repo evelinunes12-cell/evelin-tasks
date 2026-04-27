@@ -96,7 +96,7 @@ export default function StudyGroupDetail() {
       document.removeEventListener("visibilitychange", markRead);
       supabase.removeChannel(ch);
     };
-  }, [id, user, qc]);
+  }, [id, user?.id, qc]);
 
   const myMember = members.find((m) => m.user_id === user?.id);
   const isAdmin = myMember?.role === "admin";
