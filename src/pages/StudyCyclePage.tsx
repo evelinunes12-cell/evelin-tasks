@@ -94,7 +94,7 @@ const StudyCyclePage = () => {
     try {
       await deleteStudyCycle(deleteId);
       toast.success("Ciclo excluído.");
-      setCycles((prev) => prev.filter((c) => c.id !== deleteId));
+      reloadCycles();
     } catch {
       toast.error("Erro ao excluir o ciclo.");
     } finally {
@@ -105,9 +105,7 @@ const StudyCyclePage = () => {
   const handleToggle = async (cycle: StudyCycle) => {
     try {
       await toggleCycleActive(cycle.id, !cycle.is_active);
-      setCycles((prev) =>
-        prev.map((c) => (c.id === cycle.id ? { ...c, is_active: !c.is_active } : c))
-      );
+      reloadCycles();
       toast.success(cycle.is_active ? "Ciclo desativado." : "Ciclo ativado!");
     } catch {
       toast.error("Erro ao alterar status.");
@@ -320,8 +318,7 @@ const StudyCyclePage = () => {
         cycleToEdit={editingCycle}
         userId={user?.id}
         onSubjectsChanged={async () => {
-          const updated = await fetchSubjects();
-          setSubjects(updated);
+          reloadSubjects();
         }}
       />
 
