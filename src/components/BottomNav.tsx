@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Calendar, BookOpen, GraduationCap, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { prefetchRoute } from "@/lib/routePrefetch";
+import { useStudyGroupsUnreadTotal } from "@/hooks/useStudyGroupsUnreadTotal";
 
 const navItems = [
   { label: "Início", icon: LayoutDashboard, path: "/dashboard" },
@@ -14,6 +15,7 @@ const navItems = [
 export function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const studyGroupsUnread = useStudyGroupsUnreadTotal();
 
   const hiddenRoutes = ["/auth", "/onboarding", "/invite"];
   if (hiddenRoutes.some((r) => location.pathname.startsWith(r))) return null;
@@ -28,6 +30,8 @@ export function BottomNav() {
             (item.path === "/grupos-de-estudo" && location.pathname.startsWith("/grupos-de-estudo")) ||
             (item.path !== "/dashboard" && item.path !== "/estudos/ciclo" && item.path !== "/grupos-de-estudo" && location.pathname.startsWith(item.path));
 
+          const unread = item.path === "/grupos-de-estudo" ? studyGroupsUnread : 0;
+
           return (
             <button
               key={item.path}
@@ -41,7 +45,14 @@ export function BottomNav() {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <item.icon className={cn("w-5 h-5", isActive && "stroke-[2.5]")} />
+              <span className="relative inline-flex">
+                <item.icon className={cn("w-5 h-5", isActive && "stroke-[2.5]")} />
+                {unread > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[1rem] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[0.625rem] font-semibold leading-none flex items-center justify-center ring-2 ring-card">
+                    {unread > 99 ? "99+" : unread}
+                  </span>
+                )}
+              </span>
               <span className={cn("text-[0.625rem] leading-tight", isActive && "font-semibold")}>
                 {item.label}
               </span>
