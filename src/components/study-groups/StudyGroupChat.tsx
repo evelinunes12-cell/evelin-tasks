@@ -192,7 +192,7 @@ export default function StudyGroupChat({ groupId, members }: Props) {
       supabase.removeChannel(channel);
       typingChannelRef.current = null;
     };
-  }, [groupId, user]);
+  }, [groupId, user?.id]);
 
   // Expire stale typing entries
   useEffect(() => {
@@ -234,7 +234,7 @@ export default function StudyGroupChat({ groupId, members }: Props) {
       clearTimeout(localTypingTimerRef.current);
       localTypingTimerRef.current = null;
     }
-  }, [user]);
+  }, [user?.id]);
 
   const handleInputChange = (value: string) => {
     setInput(value);

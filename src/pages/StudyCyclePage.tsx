@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Repeat, Plus, BookOpen, Clock, Trash2, Power, PowerOff, Play, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,31 +39,28 @@ import {
 const StudyCyclePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [cycles, setCycles] = useState<StudyCycle[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCycle, setEditingCycle] = useState<StudyCycle | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { playCycle } = useStudyCyclePlayer();
 
-  useEffect(() => {
-    if (!user) return;
-    loadData();
-  }, [user]);
+  const { data: cycles = [], isLoading: loadingCycles } = useQuery({
+    queryKey: ["study-cycles", user?.id],
+    queryFn: fetchStudyCycles,
+    enabled: !!user,
+  });
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [cyclesData, subjectsData] = await Promise.all([fetchStudyCycles(), fetchSubjects()]);
-      setCycles(cyclesData);
-      setSubjects(subjectsData);
-    } catch {
-      toast.error("Erro ao carregar ciclos.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: subjects = [], isLoading: loadingSubjects } = useQuery({
+    queryKey: ["subjects", user?.id],
+    queryFn: fetchSubjects,
+    enabled: !!user,
+  });
+
+  const loading = loadingCycles || loadingSubjects;
+
+  const reloadCycles = () => queryClient.invalidateQueries({ queryKey: ["study-cycles", user?.id] });
+  const reloadSubjects = () => queryClient.invalidateQueries({ queryKey: ["subjects", user?.id] });
 
   const handleSave = async (name: string, blocks: NewBlock[], advancedMeta?: AdvancedCycleMetadata) => {
     if (!user) return;
@@ -78,7 +76,7 @@ const StudyCyclePage = () => {
       registerActivity(user.id);
     }
     setEditingCycle(null);
-    loadData();
+    reloadCycles();
   };
 
   const handleOpenEdit = (cycle: StudyCycle) => {
@@ -96,7 +94,7 @@ const StudyCyclePage = () => {
     try {
       await deleteStudyCycle(deleteId);
       toast.success("Ciclo excluído.");
-      setCycles((prev) => prev.filter((c) => c.id !== deleteId));
+      reloadCycles();
     } catch {
       toast.error("Erro ao excluir o ciclo.");
     } finally {
@@ -107,9 +105,7 @@ const StudyCyclePage = () => {
   const handleToggle = async (cycle: StudyCycle) => {
     try {
       await toggleCycleActive(cycle.id, !cycle.is_active);
-      setCycles((prev) =>
-        prev.map((c) => (c.id === cycle.id ? { ...c, is_active: !c.is_active } : c))
-      );
+      reloadCycles();
       toast.success(cycle.is_active ? "Ciclo desativado." : "Ciclo ativado!");
     } catch {
       toast.error("Erro ao alterar status.");
@@ -322,8 +318,7 @@ const StudyCyclePage = () => {
         cycleToEdit={editingCycle}
         userId={user?.id}
         onSubjectsChanged={async () => {
-          const updated = await fetchSubjects();
-          setSubjects(updated);
+          reloadSubjects();
         }}
       />
 

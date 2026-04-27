@@ -56,7 +56,7 @@ export default function StudyGroups() {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [user, qc]);
+  }, [user?.id, qc]);
 
   const createMutation = useMutation({
     mutationFn: () => createStudyGroup(name.trim(), description.trim()),
