@@ -153,6 +153,38 @@ export type Database = {
           },
         ]
       }
+      environment_messages: {
+        Row: {
+          content: string
+          created_at: string
+          environment_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          environment_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          environment_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environment_messages_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "shared_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       environment_statuses: {
         Row: {
           color: string | null
@@ -1468,6 +1500,10 @@ export type Database = {
         Returns: boolean
       }
       log_user_xp: { Args: { p_action_type: string }; Returns: undefined }
+      mark_environment_messages_notifications_read: {
+        Args: { p_environment_id: string }
+        Returns: undefined
+      }
       mark_study_group_messages_notifications_read: {
         Args: { p_group_id: string }
         Returns: undefined

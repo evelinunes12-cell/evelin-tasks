@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
@@ -8,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History, Clock, Pencil, X, Save } from "lucide-react";
+import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History, Clock, Pencil, X, Save, MessageCircle } from "lucide-react";
+import EnvironmentChat from "@/components/environments/EnvironmentChat";
 import { LogOut } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import EnvironmentActivityTimeline from "@/components/EnvironmentActivityTimeline";
@@ -64,6 +66,7 @@ const EnvironmentDetail = () => {
   const { id } = useParams();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [ownerProfile, setOwnerProfile] = useState<{ username?: string | null; full_name?: string | null; avatar_url?: string | null; email?: string } | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -155,6 +158,49 @@ const EnvironmentDetail = () => {
       fetchEnvironmentData();
     }
   }, [user, id]);
+
+  // Mark environment chat notifications as read while page is open & visible
+  useEffect(() => {
+    if (!id || !user) return;
+
+    const markRead = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        await supabase.rpc("mark_environment_messages_notifications_read", {
+          p_environment_id: id,
+        });
+        qc.invalidateQueries({ queryKey: ["notifications"] });
+        qc.invalidateQueries({ queryKey: ["shared-environments-unread"] });
+        qc.invalidateQueries({ queryKey: ["shared-environments-unread-total"] });
+      } catch {
+        // silent
+      }
+    };
+
+    markRead();
+    document.addEventListener("visibilitychange", markRead);
+
+    const ch = supabase
+      .channel(`env-msg-read-${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "environment_messages",
+          filter: `environment_id=eq.${id}`,
+        },
+        () => {
+          if (document.visibilityState === "visible") markRead();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      document.removeEventListener("visibilitychange", markRead);
+      supabase.removeChannel(ch);
+    };
+  }, [id, user?.id, qc]);
 
   const fetchEnvironmentData = async () => {
     try {
@@ -350,6 +396,10 @@ const EnvironmentDetail = () => {
         <Tabs defaultValue="tasks" className="w-full">
           <TabsList>
             <TabsTrigger value="tasks">Tarefas</TabsTrigger>
+            <TabsTrigger value="chat">
+              <MessageCircle className="w-4 h-4 mr-1" />
+              Chat
+            </TabsTrigger>
             <TabsTrigger value="members">Membros</TabsTrigger>
             <TabsTrigger value="history">
               <History className="w-4 h-4 mr-1" />
@@ -357,6 +407,32 @@ const EnvironmentDetail = () => {
             </TabsTrigger>
             {isOwner && <TabsTrigger value="invites">Convites</TabsTrigger>}
           </TabsList>
+
+          <TabsContent value="chat" className="space-y-2">
+            <EnvironmentChat
+              environmentId={id!}
+              members={[
+                ...(ownerProfile
+                  ? [{
+                      user_id: environment.owner_id,
+                      full_name: ownerProfile.full_name ?? null,
+                      username: ownerProfile.username ?? null,
+                      avatar_url: ownerProfile.avatar_url ?? null,
+                      email: ownerProfile.email,
+                    }]
+                  : []),
+                ...members
+                  .filter((m) => m.user_id !== null)
+                  .map((m) => ({
+                    user_id: m.user_id,
+                    full_name: m.full_name ?? null,
+                    username: m.username ?? null,
+                    avatar_url: m.avatar_url ?? null,
+                    email: m.email,
+                  })),
+              ]}
+            />
+          </TabsContent>
 
           <TabsContent value="tasks" className="space-y-6">
             <div className="flex justify-between items-center">
