@@ -26,6 +26,7 @@ interface Environment {
 const SharedEnvironments = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,6 +45,29 @@ const SharedEnvironments = () => {
   useEffect(() => {
     loadEnvironments();
   }, [loadEnvironments]);
+
+  const environmentIds = environments.map((e) => e.id);
+  const { data: unreadCounts } = useQuery({
+    queryKey: ["shared-environments-unread", environmentIds],
+    queryFn: () => getEnvironmentsUnreadCounts(environmentIds),
+    enabled: environmentIds.length > 0,
+  });
+
+  // Realtime: refresh unread counts when notifications change
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`se-unread-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => qc.invalidateQueries({ queryKey: ["shared-environments-unread"] })
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [user?.id, qc]);
 
   const fetchEnvironments = async () => {
     try {
