@@ -396,6 +396,10 @@ const EnvironmentDetail = () => {
         <Tabs defaultValue="tasks" className="w-full">
           <TabsList>
             <TabsTrigger value="tasks">Tarefas</TabsTrigger>
+            <TabsTrigger value="chat">
+              <MessageCircle className="w-4 h-4 mr-1" />
+              Chat
+            </TabsTrigger>
             <TabsTrigger value="members">Membros</TabsTrigger>
             <TabsTrigger value="history">
               <History className="w-4 h-4 mr-1" />
@@ -403,6 +407,32 @@ const EnvironmentDetail = () => {
             </TabsTrigger>
             {isOwner && <TabsTrigger value="invites">Convites</TabsTrigger>}
           </TabsList>
+
+          <TabsContent value="chat" className="space-y-2">
+            <EnvironmentChat
+              environmentId={id!}
+              members={[
+                ...(ownerProfile
+                  ? [{
+                      user_id: environment.owner_id,
+                      full_name: ownerProfile.full_name ?? null,
+                      username: ownerProfile.username ?? null,
+                      avatar_url: ownerProfile.avatar_url ?? null,
+                      email: ownerProfile.email,
+                    }]
+                  : []),
+                ...members
+                  .filter((m) => m.user_id !== null)
+                  .map((m) => ({
+                    user_id: m.user_id,
+                    full_name: m.full_name ?? null,
+                    username: m.username ?? null,
+                    avatar_url: m.avatar_url ?? null,
+                    email: m.email,
+                  })),
+              ]}
+            />
+          </TabsContent>
 
           <TabsContent value="tasks" className="space-y-6">
             <div className="flex justify-between items-center">
