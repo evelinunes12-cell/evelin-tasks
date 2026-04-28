@@ -153,26 +153,61 @@ const SharedEnvironments = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {environments.map((env) => (
+            {environments.map((env) => {
+              const unread = unreadCounts?.[env.id] ?? 0;
+              return (
               <Card
                 key={env.id}
-                className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02]"
+                className={cn(
+                  "cursor-pointer transition-all hover:scale-[1.02] relative overflow-hidden",
+                  unread > 0
+                    ? "border-primary ring-2 ring-primary/30 shadow-md hover:ring-primary/50"
+                    : "hover:shadow-lg"
+                )}
                 onClick={() => navigate(`/environment/${env.id}`)}
               >
+                {unread > 0 && (
+                  <span className="absolute top-0 left-0 h-full w-1 bg-primary" aria-hidden />
+                )}
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-xl line-clamp-1">{env.environment_name}</CardTitle>
-                    {env.is_owner && (
-                      <Badge variant="secondary" className="gap-1 shrink-0">
-                        <Crown className="w-3 h-3" />
-                        Proprietário
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {unread > 0 && (
+                        <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden>
+                          <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+                        </span>
+                      )}
+                      <CardTitle className="text-xl line-clamp-1 flex-1 min-w-0">{env.environment_name}</CardTitle>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {unread > 0 && (
+                        <Badge
+                          variant="default"
+                          className="h-6 min-w-6 px-2 rounded-full text-xs font-semibold gap-1 bg-primary text-primary-foreground"
+                          aria-label={`${unread} mensagens não lidas`}
+                        >
+                          <MessageCircle className="h-3 w-3" />
+                          {unread > 99 ? "99+" : unread}
+                        </Badge>
+                      )}
+                      {env.is_owner && (
+                        <Badge variant="secondary" className="gap-1">
+                          <Crown className="w-3 h-3" />
+                          Proprietário
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   {env.description && (
                     <CardDescription className="line-clamp-2">
                       {env.description}
                     </CardDescription>
+                  )}
+                  {unread > 0 && (
+                    <p className="text-xs text-primary font-medium mt-1">
+                      {unread === 1 ? "1 nova mensagem" : `${unread} novas mensagens`}
+                    </p>
                   )}
                 </CardHeader>
                 <CardContent>
@@ -182,7 +217,8 @@ const SharedEnvironments = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
