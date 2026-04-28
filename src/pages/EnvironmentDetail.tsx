@@ -159,6 +159,49 @@ const EnvironmentDetail = () => {
     }
   }, [user, id]);
 
+  // Mark environment chat notifications as read while page is open & visible
+  useEffect(() => {
+    if (!id || !user) return;
+
+    const markRead = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        await supabase.rpc("mark_environment_messages_notifications_read", {
+          p_environment_id: id,
+        });
+        qc.invalidateQueries({ queryKey: ["notifications"] });
+        qc.invalidateQueries({ queryKey: ["shared-environments-unread"] });
+        qc.invalidateQueries({ queryKey: ["shared-environments-unread-total"] });
+      } catch {
+        // silent
+      }
+    };
+
+    markRead();
+    document.addEventListener("visibilitychange", markRead);
+
+    const ch = supabase
+      .channel(`env-msg-read-${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "environment_messages",
+          filter: `environment_id=eq.${id}`,
+        },
+        () => {
+          if (document.visibilityState === "visible") markRead();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      document.removeEventListener("visibilitychange", markRead);
+      supabase.removeChannel(ch);
+    };
+  }, [id, user?.id, qc]);
+
   const fetchEnvironmentData = async () => {
     try {
       setLoading(true);
