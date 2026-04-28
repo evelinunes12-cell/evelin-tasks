@@ -13,7 +13,7 @@ export async function listEnvironmentMessages(
   limit = 100
 ): Promise<EnvironmentMessage[]> {
   const { data, error } = await supabase
-    .from("environment_messages" as any)
+    .from("environment_messages")
     .select("*")
     .eq("environment_id", environmentId)
     .order("created_at", { ascending: false })
@@ -31,12 +31,12 @@ export async function sendEnvironmentMessage(
   const trimmed = content.trim();
   if (!trimmed) return;
   const { error } = await supabase
-    .from("environment_messages" as any)
+    .from("environment_messages")
     .insert({
       environment_id: environmentId,
       user_id: auth.user.id,
       content: trimmed.slice(0, 2000),
-    } as any);
+    });
   if (error) throw error;
 }
 
