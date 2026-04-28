@@ -1,14 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Crown } from "lucide-react";
+import { Plus, Users, Crown, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { getEnvironmentsUnreadCounts } from "@/services/environmentMessages";
+import { cn } from "@/lib/utils";
 
 interface Environment {
   id: string;
