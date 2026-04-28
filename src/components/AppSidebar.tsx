@@ -25,6 +25,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useStudyGroupsUnreadTotal } from "@/hooks/useStudyGroupsUnreadTotal";
+import { useSharedEnvironmentsUnreadTotal } from "@/hooks/useSharedEnvironmentsUnreadTotal";
 
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: Home, description: "Painel principal com suas tarefas" },
@@ -62,6 +63,7 @@ export function AppSidebar() {
   const { isAdmin } = useAdminRole();
   const { user, signOut } = useAuth();
   const studyGroupsUnread = useStudyGroupsUnreadTotal();
+  const sharedEnvironmentsUnread = useSharedEnvironmentsUnreadTotal();
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isStudyRoute = location.pathname.startsWith("/estudos");
@@ -100,7 +102,12 @@ export function AppSidebar() {
 
   const renderMenuItem = (item: { title: string; url: string; icon: any; description: string; comingSoon?: boolean; isNew?: boolean }) => {
     const isStudyGroups = item.url === "/grupos-de-estudo";
-    const unread = isStudyGroups ? studyGroupsUnread : 0;
+    const isSharedEnvs = item.url === "/shared-environments";
+    const unread = isStudyGroups
+      ? studyGroupsUnread
+      : isSharedEnvs
+      ? sharedEnvironmentsUnread
+      : 0;
     return (
       <SidebarMenuItem key={item.title}>
         <Tooltip>
