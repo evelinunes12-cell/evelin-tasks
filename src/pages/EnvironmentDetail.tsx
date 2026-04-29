@@ -40,6 +40,7 @@ interface Environment {
   environment_name: string;
   description: string | null;
   owner_id: string;
+  restrict_tasks_to_assignees?: boolean;
 }
 
 interface Task {
