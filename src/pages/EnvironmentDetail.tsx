@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History, Clock, Pencil, X, Save, MessageCircle } from "lucide-react";
+import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History, Clock, Pencil, X, Save, MessageCircle, Lock } from "lucide-react";
 import EnvironmentChat from "@/components/environments/EnvironmentChat";
 import { LogOut } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
