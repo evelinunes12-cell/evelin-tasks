@@ -43,6 +43,7 @@ const EnvironmentForm = () => {
   const [loading, setLoading] = useState(false);
   const [environmentName, setEnvironmentName] = useState("");
   const [description, setDescription] = useState("");
+  const [restrictTasksToAssignees, setRestrictTasksToAssignees] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [newMemberPermissions, setNewMemberPermissions] = useState<string[]>(["view"]);
