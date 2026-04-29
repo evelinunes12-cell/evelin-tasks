@@ -124,12 +124,13 @@ const TaskForm = () => {
       // Fetch environment name
       const { data: envData } = await supabase
         .from("shared_environments")
-        .select("environment_name")
+        .select("environment_name, restrict_tasks_to_assignees")
         .eq("id", envId)
         .single();
 
       if (envData) {
         setEnvironmentName(envData.environment_name);
+        setEnvironmentRestricted(Boolean((envData as any).restrict_tasks_to_assignees));
       }
 
       // Fetch environment subjects
