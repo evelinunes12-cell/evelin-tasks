@@ -436,6 +436,18 @@ const EnvironmentDetail = () => {
           </TabsContent>
 
           <TabsContent value="tasks" className="space-y-6">
+            {environment.restrict_tasks_to_assignees && (
+              <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                <Lock className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground">Modo restrito ativo</p>
+                  <p className="text-muted-foreground break-words">
+                    Cada card só pode ser visto e modificado pelo proprietário, pelo criador do card e pelos membros vinculados.
+                    {isOwner && " Você pode desativar isso em Configurações."}
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Tarefas do Grupo</h2>
               <Button size="sm" onClick={() => navigate(`/task/new?environment=${id}`)}>
