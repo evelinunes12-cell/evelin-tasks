@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { X, Plus, Mail, Users, BookOpen, ListTodo, Trash2 } from "lucide-react";
+import { X, Plus, Mail, Users, BookOpen, ListTodo, Trash2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
 import { environmentFormSchema, memberSchema, subjectStatusSchema } from "@/lib/validation";
@@ -42,6 +43,7 @@ const EnvironmentForm = () => {
   const [loading, setLoading] = useState(false);
   const [environmentName, setEnvironmentName] = useState("");
   const [description, setDescription] = useState("");
+  const [restrictTasksToAssignees, setRestrictTasksToAssignees] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [newMemberPermissions, setNewMemberPermissions] = useState<string[]>(["view"]);
@@ -86,6 +88,7 @@ const EnvironmentForm = () => {
 
       setEnvironmentName(data.environment_name);
       setDescription(data.description || "");
+      setRestrictTasksToAssignees(Boolean((data as any).restrict_tasks_to_assignees));
 
       const { data: membersData } = await supabase
         .from("environment_members")
@@ -204,7 +207,7 @@ const EnvironmentForm = () => {
     try {
       setLoading(true);
       if (isNewEnvironment) {
-        const { data: envData, error } = await supabase.from("shared_environments").insert({ environment_name: validation.data.environment_name, description: validation.data.description || null, owner_id: user.id }).select().single();
+        const { data: envData, error } = await supabase.from("shared_environments").insert({ environment_name: validation.data.environment_name, description: validation.data.description || null, owner_id: user.id, restrict_tasks_to_assignees: restrictTasksToAssignees } as any).select().single();
         if (error) throw error;
 
         if (members.length > 0) {
@@ -222,7 +225,7 @@ const EnvironmentForm = () => {
         toast.success("Grupo de trabalho criado!");
         navigate(`/environment/${envData.id}`);
       } else {
-        await supabase.from("shared_environments").update({ environment_name: validation.data.environment_name, description: validation.data.description || null }).eq("id", id);
+        await supabase.from("shared_environments").update({ environment_name: validation.data.environment_name, description: validation.data.description || null, restrict_tasks_to_assignees: restrictTasksToAssignees } as any).eq("id", id);
 
         const { data: existingMembers } = await supabase.from("environment_members").select("email").eq("environment_id", id);
         const existingEmails = existingMembers?.map(m => m.email) || [];
@@ -252,6 +255,24 @@ const EnvironmentForm = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2"><Label>Nome do Grupo *</Label><Input value={environmentName} onChange={(e) => setEnvironmentName(e.target.value)} placeholder="Ex: Projeto TCC, Grupo de Estudos..." required /></div>
               <div className="space-y-2"><Label>Descrição</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} /></div>
+              <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <Label htmlFor="restrict-tasks" className="cursor-pointer">
+                      Privacidade dos cards
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground break-words">
+                    Quando ativado, cada card só pode ser visto e modificado por você (proprietário), pelo criador do card e pelos membros vinculados a ele. Quando desativado, todos os membros com permissão veem todos os cards.
+                  </p>
+                </div>
+                <Switch
+                  id="restrict-tasks"
+                  checked={restrictTasksToAssignees}
+                  onCheckedChange={setRestrictTasksToAssignees}
+                />
+              </div>
             </CardContent>
           </Card>
 

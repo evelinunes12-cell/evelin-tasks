@@ -731,6 +731,7 @@ export type Database = {
           environment_name: string
           id: string
           owner_id: string
+          restrict_tasks_to_assignees: boolean
           updated_at: string
         }
         Insert: {
@@ -739,6 +740,7 @@ export type Database = {
           environment_name: string
           id?: string
           owner_id: string
+          restrict_tasks_to_assignees?: boolean
           updated_at?: string
         }
         Update: {
@@ -747,6 +749,7 @@ export type Database = {
           environment_name?: string
           id?: string
           owner_id?: string
+          restrict_tasks_to_assignees?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -1040,6 +1043,38 @@ export type Database = {
           title?: string | null
         }
         Relationships: []
+      }
+      task_assignees: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignees_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_attachments: {
         Row: {
@@ -1387,8 +1422,16 @@ export type Database = {
     }
     Functions: {
       auto_archive_tasks: { Args: never; Returns: undefined }
+      can_access_environment_task: {
+        Args: { _task_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_access_task_attachment: {
         Args: { file_path: string; requesting_user_id: string }
+        Returns: boolean
+      }
+      can_manage_task_assignees: {
+        Args: { _task_id: string; _user_id: string }
         Returns: boolean
       }
       check_overdue_tasks: { Args: never; Returns: undefined }
@@ -1410,6 +1453,16 @@ export type Database = {
             Args: { p_end_date?: string; p_start_date?: string }
             Returns: Json
           }
+      get_environment_assignable_members: {
+        Args: { _environment_id: string }
+        Returns: {
+          avatar_url: string
+          email: string
+          full_name: string
+          user_id: string
+          username: string
+        }[]
+      }
       get_environment_members: {
         Args: { p_environment_id: string }
         Returns: {
@@ -1468,6 +1521,18 @@ export type Database = {
           full_name: string
           group_id: string
           member_count: number
+          user_id: string
+          username: string
+        }[]
+      }
+      get_task_assignees: {
+        Args: { _task_id: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
           user_id: string
           username: string
         }[]

@@ -24,6 +24,8 @@ import TaskStepForm, { TaskStep } from "@/components/TaskStepForm";
 import { Separator } from "@/components/ui/separator";
 import ChecklistManager, { ChecklistItem } from "@/components/ChecklistManager";
 import { fetchEnvironmentSubjects, fetchEnvironmentStatusesHierarchical } from "@/services/environmentData";
+import TaskAssigneesManager from "@/components/environments/TaskAssigneesManager";
+import { fetchTaskAssignees, setTaskAssignees as persistTaskAssignees } from "@/services/taskAssignees";
 import HierarchicalStatusSelect, { HierarchicalStatus } from "@/components/HierarchicalStatusSelect";
 import { logError } from "@/lib/logger";
 import { taskFormSchema, linkSchema, checklistSchema } from "@/lib/validation";
@@ -68,6 +70,8 @@ const TaskForm = () => {
   const [existingStatuses, setExistingStatuses] = useState<HierarchicalStatus[]>([]);
   const [openStatusCombo, setOpenStatusCombo] = useState(false);
   const [environmentName, setEnvironmentName] = useState<string>("");
+  const [environmentRestricted, setEnvironmentRestricted] = useState(false);
+  const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -120,12 +124,13 @@ const TaskForm = () => {
       // Fetch environment name
       const { data: envData } = await supabase
         .from("shared_environments")
-        .select("environment_name")
+        .select("environment_name, restrict_tasks_to_assignees")
         .eq("id", envId)
         .single();
 
       if (envData) {
         setEnvironmentName(envData.environment_name);
+        setEnvironmentRestricted(Boolean((envData as any).restrict_tasks_to_assignees));
       }
 
       // Fetch environment subjects
@@ -293,6 +298,25 @@ const TaskForm = () => {
         setExistingSubjects(subjects.map(s => s.name));
         const statuses = await fetchEnvironmentStatusesHierarchical(data.environment_id);
         setExistingStatuses(statuses);
+
+        // Load environment privacy flag
+        const { data: envRow } = await supabase
+          .from("shared_environments")
+          .select("environment_name, restrict_tasks_to_assignees")
+          .eq("id", data.environment_id)
+          .single();
+        if (envRow) {
+          setEnvironmentName(envRow.environment_name);
+          setEnvironmentRestricted(Boolean((envRow as any).restrict_tasks_to_assignees));
+        }
+
+        // Load existing assignees
+        try {
+          const assignees = await fetchTaskAssignees(id!);
+          setAssignedUserIds(assignees.map((a) => a.user_id));
+        } catch (e) {
+          logError("loading task assignees", e);
+        }
       }
       
       // Fetch existing links
@@ -655,6 +679,15 @@ const TaskForm = () => {
 
         await saveSteps(id!);
 
+        // Persist assignees for environment tasks
+        if (environmentId && user) {
+          try {
+            await persistTaskAssignees(id!, assignedUserIds, user.id);
+          } catch (e) {
+            logError("persist task assignees (edit)", e);
+          }
+        }
+
         toast({
           title: "Tarefa atualizada",
           description: "As alterações foram salvas com sucesso.",
@@ -673,6 +706,15 @@ const TaskForm = () => {
         }
 
         await saveSteps(data.id);
+
+        // Persist assignees for environment tasks
+        if (environmentId && user && assignedUserIds.length > 0) {
+          try {
+            await persistTaskAssignees(data.id, assignedUserIds, user.id);
+          } catch (e) {
+            logError("persist task assignees (create)", e);
+          }
+        }
 
         toast({
           title: "Tarefa criada",
@@ -936,6 +978,17 @@ const TaskForm = () => {
                     onChange={(e) => setGroupMembers(e.target.value)}
                     placeholder="Nome dos participantes (um por linha)"
                     rows={3}
+                  />
+                </div>
+              )}
+
+              {environmentId && (
+                <div className="rounded-lg border p-4">
+                  <TaskAssigneesManager
+                    environmentId={environmentId}
+                    selectedUserIds={assignedUserIds}
+                    onChange={setAssignedUserIds}
+                    restrictedMode={environmentRestricted}
                   />
                 </div>
               )}
