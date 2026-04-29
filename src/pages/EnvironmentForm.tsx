@@ -225,7 +225,7 @@ const EnvironmentForm = () => {
         toast.success("Grupo de trabalho criado!");
         navigate(`/environment/${envData.id}`);
       } else {
-        await supabase.from("shared_environments").update({ environment_name: validation.data.environment_name, description: validation.data.description || null }).eq("id", id);
+        await supabase.from("shared_environments").update({ environment_name: validation.data.environment_name, description: validation.data.description || null, restrict_tasks_to_assignees: restrictTasksToAssignees } as any).eq("id", id);
 
         const { data: existingMembers } = await supabase.from("environment_members").select("email").eq("environment_id", id);
         const existingEmails = existingMembers?.map(m => m.email) || [];
