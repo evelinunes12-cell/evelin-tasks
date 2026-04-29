@@ -679,6 +679,15 @@ const TaskForm = () => {
 
         await saveSteps(id!);
 
+        // Persist assignees for environment tasks
+        if (environmentId && user) {
+          try {
+            await persistTaskAssignees(id!, assignedUserIds, user.id);
+          } catch (e) {
+            logError("persist task assignees (edit)", e);
+          }
+        }
+
         toast({
           title: "Tarefa atualizada",
           description: "As alterações foram salvas com sucesso.",
@@ -697,6 +706,15 @@ const TaskForm = () => {
         }
 
         await saveSteps(data.id);
+
+        // Persist assignees for environment tasks
+        if (environmentId && user && assignedUserIds.length > 0) {
+          try {
+            await persistTaskAssignees(data.id, assignedUserIds, user.id);
+          } catch (e) {
+            logError("persist task assignees (create)", e);
+          }
+        }
 
         toast({
           title: "Tarefa criada",
