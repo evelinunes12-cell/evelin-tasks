@@ -982,6 +982,17 @@ const TaskForm = () => {
                 </div>
               )}
 
+              {environmentId && (
+                <div className="rounded-lg border p-4">
+                  <TaskAssigneesManager
+                    environmentId={environmentId}
+                    selectedUserIds={assignedUserIds}
+                    onChange={setAssignedUserIds}
+                    restrictedMode={environmentRestricted}
+                  />
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="files">Anexar Arquivos</Label>
                 <Input
