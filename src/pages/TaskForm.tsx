@@ -70,6 +70,8 @@ const TaskForm = () => {
   const [existingStatuses, setExistingStatuses] = useState<HierarchicalStatus[]>([]);
   const [openStatusCombo, setOpenStatusCombo] = useState(false);
   const [environmentName, setEnvironmentName] = useState<string>("");
+  const [environmentRestricted, setEnvironmentRestricted] = useState(false);
+  const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) {
