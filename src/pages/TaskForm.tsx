@@ -298,6 +298,25 @@ const TaskForm = () => {
         setExistingSubjects(subjects.map(s => s.name));
         const statuses = await fetchEnvironmentStatusesHierarchical(data.environment_id);
         setExistingStatuses(statuses);
+
+        // Load environment privacy flag
+        const { data: envRow } = await supabase
+          .from("shared_environments")
+          .select("environment_name, restrict_tasks_to_assignees")
+          .eq("id", data.environment_id)
+          .single();
+        if (envRow) {
+          setEnvironmentName(envRow.environment_name);
+          setEnvironmentRestricted(Boolean((envRow as any).restrict_tasks_to_assignees));
+        }
+
+        // Load existing assignees
+        try {
+          const assignees = await fetchTaskAssignees(id!);
+          setAssignedUserIds(assignees.map((a) => a.user_id));
+        } catch (e) {
+          logError("loading task assignees", e);
+        }
       }
       
       // Fetch existing links
