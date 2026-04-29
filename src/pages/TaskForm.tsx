@@ -24,6 +24,8 @@ import TaskStepForm, { TaskStep } from "@/components/TaskStepForm";
 import { Separator } from "@/components/ui/separator";
 import ChecklistManager, { ChecklistItem } from "@/components/ChecklistManager";
 import { fetchEnvironmentSubjects, fetchEnvironmentStatusesHierarchical } from "@/services/environmentData";
+import TaskAssigneesManager from "@/components/environments/TaskAssigneesManager";
+import { fetchTaskAssignees, setTaskAssignees as persistTaskAssignees } from "@/services/taskAssignees";
 import HierarchicalStatusSelect, { HierarchicalStatus } from "@/components/HierarchicalStatusSelect";
 import { logError } from "@/lib/logger";
 import { taskFormSchema, linkSchema, checklistSchema } from "@/lib/validation";
