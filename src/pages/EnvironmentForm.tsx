@@ -207,7 +207,7 @@ const EnvironmentForm = () => {
     try {
       setLoading(true);
       if (isNewEnvironment) {
-        const { data: envData, error } = await supabase.from("shared_environments").insert({ environment_name: validation.data.environment_name, description: validation.data.description || null, owner_id: user.id }).select().single();
+        const { data: envData, error } = await supabase.from("shared_environments").insert({ environment_name: validation.data.environment_name, description: validation.data.description || null, owner_id: user.id, restrict_tasks_to_assignees: restrictTasksToAssignees } as any).select().single();
         if (error) throw error;
 
         if (members.length > 0) {
