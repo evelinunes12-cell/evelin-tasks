@@ -88,6 +88,7 @@ const EnvironmentForm = () => {
 
       setEnvironmentName(data.environment_name);
       setDescription(data.description || "");
+      setRestrictTasksToAssignees(Boolean((data as any).restrict_tasks_to_assignees));
 
       const { data: membersData } = await supabase
         .from("environment_members")
