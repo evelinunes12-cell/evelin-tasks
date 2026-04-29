@@ -255,6 +255,24 @@ const EnvironmentForm = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2"><Label>Nome do Grupo *</Label><Input value={environmentName} onChange={(e) => setEnvironmentName(e.target.value)} placeholder="Ex: Projeto TCC, Grupo de Estudos..." required /></div>
               <div className="space-y-2"><Label>Descrição</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} /></div>
+              <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <Label htmlFor="restrict-tasks" className="cursor-pointer">
+                      Privacidade dos cards
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground break-words">
+                    Quando ativado, cada card só pode ser visto e modificado por você (proprietário), pelo criador do card e pelos membros vinculados a ele. Quando desativado, todos os membros com permissão veem todos os cards.
+                  </p>
+                </div>
+                <Switch
+                  id="restrict-tasks"
+                  checked={restrictTasksToAssignees}
+                  onCheckedChange={setRestrictTasksToAssignees}
+                />
+              </div>
             </CardContent>
           </Card>
 
