@@ -73,6 +73,7 @@ const EnvironmentDetail = () => {
   const [ownerProfile, setOwnerProfile] = useState<{ username?: string | null; full_name?: string | null; avatar_url?: string | null; email?: string } | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [assigneesByTask, setAssigneesByTask] = useState<Record<string, TaskAssignee[]>>({});
   const [hierarchicalStatuses, setHierarchicalStatuses] = useState<EnvironmentStatus[]>([]);
   const [expandedStatuses, setExpandedStatuses] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
