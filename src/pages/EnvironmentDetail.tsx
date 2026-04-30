@@ -18,6 +18,7 @@ import InviteManager from "@/components/InviteManager";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
 import { fetchEnvironmentStatusesHierarchical, type EnvironmentStatus } from "@/services/environmentData";
+import { fetchAssigneesForTasks, type TaskAssignee } from "@/services/taskAssignees";
 import {
   Collapsible,
   CollapsibleContent,
