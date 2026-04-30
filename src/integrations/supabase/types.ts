@@ -1477,6 +1477,16 @@ export type Database = {
           username: string
         }[]
       }
+      get_environment_user_profiles: {
+        Args: { _environment_id: string }
+        Returns: {
+          avatar_url: string
+          email: string
+          full_name: string
+          id: string
+          username: string
+        }[]
+      }
       get_leaderboard: {
         Args: { period_type: string }
         Returns: {

@@ -82,21 +82,20 @@ export default function EnvironmentActivityTimeline({ environmentId }: Props) {
         return;
       }
 
-      // Fetch any new user profiles we haven't seen yet
+      // Fetch any new user profiles we haven't seen yet (via RPC to bypass profiles RLS for env members)
       const newUserIds = [...new Set(data.map((a) => a.user_id))].filter(
         (uid) => !profileMap.has(uid)
       );
 
       let updatedMap = profileMap;
       if (newUserIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, email")
-          .in("id", newUserIds);
+        const { data: profiles } = await supabase.rpc("get_environment_user_profiles", {
+          _environment_id: environmentId,
+        });
 
         updatedMap = new Map(profileMap);
-        (profiles || []).forEach((p) =>
-          updatedMap.set(p.id, p.full_name || p.email)
+        (profiles || []).forEach((p: any) =>
+          updatedMap.set(p.id, p.full_name || p.email || "Usuário")
         );
         setProfileMap(updatedMap);
       }
