@@ -53,6 +53,7 @@ const TaskCard = ({
   status,
   checklist = [],
   availableStatuses = [],
+  assignees = [],
   onDelete,
   onStatusChange,
   onArchive,
