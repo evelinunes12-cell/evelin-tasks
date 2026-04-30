@@ -18,6 +18,7 @@ import InviteManager from "@/components/InviteManager";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
 import { fetchEnvironmentStatusesHierarchical, type EnvironmentStatus } from "@/services/environmentData";
+import { fetchAssigneesForTasks, type TaskAssignee } from "@/services/taskAssignees";
 import {
   Collapsible,
   CollapsibleContent,
@@ -72,6 +73,7 @@ const EnvironmentDetail = () => {
   const [ownerProfile, setOwnerProfile] = useState<{ username?: string | null; full_name?: string | null; avatar_url?: string | null; email?: string } | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [assigneesByTask, setAssigneesByTask] = useState<Record<string, TaskAssignee[]>>({});
   const [hierarchicalStatuses, setHierarchicalStatuses] = useState<EnvironmentStatus[]>([]);
   const [expandedStatuses, setExpandedStatuses] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -236,6 +238,15 @@ const EnvironmentDetail = () => {
 
       if (tasksError) throw tasksError;
       setTasks(tasksData || []);
+
+      // Fetch assignees for all tasks (only meaningful for environment tasks)
+      try {
+        const ids = (tasksData || []).map((t) => t.id);
+        const map = await fetchAssigneesForTasks(ids);
+        setAssigneesByTask(map);
+      } catch (e) {
+        logError("fetchAssigneesForTasks", e);
+      }
 
       // Fetch hierarchical statuses
       const statusesData = await fetchEnvironmentStatusesHierarchical(id!);
@@ -545,6 +556,7 @@ const EnvironmentDetail = () => {
                                             isGroupWork={task.is_group_work}
                                             status={task.status}
                                             checklist={task.checklist}
+                                            assignees={assigneesByTask[task.id] || []}
                                             onDelete={handleDeleteTask}
                                           />
                                         ))}
@@ -566,6 +578,7 @@ const EnvironmentDetail = () => {
                                     isGroupWork={task.is_group_work}
                                     status={task.status}
                                     checklist={task.checklist}
+                                            assignees={assigneesByTask[task.id] || []}
                                     onDelete={handleDeleteTask}
                                   />
                                 ))}
@@ -603,6 +616,7 @@ const EnvironmentDetail = () => {
                               isGroupWork={task.is_group_work}
                               status={task.status}
                               checklist={task.checklist}
+                                            assignees={assigneesByTask[task.id] || []}
                               onDelete={handleDeleteTask}
                             />
                           ))}
@@ -624,6 +638,7 @@ const EnvironmentDetail = () => {
                     isGroupWork={task.is_group_work}
                     status={task.status}
                     checklist={task.checklist}
+                                            assignees={assigneesByTask[task.id] || []}
                     onDelete={handleDeleteTask}
                   />
                 ))}
