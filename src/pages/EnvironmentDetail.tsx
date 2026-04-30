@@ -221,12 +221,10 @@ const EnvironmentDetail = () => {
       setEnvironment(envData);
       setIsOwner(envData.owner_id === user?.id);
 
-      // Fetch owner profile
-      const { data: ownerData } = await supabase
-        .from("profiles")
-        .select("username, full_name, avatar_url, email")
-        .eq("id", envData.owner_id)
-        .single();
+      // Fetch owner profile via RPC (works for both owner and members; profiles RLS blocks cross-user reads)
+      const { data: envProfiles } = await supabase
+        .rpc("get_environment_user_profiles", { _environment_id: envData.id });
+      const ownerData = (envProfiles || []).find((p: any) => p.id === envData.owner_id) ?? null;
       setOwnerProfile(ownerData);
 
       // Fetch tasks
