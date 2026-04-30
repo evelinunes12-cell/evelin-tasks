@@ -685,6 +685,11 @@ const TaskForm = () => {
             await persistTaskAssignees(id!, assignedUserIds, user.id);
           } catch (e) {
             logError("persist task assignees (edit)", e);
+            toast({
+              variant: "destructive",
+              title: "Não foi possível salvar os vínculos",
+              description: (e as any)?.message || "Tente novamente.",
+            });
           }
         }
 
@@ -713,6 +718,11 @@ const TaskForm = () => {
             await persistTaskAssignees(data.id, assignedUserIds, user.id);
           } catch (e) {
             logError("persist task assignees (create)", e);
+            toast({
+              variant: "destructive",
+              title: "Não foi possível salvar os vínculos",
+              description: (e as any)?.message || "Tente novamente.",
+            });
           }
         }
 
