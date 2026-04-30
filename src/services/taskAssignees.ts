@@ -61,22 +61,19 @@ export const fetchAssigneesForTasks = async (
   taskIds: string[]
 ): Promise<Record<string, TaskAssignee[]>> => {
   if (taskIds.length === 0) return {};
-  const { data, error } = await supabase
-    .from("task_assignees")
-    .select(
-      "id, task_id, user_id, created_at, profiles:user_id (email, full_name, username, avatar_url)"
-    )
-    .in("task_id", taskIds);
+  const { data, error } = await supabase.rpc("get_task_assignees_bulk", {
+    _task_ids: taskIds,
+  });
   if (error) throw error;
   const result: Record<string, TaskAssignee[]> = {};
   for (const row of (data || []) as any[]) {
     const item: TaskAssignee = {
       id: row.id,
       user_id: row.user_id,
-      email: row.profiles?.email ?? null,
-      full_name: row.profiles?.full_name ?? null,
-      username: row.profiles?.username ?? null,
-      avatar_url: row.profiles?.avatar_url ?? null,
+      email: row.email ?? null,
+      full_name: row.full_name ?? null,
+      username: row.username ?? null,
+      avatar_url: row.avatar_url ?? null,
       created_at: row.created_at,
     };
     if (!result[row.task_id]) result[row.task_id] = [];

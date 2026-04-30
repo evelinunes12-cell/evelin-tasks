@@ -1537,6 +1537,19 @@ export type Database = {
           username: string
         }[]
       }
+      get_task_assignees_bulk: {
+        Args: { _task_ids: string[] }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          task_id: string
+          user_id: string
+          username: string
+        }[]
+      }
       has_environment_permission: {
         Args: {
           _environment_id: string
