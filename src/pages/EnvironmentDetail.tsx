@@ -556,6 +556,7 @@ const EnvironmentDetail = () => {
                                             isGroupWork={task.is_group_work}
                                             status={task.status}
                                             checklist={task.checklist}
+                                            assignees={assigneesByTask[task.id] || []}
                                             onDelete={handleDeleteTask}
                                           />
                                         ))}
@@ -577,6 +578,7 @@ const EnvironmentDetail = () => {
                                     isGroupWork={task.is_group_work}
                                     status={task.status}
                                     checklist={task.checklist}
+                                            assignees={assigneesByTask[task.id] || []}
                                     onDelete={handleDeleteTask}
                                   />
                                 ))}
@@ -614,6 +616,7 @@ const EnvironmentDetail = () => {
                               isGroupWork={task.is_group_work}
                               status={task.status}
                               checklist={task.checklist}
+                                            assignees={assigneesByTask[task.id] || []}
                               onDelete={handleDeleteTask}
                             />
                           ))}
@@ -635,6 +638,7 @@ const EnvironmentDetail = () => {
                     isGroupWork={task.is_group_work}
                     status={task.status}
                     checklist={task.checklist}
+                                            assignees={assigneesByTask[task.id] || []}
                     onDelete={handleDeleteTask}
                   />
                 ))}
