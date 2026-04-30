@@ -239,6 +239,15 @@ const EnvironmentDetail = () => {
       if (tasksError) throw tasksError;
       setTasks(tasksData || []);
 
+      // Fetch assignees for all tasks (only meaningful for environment tasks)
+      try {
+        const ids = (tasksData || []).map((t) => t.id);
+        const map = await fetchAssigneesForTasks(ids);
+        setAssigneesByTask(map);
+      } catch (e) {
+        logError("fetchAssigneesForTasks", e);
+      }
+
       // Fetch hierarchical statuses
       const statusesData = await fetchEnvironmentStatusesHierarchical(id!);
       setHierarchicalStatuses(statusesData);
