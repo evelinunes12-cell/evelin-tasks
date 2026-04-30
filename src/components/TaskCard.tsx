@@ -220,6 +220,44 @@ const TaskCard = ({
             </div>
           )}
         </div>
+
+        {assignees.length > 0 && (
+          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/60">
+            <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <TooltipProvider delayDuration={200}>
+              <div className="flex -space-x-2">
+                {assignees.slice(0, 4).map((m) => {
+                  const name = m.full_name || m.username || m.email || "Membro";
+                  const initials = name
+                    .split(/\s+/)
+                    .map((p) => p[0])
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase();
+                  return (
+                    <Tooltip key={m.user_id}>
+                      <TooltipTrigger asChild>
+                        <Avatar className="h-6 w-6 border-2 border-background">
+                          <AvatarImage src={m.avatar_url || undefined} alt={name} />
+                          <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
+                            {initials || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                      </TooltipTrigger>
+                      <TooltipContent>{name}</TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+                {assignees.length > 4 && (
+                  <div className="h-6 w-6 rounded-full border-2 border-background bg-muted text-[10px] font-medium flex items-center justify-center text-muted-foreground">
+                    +{assignees.length - 4}
+                  </div>
+                )}
+              </div>
+            </TooltipProvider>
+          </div>
+        )}
       </CardContent>
       <CardFooter className="flex gap-2 pt-0">
         <Button
