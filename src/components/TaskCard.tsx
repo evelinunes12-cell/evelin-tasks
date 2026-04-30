@@ -18,6 +18,16 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { registerActivity } from "@/services/activity";
 import { TaskQuickView } from "./TaskQuickView";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+export interface TaskCardAssignee {
+  user_id: string;
+  email?: string | null;
+  full_name?: string | null;
+  username?: string | null;
+  avatar_url?: string | null;
+}
 
 interface TaskCardProps {
   id: string;
@@ -28,6 +38,7 @@ interface TaskCardProps {
   status: string;
   checklist?: { text: string; completed: boolean }[];
   availableStatuses?: string[];
+  assignees?: TaskCardAssignee[];
   onDelete: (id: string) => void;
   onStatusChange?: (id: string, newStatus: string) => void;
   onArchive?: (id: string) => void;
