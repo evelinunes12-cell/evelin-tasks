@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { listMessages, sendMessage, type StudyGroupMessage, type StudyGroupMember } from "@/services/studyGroups";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Send, Smile } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,6 +14,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatUsername } from "@/lib/username";
+import MentionInput, { type MentionInputHandle, type MentionUser } from "@/components/chat/MentionInput";
+import MessageContent from "@/components/chat/MessageContent";
 
 interface Props {
   groupId: string;
