@@ -314,6 +314,7 @@ export default function StudyGroupChat({ groupId, members }: Props) {
       setInput(text);
     } finally {
       setSending(false);
+      requestAnimationFrame(() => inputRef.current?.focus());
     }
   };
 
