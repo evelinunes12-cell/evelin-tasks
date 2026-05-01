@@ -337,6 +337,7 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
       setInput(text);
     } finally {
       setSending(false);
+      requestAnimationFrame(() => inputRef.current?.focus());
     }
   };
 
