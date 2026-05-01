@@ -162,6 +162,18 @@ export default function StudyGroupChat({ groupId, members }: Props) {
     return m;
   }, [members]);
 
+  const mentionMembers: MentionUser[] = useMemo(
+    () =>
+      members.map((mem) => ({
+        user_id: mem.user_id,
+        full_name: mem.profile?.full_name,
+        username: mem.profile?.username,
+        email: mem.profile?.email,
+        avatar_url: mem.profile?.avatar_url,
+      })),
+    [members],
+  );
+
   // Realtime: messages
   useEffect(() => {
     const channel = supabase
