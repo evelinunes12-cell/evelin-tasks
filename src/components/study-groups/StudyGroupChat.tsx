@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { listMessages, sendMessage, type StudyGroupMessage, type StudyGroupMember } from "@/services/studyGroups";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Send, Smile } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,6 +14,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatUsername } from "@/lib/username";
+import MentionInput, { type MentionInputHandle, type MentionUser } from "@/components/chat/MentionInput";
+import MessageContent from "@/components/chat/MessageContent";
 
 interface Props {
   groupId: string;
@@ -27,13 +28,27 @@ const MessageBubble = memo(function MessageBubble({
   msg,
   isMe,
   member,
+  members,
+  currentUserId,
 }: {
   msg: StudyGroupMessage;
   isMe: boolean;
   member?: StudyGroupMember;
+  members: StudyGroupMember[];
+  currentUserId?: string | null;
 }) {
   const name = member?.profile?.full_name || "Usuário";
   const username = formatUsername(member?.profile?.username);
+  const lookupMembers = useMemo(
+    () =>
+      members.map((m) => ({
+        user_id: m.user_id,
+        full_name: m.profile?.full_name,
+        username: m.profile?.username,
+        email: m.profile?.email,
+      })),
+    [members],
+  );
   return (
     <div className={cn("flex gap-2", isMe ? "flex-row-reverse" : "flex-row")}>
       {!isMe && (
@@ -48,13 +63,18 @@ const MessageBubble = memo(function MessageBubble({
         )}
         <div
           className={cn(
-            "rounded-2xl px-3 py-2 text-sm break-words",
+            "rounded-2xl px-3 py-2 text-sm break-words whitespace-pre-wrap",
             isMe
               ? "bg-primary text-primary-foreground rounded-br-sm"
               : "bg-muted text-foreground rounded-bl-sm"
           )}
         >
-          {msg.content}
+          <MessageContent
+            content={msg.content}
+            members={lookupMembers}
+            currentUserId={currentUserId}
+            isMe={isMe}
+          />
         </div>
         <span className="text-[10px] text-muted-foreground mt-0.5 px-1">
           {new Date(msg.created_at).toLocaleTimeString("pt-BR", {
@@ -129,6 +149,7 @@ export default function StudyGroupChat({ groupId, members }: Props) {
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
   const lastSentTypingRef = useRef<number>(0);
   const localTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<MentionInputHandle>(null);
 
   const { data: messages, isLoading } = useQuery({
     queryKey: ["study-group-messages", groupId],
@@ -140,6 +161,18 @@ export default function StudyGroupChat({ groupId, members }: Props) {
     members.forEach((mem) => m.set(mem.user_id, mem));
     return m;
   }, [members]);
+
+  const mentionMembers: MentionUser[] = useMemo(
+    () =>
+      members.map((mem) => ({
+        user_id: mem.user_id,
+        full_name: mem.profile?.full_name,
+        username: mem.profile?.username,
+        email: mem.profile?.email,
+        avatar_url: mem.profile?.avatar_url,
+      })),
+    [members],
+  );
 
   // Realtime: messages
   useEffect(() => {
@@ -326,6 +359,8 @@ export default function StudyGroupChat({ groupId, members }: Props) {
                   msg={m}
                   isMe={m.user_id === user?.id}
                   member={memberMap.get(m.user_id)}
+                  members={members}
+                  currentUserId={user?.id}
                 />
               </div>
             );
@@ -367,13 +402,17 @@ export default function StudyGroupChat({ groupId, members }: Props) {
             />
           </PopoverContent>
         </Popover>
-        <Input
+        <MentionInput
+          ref={inputRef}
           value={input}
-          onChange={(e) => handleInputChange(e.target.value)}
+          onChange={handleInputChange}
           onBlur={sendStopTyping}
-          placeholder="Digite uma mensagem..."
+          onSubmit={handleSend}
+          placeholder="Digite uma mensagem... use @ para mencionar"
           maxLength={2000}
           disabled={sending}
+          currentUserId={user?.id}
+          members={mentionMembers}
         />
         <Button type="submit" size="icon" disabled={!input.trim() || sending}>
           <Send className="h-4 w-4" />
