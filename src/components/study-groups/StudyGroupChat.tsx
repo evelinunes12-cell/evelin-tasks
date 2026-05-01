@@ -346,6 +346,8 @@ export default function StudyGroupChat({ groupId, members }: Props) {
                   msg={m}
                   isMe={m.user_id === user?.id}
                   member={memberMap.get(m.user_id)}
+                  members={members}
+                  currentUserId={user?.id}
                 />
               </div>
             );
@@ -387,13 +389,17 @@ export default function StudyGroupChat({ groupId, members }: Props) {
             />
           </PopoverContent>
         </Popover>
-        <Input
+        <MentionInput
+          ref={inputRef}
           value={input}
-          onChange={(e) => handleInputChange(e.target.value)}
+          onChange={handleInputChange}
           onBlur={sendStopTyping}
-          placeholder="Digite uma mensagem..."
+          onSubmit={handleSend}
+          placeholder="Digite uma mensagem... use @ para mencionar"
           maxLength={2000}
           disabled={sending}
+          currentUserId={user?.id}
+          members={mentionMembers}
         />
         <Button type="submit" size="icon" disabled={!input.trim() || sending}>
           <Send className="h-4 w-4" />
