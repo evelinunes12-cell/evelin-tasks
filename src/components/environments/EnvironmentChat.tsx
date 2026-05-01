@@ -163,6 +163,21 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
   const lastSentTypingRef = useRef<number>(0);
   const localTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<MentionInputHandle>(null);
+
+  const mentionMembers = useMemo(
+    () =>
+      members
+        .filter((m) => !!m.user_id)
+        .map((m) => ({
+          user_id: m.user_id as string,
+          full_name: m.full_name,
+          username: m.username,
+          email: m.email,
+          avatar_url: m.avatar_url,
+        })),
+    [members],
+  );
 
   const { data: messages, isLoading } = useQuery({
     queryKey: ["environment-messages", environmentId],
@@ -366,6 +381,8 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
                   msg={m}
                   isMe={m.user_id === user?.id}
                   member={memberMap.get(m.user_id)}
+                  members={members}
+                  currentUserId={user?.id}
                 />
               </div>
             );
@@ -407,13 +424,17 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
             />
           </PopoverContent>
         </Popover>
-        <Input
+        <MentionInput
+          ref={inputRef}
           value={input}
-          onChange={(e) => handleInputChange(e.target.value)}
+          onChange={handleInputChange}
           onBlur={sendStopTyping}
-          placeholder="Digite uma mensagem..."
+          onSubmit={handleSend}
+          placeholder="Digite uma mensagem... use @ para mencionar"
           maxLength={2000}
           disabled={sending}
+          currentUserId={user?.id}
+          members={mentionMembers}
         />
         <Button type="submit" size="icon" disabled={!input.trim() || sending}>
           <Send className="h-4 w-4" />
