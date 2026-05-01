@@ -149,6 +149,7 @@ export default function StudyGroupChat({ groupId, members }: Props) {
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
   const lastSentTypingRef = useRef<number>(0);
   const localTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<MentionInputHandle>(null);
 
   const { data: messages, isLoading } = useQuery({
     queryKey: ["study-group-messages", groupId],
