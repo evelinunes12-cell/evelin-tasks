@@ -28,13 +28,27 @@ const MessageBubble = memo(function MessageBubble({
   msg,
   isMe,
   member,
+  members,
+  currentUserId,
 }: {
   msg: StudyGroupMessage;
   isMe: boolean;
   member?: StudyGroupMember;
+  members: StudyGroupMember[];
+  currentUserId?: string | null;
 }) {
   const name = member?.profile?.full_name || "Usuário";
   const username = formatUsername(member?.profile?.username);
+  const lookupMembers = useMemo(
+    () =>
+      members.map((m) => ({
+        user_id: m.user_id,
+        full_name: m.profile?.full_name,
+        username: m.profile?.username,
+        email: m.profile?.email,
+      })),
+    [members],
+  );
   return (
     <div className={cn("flex gap-2", isMe ? "flex-row-reverse" : "flex-row")}>
       {!isMe && (
@@ -49,13 +63,18 @@ const MessageBubble = memo(function MessageBubble({
         )}
         <div
           className={cn(
-            "rounded-2xl px-3 py-2 text-sm break-words",
+            "rounded-2xl px-3 py-2 text-sm break-words whitespace-pre-wrap",
             isMe
               ? "bg-primary text-primary-foreground rounded-br-sm"
               : "bg-muted text-foreground rounded-bl-sm"
           )}
         >
-          {msg.content}
+          <MessageContent
+            content={msg.content}
+            members={lookupMembers}
+            currentUserId={currentUserId}
+            isMe={isMe}
+          />
         </div>
         <span className="text-[10px] text-muted-foreground mt-0.5 px-1">
           {new Date(msg.created_at).toLocaleTimeString("pt-BR", {
