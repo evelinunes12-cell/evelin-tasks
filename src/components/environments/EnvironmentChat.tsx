@@ -10,7 +10,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Smile } from "lucide-react";
+import { Send, Smile, Reply } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
 import { useTheme } from "next-themes";
@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { formatUsername } from "@/lib/username";
 import MentionInput, { type MentionInputHandle } from "@/components/chat/MentionInput";
 import MessageContent from "@/components/chat/MessageContent";
+import MessageReplyPreview from "@/components/chat/MessageReplyPreview";
+import MessageReplyQuote from "@/components/chat/MessageReplyQuote";
 
 export interface EnvChatMember {
   user_id: string | null;
@@ -42,12 +44,20 @@ const MessageBubble = memo(function MessageBubble({
   member,
   members,
   currentUserId,
+  repliedMsg,
+  repliedAuthorName,
+  onReply,
+  onJumpTo,
 }: {
   msg: EnvironmentMessage;
   isMe: boolean;
   member?: EnvChatMember;
   members: EnvChatMember[];
   currentUserId?: string | null;
+  repliedMsg?: EnvironmentMessage | null;
+  repliedAuthorName?: string;
+  onReply: (msg: EnvironmentMessage) => void;
+  onJumpTo?: (id: string) => void;
 }) {
   const name = member?.full_name || "Usuário";
   const username = formatUsername(member?.username);
@@ -64,9 +74,12 @@ const MessageBubble = memo(function MessageBubble({
     [members],
   );
   return (
-    <div className={cn("flex gap-2", isMe ? "flex-row-reverse" : "flex-row")}>
+    <div
+      id={`env-msg-${msg.id}`}
+      className={cn("group flex gap-2 items-end", isMe ? "flex-row-reverse" : "flex-row")}
+    >
       {!isMe && (
-        <Avatar className="h-8 w-8 mt-1 shrink-0">
+        <Avatar className="h-8 w-8 mb-5 shrink-0">
           <AvatarImage src={member?.avatar_url ?? undefined} />
           <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
@@ -80,9 +93,17 @@ const MessageBubble = memo(function MessageBubble({
             "rounded-2xl px-3 py-2 text-sm break-words whitespace-pre-wrap",
             isMe
               ? "bg-primary text-primary-foreground rounded-br-sm"
-              : "bg-muted text-foreground rounded-bl-sm"
+              : "bg-muted text-foreground rounded-bl-sm",
           )}
         >
+          {repliedMsg && (
+            <MessageReplyQuote
+              authorName={repliedAuthorName || "Mensagem"}
+              content={repliedMsg.content}
+              isMe={isMe}
+              onClick={() => onJumpTo?.(repliedMsg.id)}
+            />
+          )}
           <MessageContent
             content={msg.content}
             members={lookupMembers}
@@ -97,6 +118,17 @@ const MessageBubble = memo(function MessageBubble({
           })}
         </span>
       </div>
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        className="h-7 w-7 mb-5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shrink-0"
+        onClick={() => onReply(msg)}
+        title="Responder"
+        aria-label="Responder mensagem"
+      >
+        <Reply className="h-4 w-4" />
+      </Button>
     </div>
   );
 });
@@ -158,6 +190,7 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
   const qc = useQueryClient();
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [replyTo, setReplyTo] = useState<EnvironmentMessage | null>(null);
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
@@ -192,7 +225,12 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
     return m;
   }, [members]);
 
-  // Realtime: messages
+  const messageMap = useMemo(() => {
+    const m = new Map<string, EnvironmentMessage>();
+    (messages ?? []).forEach((msg) => m.set(msg.id, msg));
+    return m;
+  }, [messages]);
+
   useEffect(() => {
     const channel = supabase
       .channel(`environment-messages-${environmentId}`)
@@ -221,7 +259,6 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
     };
   }, [environmentId, qc]);
 
-  // Realtime: typing indicator (broadcast)
   useEffect(() => {
     if (!user) return;
     const channel = supabase.channel(`environment-typing-${environmentId}`, {
@@ -253,7 +290,6 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
     };
   }, [environmentId, user?.id]);
 
-  // Expire stale typing entries
   useEffect(() => {
     if (Object.keys(typingUsers).length === 0) return;
     const interval = setInterval(() => {
@@ -274,7 +310,6 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
     return () => clearInterval(interval);
   }, [typingUsers]);
 
-  // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -324,14 +359,29 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
     };
   }, []);
 
+  const handleReply = useCallback((msg: EnvironmentMessage) => {
+    setReplyTo(msg);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, []);
+
+  const handleJumpTo = useCallback((id: string) => {
+    const el = document.getElementById(`env-msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-primary", "rounded-2xl");
+    setTimeout(() => el.classList.remove("ring-2", "ring-primary", "rounded-2xl"), 1500);
+  }, []);
+
   const handleSend = async () => {
     const text = input.trim();
     if (!text || sending) return;
     setSending(true);
     setInput("");
+    const replyId = replyTo?.id ?? null;
+    setReplyTo(null);
     sendStopTyping();
     try {
-      await sendEnvironmentMessage(environmentId, text);
+      await sendEnvironmentMessage(environmentId, text, replyId);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao enviar");
       setInput(text);
@@ -354,6 +404,12 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
       .filter(Boolean);
   }, [typingUsers, memberMap]);
 
+  const replyAuthorName = useMemo(() => {
+    if (!replyTo) return "";
+    const m = memberMap.get(replyTo.user_id);
+    return m?.full_name || formatUsername(m?.username) || "Usuário";
+  }, [replyTo, memberMap]);
+
   return (
     <div className="flex flex-col h-[600px] min-h-0 border rounded-lg bg-card">
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
@@ -375,6 +431,12 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
             const showSeparator =
               !prev ||
               new Date(prev.created_at).toDateString() !== currentDate.toDateString();
+            const repliedMsg = m.reply_to_id ? messageMap.get(m.reply_to_id) ?? null : null;
+            const repliedAuthor = repliedMsg
+              ? memberMap.get(repliedMsg.user_id)?.full_name ||
+                formatUsername(memberMap.get(repliedMsg.user_id)?.username) ||
+                "Usuário"
+              : undefined;
             return (
               <div key={m.id} className="space-y-3">
                 {showSeparator && <DateSeparator label={formatDateSeparator(currentDate)} />}
@@ -384,6 +446,10 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
                   member={memberMap.get(m.user_id)}
                   members={members}
                   currentUserId={user?.id}
+                  repliedMsg={repliedMsg}
+                  repliedAuthorName={repliedAuthor}
+                  onReply={handleReply}
+                  onJumpTo={handleJumpTo}
                 />
               </div>
             );
@@ -394,6 +460,14 @@ export default function EnvironmentChat({ environmentId, members }: Props) {
       <div className="px-4 h-5 flex items-center">
         <TypingIndicator names={typingNames} />
       </div>
+
+      {replyTo && (
+        <MessageReplyPreview
+          authorName={replyAuthorName}
+          content={replyTo.content}
+          onCancel={() => setReplyTo(null)}
+        />
+      )}
 
       <form
         className="p-3 border-t flex gap-2 bg-card"
