@@ -32,6 +32,7 @@ export interface StudyGroupMessage {
   user_id: string;
   content: string;
   created_at: string;
+  reply_to_id?: string | null;
 }
 
 export interface RankingRow {
@@ -331,14 +332,21 @@ export async function listMessages(groupId: string, limit = 100): Promise<StudyG
   return (data ?? []).reverse();
 }
 
-export async function sendMessage(groupId: string, content: string) {
+export async function sendMessage(
+  groupId: string,
+  content: string,
+  replyToId?: string | null,
+) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error("Não autenticado");
   const trimmed = content.trim();
   if (!trimmed) return;
-  const { error } = await supabase
-    .from("study_group_messages")
-    .insert({ group_id: groupId, user_id: auth.user.id, content: trimmed.slice(0, 2000) });
+  const { error } = await supabase.from("study_group_messages").insert({
+    group_id: groupId,
+    user_id: auth.user.id,
+    content: trimmed.slice(0, 2000),
+    reply_to_id: replyToId ?? null,
+  } as any);
   if (error) throw error;
 }
 

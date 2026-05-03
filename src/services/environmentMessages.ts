@@ -6,6 +6,7 @@ export interface EnvironmentMessage {
   user_id: string;
   content: string;
   created_at: string;
+  reply_to_id?: string | null;
 }
 
 export async function listEnvironmentMessages(
@@ -24,19 +25,19 @@ export async function listEnvironmentMessages(
 
 export async function sendEnvironmentMessage(
   environmentId: string,
-  content: string
+  content: string,
+  replyToId?: string | null,
 ) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error("Não autenticado");
   const trimmed = content.trim();
   if (!trimmed) return;
-  const { error } = await supabase
-    .from("environment_messages")
-    .insert({
-      environment_id: environmentId,
-      user_id: auth.user.id,
-      content: trimmed.slice(0, 2000),
-    });
+  const { error } = await supabase.from("environment_messages").insert({
+    environment_id: environmentId,
+    user_id: auth.user.id,
+    content: trimmed.slice(0, 2000),
+    reply_to_id: replyToId ?? null,
+  } as any);
   if (error) throw error;
 }
 
