@@ -6,7 +6,7 @@ import { listMessages, sendMessage, type StudyGroupMessage, type StudyGroupMembe
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Smile } from "lucide-react";
+import { Send, Smile, Reply } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
 import { useTheme } from "next-themes";
@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { formatUsername } from "@/lib/username";
 import MentionInput, { type MentionInputHandle, type MentionUser } from "@/components/chat/MentionInput";
 import MessageContent from "@/components/chat/MessageContent";
+import MessageReplyPreview from "@/components/chat/MessageReplyPreview";
+import MessageReplyQuote from "@/components/chat/MessageReplyQuote";
 
 interface Props {
   groupId: string;
@@ -30,12 +32,20 @@ const MessageBubble = memo(function MessageBubble({
   member,
   members,
   currentUserId,
+  repliedMsg,
+  repliedAuthorName,
+  onReply,
+  onJumpTo,
 }: {
   msg: StudyGroupMessage;
   isMe: boolean;
   member?: StudyGroupMember;
   members: StudyGroupMember[];
   currentUserId?: string | null;
+  repliedMsg?: StudyGroupMessage | null;
+  repliedAuthorName?: string;
+  onReply: (msg: StudyGroupMessage) => void;
+  onJumpTo?: (id: string) => void;
 }) {
   const name = member?.profile?.full_name || "Usuário";
   const username = formatUsername(member?.profile?.username);
@@ -50,9 +60,12 @@ const MessageBubble = memo(function MessageBubble({
     [members],
   );
   return (
-    <div className={cn("flex gap-2", isMe ? "flex-row-reverse" : "flex-row")}>
+    <div
+      id={`msg-${msg.id}`}
+      className={cn("group flex gap-2 items-end", isMe ? "flex-row-reverse" : "flex-row")}
+    >
       {!isMe && (
-        <Avatar className="h-8 w-8 mt-1 shrink-0">
+        <Avatar className="h-8 w-8 mb-5 shrink-0">
           <AvatarImage src={member?.profile?.avatar_url ?? undefined} />
           <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
@@ -66,9 +79,17 @@ const MessageBubble = memo(function MessageBubble({
             "rounded-2xl px-3 py-2 text-sm break-words whitespace-pre-wrap",
             isMe
               ? "bg-primary text-primary-foreground rounded-br-sm"
-              : "bg-muted text-foreground rounded-bl-sm"
+              : "bg-muted text-foreground rounded-bl-sm",
           )}
         >
+          {repliedMsg && (
+            <MessageReplyQuote
+              authorName={repliedAuthorName || "Mensagem"}
+              content={repliedMsg.content}
+              isMe={isMe}
+              onClick={() => onJumpTo?.(repliedMsg.id)}
+            />
+          )}
           <MessageContent
             content={msg.content}
             members={lookupMembers}
@@ -83,6 +104,17 @@ const MessageBubble = memo(function MessageBubble({
           })}
         </span>
       </div>
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        className="h-7 w-7 mb-5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shrink-0"
+        onClick={() => onReply(msg)}
+        title="Responder"
+        aria-label="Responder mensagem"
+      >
+        <Reply className="h-4 w-4" />
+      </Button>
     </div>
   );
 });
@@ -144,6 +176,7 @@ export default function StudyGroupChat({ groupId, members }: Props) {
   const qc = useQueryClient();
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [replyTo, setReplyTo] = useState<StudyGroupMessage | null>(null);
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
@@ -162,6 +195,12 @@ export default function StudyGroupChat({ groupId, members }: Props) {
     return m;
   }, [members]);
 
+  const messageMap = useMemo(() => {
+    const m = new Map<string, StudyGroupMessage>();
+    (messages ?? []).forEach((msg) => m.set(msg.id, msg));
+    return m;
+  }, [messages]);
+
   const mentionMembers: MentionUser[] = useMemo(
     () =>
       members.map((mem) => ({
@@ -174,7 +213,6 @@ export default function StudyGroupChat({ groupId, members }: Props) {
     [members],
   );
 
-  // Realtime: messages
   useEffect(() => {
     const channel = supabase
       .channel(`study-group-messages-${groupId}`)
@@ -195,7 +233,6 @@ export default function StudyGroupChat({ groupId, members }: Props) {
     };
   }, [groupId, qc]);
 
-  // Realtime: typing indicator (broadcast)
   useEffect(() => {
     if (!user) return;
     const channel = supabase.channel(`study-group-typing-${groupId}`, {
@@ -227,7 +264,6 @@ export default function StudyGroupChat({ groupId, members }: Props) {
     };
   }, [groupId, user?.id]);
 
-  // Expire stale typing entries
   useEffect(() => {
     if (Object.keys(typingUsers).length === 0) return;
     const interval = setInterval(() => {
@@ -248,7 +284,6 @@ export default function StudyGroupChat({ groupId, members }: Props) {
     return () => clearInterval(interval);
   }, [typingUsers]);
 
-  // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -279,7 +314,6 @@ export default function StudyGroupChat({ groupId, members }: Props) {
     }
 
     const now = Date.now();
-    // Throttle: re-send "typing" at most every 1.5s
     if (now - lastSentTypingRef.current > 1500) {
       typingChannelRef.current.send({
         type: "broadcast",
@@ -289,16 +323,27 @@ export default function StudyGroupChat({ groupId, members }: Props) {
       lastSentTypingRef.current = now;
     }
 
-    // Reset auto-stop timer
     if (localTypingTimerRef.current) clearTimeout(localTypingTimerRef.current);
     localTypingTimerRef.current = setTimeout(sendStopTyping, TYPING_TIMEOUT_MS);
   };
 
-  // Cleanup typing on unmount
   useEffect(() => {
     return () => {
       if (localTypingTimerRef.current) clearTimeout(localTypingTimerRef.current);
     };
+  }, []);
+
+  const handleReply = useCallback((msg: StudyGroupMessage) => {
+    setReplyTo(msg);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, []);
+
+  const handleJumpTo = useCallback((id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-primary", "rounded-2xl");
+    setTimeout(() => el.classList.remove("ring-2", "ring-primary", "rounded-2xl"), 1500);
   }, []);
 
   const handleSend = async () => {
@@ -306,9 +351,11 @@ export default function StudyGroupChat({ groupId, members }: Props) {
     if (!text || sending) return;
     setSending(true);
     setInput("");
+    const replyId = replyTo?.id ?? null;
+    setReplyTo(null);
     sendStopTyping();
     try {
-      await sendMessage(groupId, text);
+      await sendMessage(groupId, text, replyId);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao enviar");
       setInput(text);
@@ -332,6 +379,12 @@ export default function StudyGroupChat({ groupId, members }: Props) {
       .filter(Boolean);
   }, [typingUsers, memberMap]);
 
+  const replyAuthorName = useMemo(() => {
+    if (!replyTo) return "";
+    const m = memberMap.get(replyTo.user_id);
+    return m?.profile?.full_name || formatUsername(m?.profile?.username) || "Usuário";
+  }, [replyTo, memberMap]);
+
   return (
     <div className="flex flex-col h-full min-h-0">
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
@@ -353,6 +406,12 @@ export default function StudyGroupChat({ groupId, members }: Props) {
             const showSeparator =
               !prev ||
               new Date(prev.created_at).toDateString() !== currentDate.toDateString();
+            const repliedMsg = m.reply_to_id ? messageMap.get(m.reply_to_id) ?? null : null;
+            const repliedAuthor = repliedMsg
+              ? memberMap.get(repliedMsg.user_id)?.profile?.full_name ||
+                formatUsername(memberMap.get(repliedMsg.user_id)?.profile?.username) ||
+                "Usuário"
+              : undefined;
             return (
               <div key={m.id} className="space-y-3">
                 {showSeparator && <DateSeparator label={formatDateSeparator(currentDate)} />}
@@ -362,6 +421,10 @@ export default function StudyGroupChat({ groupId, members }: Props) {
                   member={memberMap.get(m.user_id)}
                   members={members}
                   currentUserId={user?.id}
+                  repliedMsg={repliedMsg}
+                  repliedAuthorName={repliedAuthor}
+                  onReply={handleReply}
+                  onJumpTo={handleJumpTo}
                 />
               </div>
             );
@@ -372,6 +435,14 @@ export default function StudyGroupChat({ groupId, members }: Props) {
       <div className="px-4 h-5 flex items-center">
         <TypingIndicator names={typingNames} />
       </div>
+
+      {replyTo && (
+        <MessageReplyPreview
+          authorName={replyAuthorName}
+          content={replyTo.content}
+          onCancel={() => setReplyTo(null)}
+        />
+      )}
 
       <form
         className="p-3 border-t flex gap-2 bg-card"
