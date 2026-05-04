@@ -205,13 +205,21 @@ function TypingIndicator({ names }: { names: string[] }) {
   );
 }
 
-export default function EnvironmentChat({ environmentId, members }: Props) {
+export default function EnvironmentChat({ environmentId, members, tasks = [] }: Props) {
   const { user } = useAuth();
   const { resolvedTheme } = useTheme();
   const qc = useQueryClient();
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [replyTo, setReplyTo] = useState<EnvironmentMessage | null>(null);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [createThreadOpen, setCreateThreadOpen] = useState(false);
+  const [pendingThreadDefaults, setPendingThreadDefaults] = useState<{
+    title?: string;
+    sourceMessageId?: string | null;
+    taskId?: string | null;
+  }>({});
+  const [threadsListOpen, setThreadsListOpen] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
