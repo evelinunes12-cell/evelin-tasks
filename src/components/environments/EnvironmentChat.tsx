@@ -22,6 +22,9 @@ import MentionInput, { type MentionInputHandle } from "@/components/chat/Mention
 import MessageContent from "@/components/chat/MessageContent";
 import MessageReplyPreview from "@/components/chat/MessageReplyPreview";
 import MessageReplyQuote from "@/components/chat/MessageReplyQuote";
+import ThreadPanel from "./ThreadPanel";
+import CreateThreadDialog from "./CreateThreadDialog";
+import { listEnvironmentThreads, type ThreadWithMeta } from "@/services/environmentThreads";
 
 export interface EnvChatMember {
   user_id: string | null;
