@@ -10,7 +10,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Smile, Reply } from "lucide-react";
+import { Send, Smile, Reply, Hash, MessageSquarePlus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
 import { useTheme } from "next-themes";
