@@ -91,10 +91,10 @@ export async function getThread(threadId: string): Promise<ThreadWithMeta | null
 export async function listThreadMessages(
   threadId: string
 ): Promise<EnvironmentMessage[]> {
-  const { data, error } = await supabase
-    .from("environment_messages")
+  const { data, error } = await (supabase
+    .from("environment_messages") as any)
     .select("*")
-    .eq("thread_id" as any, threadId)
+    .eq("thread_id", threadId)
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as EnvironmentMessage[];
