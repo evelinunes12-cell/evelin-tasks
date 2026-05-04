@@ -401,6 +401,21 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
     setTimeout(() => el.classList.remove("ring-2", "ring-primary", "rounded-2xl"), 1500);
   }, []);
 
+  const handleStartThread = useCallback((msg: EnvironmentMessage) => {
+    const snippet = msg.content.slice(0, 80);
+    setPendingThreadDefaults({
+      title: snippet,
+      sourceMessageId: msg.id,
+      taskId: null,
+    });
+    setCreateThreadOpen(true);
+  }, []);
+
+  const handleNewThreadFromButton = useCallback(() => {
+    setPendingThreadDefaults({ title: "", sourceMessageId: null, taskId: null });
+    setCreateThreadOpen(true);
+  }, []);
+
   const handleSend = async () => {
     const text = input.trim();
     if (!text || sending) return;
