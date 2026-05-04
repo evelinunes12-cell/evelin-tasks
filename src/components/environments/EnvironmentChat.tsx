@@ -126,17 +126,30 @@ const MessageBubble = memo(function MessageBubble({
           })}
         </span>
       </div>
-      <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        className="h-7 w-7 mb-5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shrink-0"
-        onClick={() => onReply(msg)}
-        title="Responder"
-        aria-label="Responder mensagem"
-      >
-        <Reply className="h-4 w-4" />
-      </Button>
+      <div className="flex flex-col gap-1 mb-5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0">
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7"
+          onClick={() => onReply(msg)}
+          title="Responder"
+          aria-label="Responder mensagem"
+        >
+          <Reply className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7"
+          onClick={() => onStartThread(msg)}
+          title="Criar tópico"
+          aria-label="Criar tópico a partir da mensagem"
+        >
+          <MessageSquarePlus className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 });
