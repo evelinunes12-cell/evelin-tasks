@@ -17,6 +17,7 @@ export async function listEnvironmentMessages(
     .from("environment_messages")
     .select("*")
     .eq("environment_id", environmentId)
+    .is("thread_id" as any, null)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
