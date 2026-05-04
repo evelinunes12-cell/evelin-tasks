@@ -32,10 +32,10 @@ export async function listEnvironmentThreads(
   if (list.length === 0) return [];
 
   const ids = list.map((t) => t.id);
-  const { data: msgs } = await supabase
-    .from("environment_messages")
-    .select("thread_id,created_at" as any)
-    .in("thread_id" as any, ids);
+  const { data: msgs } = await (supabase
+    .from("environment_messages") as any)
+    .select("thread_id,created_at")
+    .in("thread_id", ids);
 
   const taskIds = list.map((t) => t.source_task_id).filter(Boolean) as string[];
   let taskMap: Record<string, string> = {};
