@@ -160,6 +160,7 @@ export type Database = {
           environment_id: string
           id: string
           reply_to_id: string | null
+          thread_id: string | null
           user_id: string
         }
         Insert: {
@@ -168,6 +169,7 @@ export type Database = {
           environment_id: string
           id?: string
           reply_to_id?: string | null
+          thread_id?: string | null
           user_id: string
         }
         Update: {
@@ -176,6 +178,7 @@ export type Database = {
           environment_id?: string
           id?: string
           reply_to_id?: string | null
+          thread_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -191,6 +194,13 @@ export type Database = {
             columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "environment_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "environment_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "environment_threads"
             referencedColumns: ["id"]
           },
         ]
@@ -283,6 +293,54 @@ export type Database = {
             columns: ["environment_id"]
             isOneToOne: false
             referencedRelation: "shared_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      environment_threads: {
+        Row: {
+          created_at: string
+          created_by: string
+          environment_id: string
+          id: string
+          source_message_id: string | null
+          source_task_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          environment_id: string
+          id?: string
+          source_message_id?: string | null
+          source_task_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          environment_id?: string
+          id?: string
+          source_message_id?: string | null
+          source_task_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environment_threads_source_message_id_fkey"
+            columns: ["source_message_id"]
+            isOneToOne: false
+            referencedRelation: "environment_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "environment_threads_source_task_id_fkey"
+            columns: ["source_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
