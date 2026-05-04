@@ -421,6 +421,7 @@ const EnvironmentDetail = () => {
           <TabsContent value="chat" className="space-y-2">
             <EnvironmentChat
               environmentId={id!}
+              tasks={tasks.map((t) => ({ id: t.id, subject_name: t.subject_name }))}
               members={[
                 ...(ownerProfile
                   ? [{
