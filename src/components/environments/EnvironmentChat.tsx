@@ -31,9 +31,15 @@ export interface EnvChatMember {
   email?: string;
 }
 
+interface TaskOption {
+  id: string;
+  subject_name: string;
+}
+
 interface Props {
   environmentId: string;
   members: EnvChatMember[];
+  tasks?: TaskOption[];
 }
 
 const TYPING_TIMEOUT_MS = 3000;
