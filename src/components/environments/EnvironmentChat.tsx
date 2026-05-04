@@ -455,110 +455,149 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
   }, [replyTo, memberMap]);
 
   return (
-    <div className="flex flex-col h-[600px] min-h-0 border rounded-lg bg-card">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
-        {isLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-12 w-3/4" />
-            <Skeleton className="h-12 w-2/3 ml-auto" />
-            <Skeleton className="h-12 w-3/4" />
-          </div>
-        ) : !messages || messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground py-12">
-            <Send className="h-8 w-8 mb-2 opacity-50" />
-            <p className="text-sm">Nenhuma mensagem ainda. Quebre o gelo!</p>
-          </div>
-        ) : (
-          messages.map((m, idx) => {
-            const currentDate = new Date(m.created_at);
-            const prev = idx > 0 ? messages[idx - 1] : null;
-            const showSeparator =
-              !prev ||
-              new Date(prev.created_at).toDateString() !== currentDate.toDateString();
-            const repliedMsg = m.reply_to_id ? messageMap.get(m.reply_to_id) ?? null : null;
-            const repliedAuthor = repliedMsg
-              ? memberMap.get(repliedMsg.user_id)?.full_name ||
-                formatUsername(memberMap.get(repliedMsg.user_id)?.username) ||
-                "Usuário"
-              : undefined;
-            return (
-              <div key={m.id} className="space-y-3">
-                {showSeparator && <DateSeparator label={formatDateSeparator(currentDate)} />}
-                <MessageBubble
-                  msg={m}
-                  isMe={m.user_id === user?.id}
-                  member={memberMap.get(m.user_id)}
-                  members={members}
-                  currentUserId={user?.id}
-                  repliedMsg={repliedMsg}
-                  repliedAuthorName={repliedAuthor}
-                  onReply={handleReply}
-                  onJumpTo={handleJumpTo}
-                />
-              </div>
-            );
-          })
+    <div className="flex flex-col lg:flex-row gap-3">
+      <div className="flex-1 min-w-0 flex flex-col h-[600px] min-h-0 border rounded-lg bg-card">
+        <div className="px-3 py-2 border-b flex items-center justify-between gap-2">
+          <span className="text-sm font-medium text-muted-foreground">Chat do grupo</span>
+          <ThreadsButton
+            environmentId={environmentId}
+            open={threadsListOpen}
+            onOpenChange={setThreadsListOpen}
+            onSelectThread={(id) => {
+              setThreadsListOpen(false);
+              setActiveThreadId(id);
+            }}
+            onCreateNew={handleNewThreadFromButton}
+            activeThreadId={activeThreadId}
+          />
+        </div>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+          {isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-12 w-3/4" />
+              <Skeleton className="h-12 w-2/3 ml-auto" />
+              <Skeleton className="h-12 w-3/4" />
+            </div>
+          ) : !messages || messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground py-12">
+              <Send className="h-8 w-8 mb-2 opacity-50" />
+              <p className="text-sm">Nenhuma mensagem ainda. Quebre o gelo!</p>
+            </div>
+          ) : (
+            messages.map((m, idx) => {
+              const currentDate = new Date(m.created_at);
+              const prev = idx > 0 ? messages[idx - 1] : null;
+              const showSeparator =
+                !prev ||
+                new Date(prev.created_at).toDateString() !== currentDate.toDateString();
+              const repliedMsg = m.reply_to_id ? messageMap.get(m.reply_to_id) ?? null : null;
+              const repliedAuthor = repliedMsg
+                ? memberMap.get(repliedMsg.user_id)?.full_name ||
+                  formatUsername(memberMap.get(repliedMsg.user_id)?.username) ||
+                  "Usuário"
+                : undefined;
+              return (
+                <div key={m.id} className="space-y-3">
+                  {showSeparator && <DateSeparator label={formatDateSeparator(currentDate)} />}
+                  <MessageBubble
+                    msg={m}
+                    isMe={m.user_id === user?.id}
+                    member={memberMap.get(m.user_id)}
+                    members={members}
+                    currentUserId={user?.id}
+                    repliedMsg={repliedMsg}
+                    repliedAuthorName={repliedAuthor}
+                    onReply={handleReply}
+                    onJumpTo={handleJumpTo}
+                    onStartThread={handleStartThread}
+                  />
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <div className="px-4 h-5 flex items-center">
+          <TypingIndicator names={typingNames} />
+        </div>
+
+        {replyTo && (
+          <MessageReplyPreview
+            authorName={replyAuthorName}
+            content={replyTo.content}
+            onCancel={() => setReplyTo(null)}
+          />
         )}
+
+        <form
+          className="p-3 border-t flex gap-2 bg-card"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSend();
+          }}
+        >
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button type="button" size="icon" variant="ghost" disabled={sending} title="Emojis">
+                <Smile className="h-5 w-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="top"
+              align="start"
+              className="p-0 border-0 bg-transparent shadow-none w-auto"
+            >
+              <EmojiPicker
+                onEmojiClick={(e) => handleInputChange(input + e.emoji)}
+                theme={(resolvedTheme === "dark" ? "dark" : "light") as Theme}
+                emojiStyle={EmojiStyle.NATIVE}
+                lazyLoadEmojis
+                width={320}
+                height={400}
+                previewConfig={{ showPreview: false }}
+                searchPlaceHolder="Buscar emoji..."
+              />
+            </PopoverContent>
+          </Popover>
+          <MentionInput
+            ref={inputRef}
+            value={input}
+            onChange={handleInputChange}
+            onBlur={sendStopTyping}
+            onSubmit={handleSend}
+            placeholder="Digite uma mensagem... use @ para mencionar"
+            maxLength={2000}
+            disabled={sending}
+            currentUserId={user?.id}
+            members={mentionMembers}
+          />
+          <Button type="submit" size="icon" disabled={!input.trim() || sending}>
+            <Send className="h-4 w-4" />
+          </Button>
+        </form>
       </div>
 
-      <div className="px-4 h-5 flex items-center">
-        <TypingIndicator names={typingNames} />
-      </div>
-
-      {replyTo && (
-        <MessageReplyPreview
-          authorName={replyAuthorName}
-          content={replyTo.content}
-          onCancel={() => setReplyTo(null)}
-        />
+      {activeThreadId && (
+        <div className="w-full lg:w-[420px] shrink-0">
+          <ThreadPanel
+            environmentId={environmentId}
+            threadId={activeThreadId}
+            members={members}
+            onClose={() => setActiveThreadId(null)}
+          />
+        </div>
       )}
 
-      <form
-        className="p-3 border-t flex gap-2 bg-card"
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSend();
-        }}
-      >
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button type="button" size="icon" variant="ghost" disabled={sending} title="Emojis">
-              <Smile className="h-5 w-5" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            side="top"
-            align="start"
-            className="p-0 border-0 bg-transparent shadow-none w-auto"
-          >
-            <EmojiPicker
-              onEmojiClick={(e) => handleInputChange(input + e.emoji)}
-              theme={(resolvedTheme === "dark" ? "dark" : "light") as Theme}
-              emojiStyle={EmojiStyle.NATIVE}
-              lazyLoadEmojis
-              width={320}
-              height={400}
-              previewConfig={{ showPreview: false }}
-              searchPlaceHolder="Buscar emoji..."
-            />
-          </PopoverContent>
-        </Popover>
-        <MentionInput
-          ref={inputRef}
-          value={input}
-          onChange={handleInputChange}
-          onBlur={sendStopTyping}
-          onSubmit={handleSend}
-          placeholder="Digite uma mensagem... use @ para mencionar"
-          maxLength={2000}
-          disabled={sending}
-          currentUserId={user?.id}
-          members={mentionMembers}
-        />
-        <Button type="submit" size="icon" disabled={!input.trim() || sending}>
-          <Send className="h-4 w-4" />
-        </Button>
-      </form>
+      <CreateThreadDialog
+        open={createThreadOpen}
+        onOpenChange={setCreateThreadOpen}
+        environmentId={environmentId}
+        tasks={tasks}
+        defaultTitle={pendingThreadDefaults.title}
+        defaultTaskId={pendingThreadDefaults.taskId ?? null}
+        sourceMessageId={pendingThreadDefaults.sourceMessageId ?? null}
+        onCreated={(id) => setActiveThreadId(id)}
+      />
     </div>
   );
 }
