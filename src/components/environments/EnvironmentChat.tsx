@@ -54,6 +54,7 @@ const MessageBubble = memo(function MessageBubble({
   repliedAuthorName,
   onReply,
   onJumpTo,
+  onStartThread,
 }: {
   msg: EnvironmentMessage;
   isMe: boolean;
@@ -64,6 +65,7 @@ const MessageBubble = memo(function MessageBubble({
   repliedAuthorName?: string;
   onReply: (msg: EnvironmentMessage) => void;
   onJumpTo?: (id: string) => void;
+  onStartThread: (msg: EnvironmentMessage) => void;
 }) {
   const name = member?.full_name || "Usuário";
   const username = formatUsername(member?.username);
