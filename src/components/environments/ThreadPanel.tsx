@@ -174,74 +174,121 @@ export default function ThreadPanel({
         </Button>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
-        {isLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-10 w-3/4" />
-            <Skeleton className="h-10 w-2/3 ml-auto" />
-          </div>
-        ) : !messages || messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground py-8">
-            <Hash className="h-6 w-6 mb-2 opacity-50" />
-            <p className="text-sm">Inicie a conversa neste tópico.</p>
-          </div>
-        ) : (
-          messages.map((m) => {
-            const isMe = m.user_id === user?.id;
-            const member = memberMap.get(m.user_id);
-            const name = member?.full_name || "Usuário";
-            const username = formatUsername(member?.username);
-            return (
-              <div
-                key={m.id}
-                className={cn(
-                  "flex gap-2 items-end",
-                  isMe ? "flex-row-reverse" : "flex-row",
-                )}
-              >
-                {!isMe && (
-                  <Avatar className="h-7 w-7 mb-5 shrink-0">
-                    <AvatarImage src={member?.avatar_url ?? undefined} />
-                    <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                )}
-                <div
-                  className={cn(
-                    "max-w-[80%] flex flex-col",
-                    isMe ? "items-end" : "items-start",
-                  )}
-                >
-                  {!isMe && (
-                    <span className="text-xs text-muted-foreground mb-0.5 px-1">
-                      {username}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0">
+        {sourceMessage && (() => {
+          const sm = sourceMessage;
+          const sMember = memberMap.get(sm.user_id);
+          const sName = sMember?.full_name || "Usuário";
+          const sUsername = formatUsername(sMember?.username);
+          return (
+            <div className="px-3 pt-3 pb-2 border-b">
+              <div className="flex gap-2 items-start">
+                <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarImage src={sMember?.avatar_url ?? undefined} />
+                  <AvatarFallback>{sName.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-sm font-semibold truncate">{sName}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">
+                      {new Date(sm.created_at).toLocaleString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
+                  </div>
+                  {sUsername && (
+                    <div className="text-[11px] text-muted-foreground -mt-0.5">{sUsername}</div>
                   )}
-                  <div
-                    className={cn(
-                      "rounded-2xl px-3 py-2 text-sm break-words whitespace-pre-wrap",
-                      isMe
-                        ? "bg-primary text-primary-foreground rounded-br-sm"
-                        : "bg-muted text-foreground rounded-bl-sm",
-                    )}
-                  >
+                  <div className="text-sm break-words whitespace-pre-wrap mt-1">
                     <MessageContent
-                      content={m.content}
+                      content={sm.content}
                       members={mentionMembers}
                       currentUserId={user?.id}
-                      isMe={isMe}
                     />
                   </div>
-                  <span className="text-[10px] text-muted-foreground mt-0.5 px-1">
-                    {new Date(m.created_at).toLocaleTimeString("pt-BR", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
                 </div>
               </div>
-            );
-          })
-        )}
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  {(messages?.length ?? 0)}{" "}
+                  {(messages?.length ?? 0) === 1 ? "resposta" : "respostas"}
+                </span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+            </div>
+          );
+        })()}
+        <div className="p-3 space-y-3">
+          {isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-3/4" />
+              <Skeleton className="h-10 w-2/3" />
+            </div>
+          ) : !messages || messages.length === 0 ? (
+            <div className="text-center text-muted-foreground py-6">
+              <Hash className="h-6 w-6 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Inicie a conversa neste tópico.</p>
+            </div>
+          ) : (
+            messages.map((m, idx) => {
+              const member = memberMap.get(m.user_id);
+              const name = member?.full_name || "Usuário";
+              const prev = idx > 0 ? messages[idx - 1] : null;
+              const sameAuthor =
+                prev &&
+                prev.user_id === m.user_id &&
+                new Date(m.created_at).getTime() -
+                  new Date(prev.created_at).getTime() <
+                  5 * 60 * 1000;
+              return (
+                <div
+                  key={m.id}
+                  className={cn(
+                    "flex gap-2 items-start group",
+                    sameAuthor ? "mt-0.5" : "mt-2",
+                  )}
+                >
+                  {sameAuthor ? (
+                    <div className="w-8 shrink-0 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 text-right pr-1 pt-1">
+                      {new Date(m.created_at).toLocaleTimeString("pt-BR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                  ) : (
+                    <Avatar className="h-8 w-8 shrink-0">
+                      <AvatarImage src={member?.avatar_url ?? undefined} />
+                      <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    {!sameAuthor && (
+                      <div className="flex items-baseline gap-2 min-w-0">
+                        <span className="text-sm font-semibold truncate">{name}</span>
+                        <span className="text-[10px] text-muted-foreground shrink-0">
+                          {new Date(m.created_at).toLocaleTimeString("pt-BR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    )}
+                    <div className="text-sm break-words whitespace-pre-wrap text-foreground">
+                      <MessageContent
+                        content={m.content}
+                        members={mentionMembers}
+                        currentUserId={user?.id}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       <form
