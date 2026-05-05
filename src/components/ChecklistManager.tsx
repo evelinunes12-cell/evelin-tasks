@@ -283,7 +283,7 @@ const ChecklistManager = ({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label>{label}</Label>
+        {label && <Label>{label}</Label>}
         {showProgress && items.length > 0 && (
           <span className="text-xs text-muted-foreground">
             {completedCount}/{items.length} ({Math.round(progress)}%)

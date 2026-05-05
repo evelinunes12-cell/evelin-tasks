@@ -1099,7 +1099,7 @@ const TaskForm = () => {
               <ChecklistManager
                 items={checklist}
                 onItemsChange={setChecklist}
-                label="Checklist da Tarefa"
+                label=""
                 showProgress
               />
 
