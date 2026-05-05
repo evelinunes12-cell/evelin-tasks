@@ -378,6 +378,20 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
     queryFn: () => listEnvironmentMessages(environmentId),
   });
 
+  const { data: threadsList } = useQuery({
+    queryKey: ["env-threads", environmentId],
+    queryFn: () => listEnvironmentThreads(environmentId),
+    refetchOnWindowFocus: false,
+  });
+
+  const threadByMessageId = useMemo(() => {
+    const m = new Map<string, ThreadWithMeta>();
+    (threadsList ?? []).forEach((t) => {
+      if (t.source_message_id) m.set(t.source_message_id, t);
+    });
+    return m;
+  }, [threadsList]);
+
   const memberMap = useMemo(() => {
     const m = new Map<string, EnvChatMember>();
     members.forEach((mem) => {
