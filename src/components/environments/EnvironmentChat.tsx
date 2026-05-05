@@ -642,6 +642,7 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
                   formatUsername(memberMap.get(repliedMsg.user_id)?.username) ||
                   "Usuário"
                 : undefined;
+              const thread = threadByMessageId.get(m.id);
               return (
                 <div key={m.id} className="space-y-3">
                   {showSeparator && <DateSeparator label={formatDateSeparator(currentDate)} />}
@@ -653,9 +654,19 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
                     currentUserId={user?.id}
                     repliedMsg={repliedMsg}
                     repliedAuthorName={repliedAuthor}
+                    threadInfo={
+                      thread
+                        ? {
+                            id: thread.id,
+                            reply_count: thread.reply_count,
+                            last_reply_at: thread.last_reply_at,
+                          }
+                        : null
+                    }
                     onReply={handleReply}
                     onJumpTo={handleJumpTo}
                     onStartThread={handleStartThread}
+                    onOpenThread={(id) => setActiveThreadId(id)}
                   />
                 </div>
               );
