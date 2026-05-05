@@ -12,6 +12,7 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { stripHtml } from "@/utils/sanitize";
 
 interface TodayTasksCardProps {
   tasks: Task[];
@@ -118,7 +119,7 @@ export function TodayTasksCard({ tasks, onStatusChange, completedStatusName }: T
         id: t.id,
         type: "task",
         title: t.subject_name,
-        subtitle: t.description || undefined,
+        subtitle: stripHtml(t.description) || undefined,
         date: t.due_date,
         overdue: isPast(d) && !isToday(d),
         link: `/task/${t.id}`,

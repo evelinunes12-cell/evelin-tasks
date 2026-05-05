@@ -20,6 +20,7 @@ import { registerActivity } from "@/services/activity";
 import { TaskQuickView } from "./TaskQuickView";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { stripHtml } from "@/utils/sanitize";
 
 export interface TaskCardAssignee {
   user_id: string;
@@ -72,7 +73,7 @@ const TaskCard = ({
     }
   };
 
-  const plainDescription = description ? description.replace(/<[^>]*>/g, "").trim() : "";
+  const plainDescription = stripHtml(description);
   
   const checklistProgress =
     checklist.length > 0

@@ -18,6 +18,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { stripHtml } from "@/utils/sanitize";
 
 interface DayDetailSheetProps {
   open: boolean;
@@ -182,9 +183,9 @@ export function DayDetailSheet({
                         <p className={`text-sm font-medium ${isCompleted ? "line-through" : ""}`}>
                           {t.subject_name}
                         </p>
-                        {t.description && (
+                        {stripHtml(t.description) && (
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {t.description}
+                            {stripHtml(t.description)}
                           </p>
                         )}
                         <div className="flex items-center gap-2 mt-1.5">
