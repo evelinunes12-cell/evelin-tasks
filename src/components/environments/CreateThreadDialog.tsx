@@ -44,6 +44,7 @@ export default function CreateThreadDialog({
   const [title, setTitle] = useState(defaultTitle ?? "");
   const [taskId, setTaskId] = useState<string>(defaultTaskId ?? "none");
   const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
 
   // Reset when opening
   const handleOpenChange = (v: boolean) => {
