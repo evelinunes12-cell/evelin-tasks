@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { sanitizeHtml } from "@/utils/sanitize";
 import TaskStepDisplay from "@/components/TaskStepDisplay";
 import { NoteDialog } from "@/components/planner/NoteDialog";
 import { createNote } from "@/services/planner";
@@ -727,7 +728,7 @@ const TaskDetail = () => {
                     setDescriptionDraft(task.description || "");
                     setIsEditingDescription(true);
                   }}
-                  dangerouslySetInnerHTML={{ __html: task.description }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(task.description) }}
                 />
               ) : (
                 <p

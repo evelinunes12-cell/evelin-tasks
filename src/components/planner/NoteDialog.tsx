@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { PlannerNote } from "@/services/planner";
 import { Subject } from "@/services/subjects";
 import { supabase } from "@/integrations/supabase/client";
+import { stripHtml } from "@/utils/sanitize";
 import {
   Dialog,
   DialogContent,
@@ -224,7 +225,7 @@ export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId
                   {tasks.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
                       {t.subject_name}
-                      {t.description ? ` — ${t.description.substring(0, 40)}` : ""}
+                      {stripHtml(t.description) ? ` — ${stripHtml(t.description).substring(0, 40)}` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

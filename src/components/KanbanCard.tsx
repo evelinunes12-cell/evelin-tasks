@@ -14,6 +14,7 @@ import { ptBR } from "date-fns/locale";
 import { parseDueDate } from "@/services/tasks";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { stripHtml } from "@/utils/sanitize";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,6 +75,7 @@ export function KanbanCard({
   const isDueTomorrow = dueDateObj && isTomorrow(dueDateObj);
 
   const formatDateDisplay = (date: Date) => format(date, "dd 'de' MMMM", { locale: ptBR });
+  const plainDescription = stripHtml(task.description);
 
   const getDateBadgeStyle = () => {
     if (isOverdue) return "bg-destructive/10 text-destructive border-destructive/30";
@@ -88,8 +90,8 @@ export function KanbanCard({
       <Card className="cursor-grabbing shadow-xl border-primary overflow-hidden">
         <CardContent className="pt-6">
           <h3 className="font-semibold text-lg text-foreground break-words">{task.subject_name}</h3>
-          {task.description && (
-            <p className="text-sm text-muted-foreground break-words line-clamp-2 mt-1">{task.description}</p>
+          {plainDescription && (
+            <p className="text-sm text-muted-foreground break-words line-clamp-2 mt-1">{plainDescription}</p>
           )}
         </CardContent>
       </Card>
@@ -133,8 +135,8 @@ export function KanbanCard({
                   </Badge>
                 )}
               </div>
-              {task.description && (
-                <p className="text-sm text-muted-foreground break-words line-clamp-3">{task.description}</p>
+              {plainDescription && (
+                <p className="text-sm text-muted-foreground break-words line-clamp-3">{plainDescription}</p>
               )}
             </div>
           </div>

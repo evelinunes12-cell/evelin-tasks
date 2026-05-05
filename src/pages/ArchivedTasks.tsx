@@ -37,6 +37,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { stripHtml } from "@/utils/sanitize";
 
 
 const ArchivedTasks = () => {
@@ -95,7 +96,7 @@ const ArchivedTasks = () => {
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
         const matchesSubject = task.subject_name.toLowerCase().includes(search);
-        const matchesDescription = task.description?.toLowerCase().includes(search);
+        const matchesDescription = stripHtml(task.description).toLowerCase().includes(search);
         if (!matchesSubject && !matchesDescription) return false;
       }
 
@@ -353,9 +354,9 @@ const ArchivedTasks = () => {
                     </Badge>
                   </div>
                   
-                  {task.description && (
+                  {stripHtml(task.description) && (
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                      {task.description}
+                      {stripHtml(task.description)}
                     </p>
                   )}
                   

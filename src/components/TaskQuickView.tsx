@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { sanitizeHtml } from "@/utils/sanitize";
 
 interface TaskQuickViewProps {
   taskId: string | null;
@@ -174,7 +175,7 @@ export function TaskQuickView({
               </h4>
               <div
                 className="text-sm prose prose-sm dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: task.description }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(task.description) }}
               />
             </div>
           )}

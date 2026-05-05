@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Task, parseDueDate } from "@/services/tasks";
 import { isPast, isToday, parseISO } from "date-fns";
+import { stripHtml } from "@/utils/sanitize";
 
 export const useDashboardFilters = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -155,7 +156,7 @@ export const filterAndSortTasks = (
     const matchesSearch =
       debouncedSearch === "" ||
       task.subject_name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      (task.description && task.description.toLowerCase().includes(debouncedSearch.toLowerCase()));
+      stripHtml(task.description).toLowerCase().includes(debouncedSearch.toLowerCase());
     return matchesStatus && matchesEnvironment && matchesSubject && matchesGroupWork && matchesOverdue && matchesDueToday && matchesSearch;
   }).sort((a, b) => {
     switch (sortBy) {
