@@ -24,7 +24,7 @@ interface GoalCardProps {
 
 export function GoalCard({ goal, onEdit, onDelete, onToggleComplete, onProgressChange }: GoalCardProps) {
   const isOverdue = goal.target_date && !goal.completed && new Date(goal.target_date + "T23:59:59") < new Date();
-  const [localProgress, setLocalProgress] = useState(goal.progress);
+  const [localProgress, setLocalProgress] = useState(goal.progress ?? 0);
   const [editingInput, setEditingInput] = useState(false);
 
   const commitProgress = (value: number) => {
@@ -130,7 +130,7 @@ export function GoalCard({ goal, onEdit, onDelete, onToggleComplete, onProgressC
               onValueCommit={(value) => commitProgress(value[0])}
               max={100}
               step={1}
-              className="cursor-pointer"
+              className="cursor-pointer [&>span:first-child]:bg-muted"
             />
           </div>
         )}
