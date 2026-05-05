@@ -10,7 +10,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Smile, Reply, Hash, MessageSquarePlus } from "lucide-react";
+import { Send, Smile, Reply, Hash, MessageSquarePlus, MessageSquare } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
 import { useTheme } from "next-themes";
@@ -55,9 +55,11 @@ const MessageBubble = memo(function MessageBubble({
   currentUserId,
   repliedMsg,
   repliedAuthorName,
+  threadInfo,
   onReply,
   onJumpTo,
   onStartThread,
+  onOpenThread,
 }: {
   msg: EnvironmentMessage;
   isMe: boolean;
@@ -66,9 +68,11 @@ const MessageBubble = memo(function MessageBubble({
   currentUserId?: string | null;
   repliedMsg?: EnvironmentMessage | null;
   repliedAuthorName?: string;
+  threadInfo?: { id: string; reply_count: number; last_reply_at: string | null } | null;
   onReply: (msg: EnvironmentMessage) => void;
   onJumpTo?: (id: string) => void;
   onStartThread: (msg: EnvironmentMessage) => void;
+  onOpenThread: (id: string) => void;
 }) {
   const name = member?.full_name || "Usuário";
   const username = formatUsername(member?.username);
@@ -84,6 +88,21 @@ const MessageBubble = memo(function MessageBubble({
         })),
     [members],
   );
+
+  const lastReplyLabel = useMemo(() => {
+    if (!threadInfo?.last_reply_at) return "";
+    const d = new Date(threadInfo.last_reply_at);
+    const now = new Date();
+    const diffH = (now.getTime() - d.getTime()) / 3600000;
+    if (diffH < 1) {
+      const m = Math.max(1, Math.floor(diffH * 60));
+      return `há ${m} min`;
+    }
+    if (diffH < 24) return `há ${Math.floor(diffH)}h`;
+    const diffD = Math.floor(diffH / 24);
+    return `há ${diffD}d`;
+  }, [threadInfo?.last_reply_at]);
+
   return (
     <div
       id={`env-msg-${msg.id}`}
@@ -122,6 +141,27 @@ const MessageBubble = memo(function MessageBubble({
             isMe={isMe}
           />
         </div>
+
+        {threadInfo && threadInfo.reply_count > 0 && (
+          <button
+            type="button"
+            onClick={() => onOpenThread(threadInfo.id)}
+            className={cn(
+              "mt-1 inline-flex items-center gap-1.5 text-xs font-medium",
+              "text-primary hover:underline px-1 py-0.5 rounded transition-colors",
+            )}
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            <span>
+              {threadInfo.reply_count}{" "}
+              {threadInfo.reply_count === 1 ? "resposta" : "respostas"}
+            </span>
+            {lastReplyLabel && (
+              <span className="text-muted-foreground font-normal">· {lastReplyLabel}</span>
+            )}
+          </button>
+        )}
+
         <span className="text-[10px] text-muted-foreground mt-0.5 px-1">
           {new Date(msg.created_at).toLocaleTimeString("pt-BR", {
             hour: "2-digit",
@@ -146,9 +186,12 @@ const MessageBubble = memo(function MessageBubble({
           size="icon"
           variant="ghost"
           className="h-7 w-7"
-          onClick={() => onStartThread(msg)}
-          title="Criar tópico"
-          aria-label="Criar tópico a partir da mensagem"
+          onClick={() => {
+            if (threadInfo) onOpenThread(threadInfo.id);
+            else onStartThread(msg);
+          }}
+          title={threadInfo ? "Abrir tópico" : "Criar tópico"}
+          aria-label={threadInfo ? "Abrir tópico" : "Criar tópico a partir da mensagem"}
         >
           <MessageSquarePlus className="h-4 w-4" />
         </Button>
@@ -334,6 +377,20 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
     queryKey: ["environment-messages", environmentId],
     queryFn: () => listEnvironmentMessages(environmentId),
   });
+
+  const { data: threadsList } = useQuery({
+    queryKey: ["env-threads", environmentId],
+    queryFn: () => listEnvironmentThreads(environmentId),
+    refetchOnWindowFocus: false,
+  });
+
+  const threadByMessageId = useMemo(() => {
+    const m = new Map<string, ThreadWithMeta>();
+    (threadsList ?? []).forEach((t) => {
+      if (t.source_message_id) m.set(t.source_message_id, t);
+    });
+    return m;
+  }, [threadsList]);
 
   const memberMap = useMemo(() => {
     const m = new Map<string, EnvChatMember>();
@@ -585,6 +642,7 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
                   formatUsername(memberMap.get(repliedMsg.user_id)?.username) ||
                   "Usuário"
                 : undefined;
+              const thread = threadByMessageId.get(m.id);
               return (
                 <div key={m.id} className="space-y-3">
                   {showSeparator && <DateSeparator label={formatDateSeparator(currentDate)} />}
@@ -596,9 +654,19 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
                     currentUserId={user?.id}
                     repliedMsg={repliedMsg}
                     repliedAuthorName={repliedAuthor}
+                    threadInfo={
+                      thread
+                        ? {
+                            id: thread.id,
+                            reply_count: thread.reply_count,
+                            last_reply_at: thread.last_reply_at,
+                          }
+                        : null
+                    }
                     onReply={handleReply}
                     onJumpTo={handleJumpTo}
                     onStartThread={handleStartThread}
+                    onOpenThread={(id) => setActiveThreadId(id)}
                   />
                 </div>
               );

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +44,7 @@ export default function CreateThreadDialog({
   const [title, setTitle] = useState(defaultTitle ?? "");
   const [taskId, setTaskId] = useState<string>(defaultTaskId ?? "none");
   const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
 
   // Reset when opening
   const handleOpenChange = (v: boolean) => {
@@ -69,6 +71,7 @@ export default function CreateThreadDialog({
         sourceTaskId: taskId !== "none" ? taskId : null,
       });
       toast.success("Tópico criado");
+      qc.invalidateQueries({ queryKey: ["env-threads", environmentId] });
       onCreated(thread.id);
       onOpenChange(false);
     } catch (err: any) {
