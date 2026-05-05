@@ -54,6 +54,20 @@ export default function ThreadPanel({
     queryFn: () => listThreadMessages(threadId),
   });
 
+  const { data: sourceMessage } = useQuery({
+    queryKey: ["env-thread-source", thread?.source_message_id],
+    queryFn: async () => {
+      if (!thread?.source_message_id) return null;
+      const { data } = await supabase
+        .from("environment_messages")
+        .select("*")
+        .eq("id", thread.source_message_id)
+        .maybeSingle();
+      return data as EnvironmentMessage | null;
+    },
+    enabled: !!thread?.source_message_id,
+  });
+
   const memberMap = useMemo(() => {
     const m = new Map<string, EnvChatMember>();
     members.forEach((mem) => {
