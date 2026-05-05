@@ -71,6 +71,7 @@ export default function CreateThreadDialog({
         sourceTaskId: taskId !== "none" ? taskId : null,
       });
       toast.success("Tópico criado");
+      qc.invalidateQueries({ queryKey: ["env-threads", environmentId] });
       onCreated(thread.id);
       onOpenChange(false);
     } catch (err: any) {
