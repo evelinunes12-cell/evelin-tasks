@@ -193,6 +193,7 @@ export default function StudyGroupChat({ groupId, members }: Props) {
   const [sending, setSending] = useState(false);
   const [replyTo, setReplyTo] = useState<StudyGroupMessage | null>(null);
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
+  const [pendingAttachment, setPendingAttachment] = useState<PendingChatAttachment | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
   const lastSentTypingRef = useRef<number>(0);
