@@ -66,7 +66,7 @@ export async function getEnvironmentsUnreadCounts(
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return {};
 
-  const links = environmentIds.map((id) => `/shared-environments/${id}`);
+  const links = environmentIds.map((id) => `/environment/${id}`);
   const { data, error } = await supabase
     .from("notifications")
     .select("link")
@@ -77,7 +77,7 @@ export async function getEnvironmentsUnreadCounts(
 
   const counts: Record<string, number> = {};
   (data ?? []).forEach((row: any) => {
-    const id = String(row.link).replace("/shared-environments/", "");
+    const id = String(row.link).replace("/environment/", "");
     counts[id] = (counts[id] ?? 0) + 1;
   });
   return counts;
