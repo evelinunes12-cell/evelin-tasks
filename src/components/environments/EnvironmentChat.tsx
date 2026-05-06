@@ -368,6 +368,7 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
   }>({});
   const [threadsListOpen, setThreadsListOpen] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
+  const [pendingAttachment, setPendingAttachment] = useState<PendingChatAttachment | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
   const lastSentTypingRef = useRef<number>(0);
