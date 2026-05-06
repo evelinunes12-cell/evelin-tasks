@@ -18,6 +18,8 @@ import MentionInput, { type MentionInputHandle, type MentionUser } from "@/compo
 import MessageContent from "@/components/chat/MessageContent";
 import MessageReplyPreview from "@/components/chat/MessageReplyPreview";
 import MessageReplyQuote from "@/components/chat/MessageReplyQuote";
+import ChatAttachment from "@/components/chat/ChatAttachment";
+import ChatAttachmentButton, { type PendingChatAttachment } from "@/components/chat/ChatAttachmentButton";
 
 interface Props {
   groupId: string;
