@@ -92,12 +92,25 @@ const MessageBubble = memo(function MessageBubble({
               onClick={() => onJumpTo?.(repliedMsg.id)}
             />
           )}
-          <MessageContent
-            content={msg.content}
-            members={lookupMembers}
-            currentUserId={currentUserId}
-            isMe={isMe}
-          />
+          {msg.attachment_url && msg.attachment_name && (
+            <ChatAttachment
+              attachment={{
+                url: msg.attachment_url,
+                name: msg.attachment_name,
+                size: msg.attachment_size,
+                type: msg.attachment_type,
+              }}
+              isMe={isMe}
+            />
+          )}
+          {msg.content && msg.content.trim().length > 0 && (
+            <MessageContent
+              content={msg.content}
+              members={lookupMembers}
+              currentUserId={currentUserId}
+              isMe={isMe}
+            />
+          )}
         </div>
         <span className="text-[10px] text-muted-foreground mt-0.5 px-1">
           {new Date(msg.created_at).toLocaleTimeString("pt-BR", {
