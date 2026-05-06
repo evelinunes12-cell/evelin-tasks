@@ -155,6 +155,10 @@ export type Database = {
       }
       environment_messages: {
         Row: {
+          attachment_name: string | null
+          attachment_size: number | null
+          attachment_type: string | null
+          attachment_url: string | null
           content: string
           created_at: string
           environment_id: string
@@ -164,6 +168,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachment_name?: string | null
+          attachment_size?: number | null
+          attachment_type?: string | null
+          attachment_url?: string | null
           content: string
           created_at?: string
           environment_id: string
@@ -173,6 +181,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachment_name?: string | null
+          attachment_size?: number | null
+          attachment_type?: string | null
+          attachment_url?: string | null
           content?: string
           created_at?: string
           environment_id?: string
@@ -954,6 +966,10 @@ export type Database = {
       }
       study_group_messages: {
         Row: {
+          attachment_name: string | null
+          attachment_size: number | null
+          attachment_type: string | null
+          attachment_url: string | null
           content: string
           created_at: string
           group_id: string
@@ -962,6 +978,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachment_name?: string | null
+          attachment_size?: number | null
+          attachment_type?: string | null
+          attachment_url?: string | null
           content: string
           created_at?: string
           group_id: string
@@ -970,6 +990,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachment_name?: string | null
+          attachment_size?: number | null
+          attachment_type?: string | null
+          attachment_url?: string | null
           content?: string
           created_at?: string
           group_id?: string

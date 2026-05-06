@@ -18,6 +18,8 @@ import MentionInput, { type MentionInputHandle, type MentionUser } from "@/compo
 import MessageContent from "@/components/chat/MessageContent";
 import MessageReplyPreview from "@/components/chat/MessageReplyPreview";
 import MessageReplyQuote from "@/components/chat/MessageReplyQuote";
+import ChatAttachment from "@/components/chat/ChatAttachment";
+import ChatAttachmentButton, { type PendingChatAttachment } from "@/components/chat/ChatAttachmentButton";
 
 interface Props {
   groupId: string;
@@ -90,12 +92,25 @@ const MessageBubble = memo(function MessageBubble({
               onClick={() => onJumpTo?.(repliedMsg.id)}
             />
           )}
-          <MessageContent
-            content={msg.content}
-            members={lookupMembers}
-            currentUserId={currentUserId}
-            isMe={isMe}
-          />
+          {msg.attachment_url && msg.attachment_name && (
+            <ChatAttachment
+              attachment={{
+                url: msg.attachment_url,
+                name: msg.attachment_name,
+                size: msg.attachment_size,
+                type: msg.attachment_type,
+              }}
+              isMe={isMe}
+            />
+          )}
+          {msg.content && msg.content.trim().length > 0 && (
+            <MessageContent
+              content={msg.content}
+              members={lookupMembers}
+              currentUserId={currentUserId}
+              isMe={isMe}
+            />
+          )}
         </div>
         <span className="text-[10px] text-muted-foreground mt-0.5 px-1">
           {new Date(msg.created_at).toLocaleTimeString("pt-BR", {
@@ -178,6 +193,7 @@ export default function StudyGroupChat({ groupId, members }: Props) {
   const [sending, setSending] = useState(false);
   const [replyTo, setReplyTo] = useState<StudyGroupMessage | null>(null);
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
+  const [pendingAttachment, setPendingAttachment] = useState<PendingChatAttachment | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
   const lastSentTypingRef = useRef<number>(0);
@@ -348,17 +364,27 @@ export default function StudyGroupChat({ groupId, members }: Props) {
 
   const handleSend = async () => {
     const text = input.trim();
-    if (!text || sending) return;
+    if ((!text && !pendingAttachment) || sending) return;
     setSending(true);
     setInput("");
     const replyId = replyTo?.id ?? null;
+    const attachment = pendingAttachment;
     setReplyTo(null);
+    setPendingAttachment(null);
     sendStopTyping();
     try {
-      await sendMessage(groupId, text, replyId);
+      await sendMessage(
+        groupId,
+        text,
+        replyId,
+        attachment
+          ? { url: attachment.url, name: attachment.name, size: attachment.size, type: attachment.type }
+          : null,
+      );
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao enviar");
       setInput(text);
+      setPendingAttachment(attachment);
     } finally {
       setSending(false);
       requestAnimationFrame(() => inputRef.current?.focus());
@@ -445,7 +471,7 @@ export default function StudyGroupChat({ groupId, members }: Props) {
       )}
 
       <form
-        className="p-3 border-t flex gap-2 bg-card"
+        className="relative p-3 border-t flex gap-2 bg-card"
         onSubmit={(e) => {
           e.preventDefault();
           handleSend();
@@ -474,6 +500,16 @@ export default function StudyGroupChat({ groupId, members }: Props) {
             />
           </PopoverContent>
         </Popover>
+        {user && (
+          <ChatAttachmentButton
+            scope="groups"
+            parentId={groupId}
+            userId={user.id}
+            pending={pendingAttachment}
+            onPendingChange={setPendingAttachment}
+            disabled={sending}
+          />
+        )}
         <MentionInput
           ref={inputRef}
           value={input}
@@ -486,7 +522,11 @@ export default function StudyGroupChat({ groupId, members }: Props) {
           currentUserId={user?.id}
           members={mentionMembers}
         />
-        <Button type="submit" size="icon" disabled={!input.trim() || sending}>
+        <Button
+          type="submit"
+          size="icon"
+          disabled={(!input.trim() && !pendingAttachment) || sending}
+        >
           <Send className="h-4 w-4" />
         </Button>
       </form>

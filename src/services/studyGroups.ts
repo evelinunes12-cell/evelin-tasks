@@ -33,6 +33,17 @@ export interface StudyGroupMessage {
   content: string;
   created_at: string;
   reply_to_id?: string | null;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
+  attachment_size?: number | null;
+  attachment_type?: string | null;
+}
+
+export interface OutgoingChatAttachment {
+  url: string;
+  name: string;
+  size: number;
+  type: string;
 }
 
 export interface RankingRow {
@@ -336,16 +347,21 @@ export async function sendMessage(
   groupId: string,
   content: string,
   replyToId?: string | null,
+  attachment?: OutgoingChatAttachment | null,
 ) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error("Não autenticado");
   const trimmed = content.trim();
-  if (!trimmed) return;
+  if (!trimmed && !attachment) return;
   const { error } = await supabase.from("study_group_messages").insert({
     group_id: groupId,
     user_id: auth.user.id,
     content: trimmed.slice(0, 2000),
     reply_to_id: replyToId ?? null,
+    attachment_url: attachment?.url ?? null,
+    attachment_name: attachment?.name ?? null,
+    attachment_size: attachment?.size ?? null,
+    attachment_type: attachment?.type ?? null,
   } as any);
   if (error) throw error;
 }
