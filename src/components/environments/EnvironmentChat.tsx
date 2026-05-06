@@ -713,7 +713,7 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
         )}
 
         <form
-          className="p-3 border-t flex gap-2 bg-card"
+          className="relative p-3 border-t flex gap-2 bg-card"
           onSubmit={(e) => {
             e.preventDefault();
             handleSend();
@@ -742,6 +742,16 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
               />
             </PopoverContent>
           </Popover>
+          {user && (
+            <ChatAttachmentButton
+              scope="environments"
+              parentId={environmentId}
+              userId={user.id}
+              pending={pendingAttachment}
+              onPendingChange={setPendingAttachment}
+              disabled={sending}
+            />
+          )}
           <MentionInput
             ref={inputRef}
             value={input}
@@ -754,7 +764,11 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
             currentUserId={user?.id}
             members={mentionMembers}
           />
-          <Button type="submit" size="icon" disabled={!input.trim() || sending}>
+          <Button
+            type="submit"
+            size="icon"
+            disabled={(!input.trim() && !pendingAttachment) || sending}
+          >
             <Send className="h-4 w-4" />
           </Button>
         </form>
