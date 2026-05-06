@@ -7,6 +7,18 @@ export interface EnvironmentMessage {
   content: string;
   created_at: string;
   reply_to_id?: string | null;
+  thread_id?: string | null;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
+  attachment_size?: number | null;
+  attachment_type?: string | null;
+}
+
+export interface OutgoingAttachment {
+  url: string;
+  name: string;
+  size: number;
+  type: string;
 }
 
 export async function listEnvironmentMessages(
