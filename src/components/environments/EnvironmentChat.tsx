@@ -580,17 +580,27 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
 
   const handleSend = async () => {
     const text = input.trim();
-    if (!text || sending) return;
+    if ((!text && !pendingAttachment) || sending) return;
     setSending(true);
     setInput("");
     const replyId = replyTo?.id ?? null;
+    const attachment = pendingAttachment;
     setReplyTo(null);
+    setPendingAttachment(null);
     sendStopTyping();
     try {
-      await sendEnvironmentMessage(environmentId, text, replyId);
+      await sendEnvironmentMessage(
+        environmentId,
+        text,
+        replyId,
+        attachment
+          ? { url: attachment.url, name: attachment.name, size: attachment.size, type: attachment.type }
+          : null,
+      );
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao enviar");
       setInput(text);
+      setPendingAttachment(attachment);
     } finally {
       setSending(false);
       requestAnimationFrame(() => inputRef.current?.focus());
