@@ -11,7 +11,7 @@ async function fetchTotal(userId: string): Promise<number> {
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
     .eq("read", false)
-    .like("link", "/shared-environments/%");
+    .like("link", "/environment/%");
   if (error) throw error;
   return count ?? 0;
 }
