@@ -24,7 +24,8 @@ const ALLOWED = [
 ];
 
 export interface PendingChatAttachment {
-  url: string;
+  url: string; // storage path (private bucket)
+  previewUrl?: string | null; // short-lived signed URL for local preview
   path: string;
   name: string;
   size: number;
