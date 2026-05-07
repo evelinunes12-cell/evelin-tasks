@@ -70,9 +70,13 @@ export default function ChatAttachmentButton({
         .from("chat-attachments")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (error) throw error;
-      const { data } = supabase.storage.from("chat-attachments").getPublicUrl(path);
+      // Bucket is private — store the path. Signed URLs are generated on display.
+      const { data: signed } = await supabase.storage
+        .from("chat-attachments")
+        .createSignedUrl(path, 3600);
       onPendingChange({
-        url: data.publicUrl,
+        url: path,
+        previewUrl: signed?.signedUrl ?? null,
         path,
         name: file.name,
         size: file.size,
