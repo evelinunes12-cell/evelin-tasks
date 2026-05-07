@@ -24,7 +24,8 @@ const ALLOWED = [
 ];
 
 export interface PendingChatAttachment {
-  url: string;
+  url: string; // storage path (private bucket)
+  previewUrl?: string | null; // short-lived signed URL for local preview
   path: string;
   name: string;
   size: number;
@@ -70,9 +71,13 @@ export default function ChatAttachmentButton({
         .from("chat-attachments")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (error) throw error;
-      const { data } = supabase.storage.from("chat-attachments").getPublicUrl(path);
+      // Bucket is private — store the path. Signed URLs are generated on display.
+      const { data: signed } = await supabase.storage
+        .from("chat-attachments")
+        .createSignedUrl(path, 3600);
       onPendingChange({
-        url: data.publicUrl,
+        url: path,
+        previewUrl: signed?.signedUrl ?? null,
         path,
         name: file.name,
         size: file.size,
@@ -128,7 +133,7 @@ export default function ChatAttachmentButton({
         <div className="absolute bottom-full left-0 right-0 mx-3 mb-1 bg-muted/80 border rounded-lg p-2 flex items-center gap-2">
           <div className="h-9 w-9 rounded bg-background flex items-center justify-center shrink-0 overflow-hidden">
             {isImage ? (
-              <img src={pending.url} alt="" className="h-full w-full object-cover" />
+              <img src={pending.previewUrl ?? undefined} alt="" className="h-full w-full object-cover" />
             ) : (
               <FileText className="h-4 w-4" />
             )}
