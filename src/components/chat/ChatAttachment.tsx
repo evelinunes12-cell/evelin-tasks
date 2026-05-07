@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { File as FileIcon, Image as ImageIcon, Download, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AttachmentPreviewModal } from "@/components/AttachmentPreviewModal";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface ChatAttachmentData {
   url: string;
