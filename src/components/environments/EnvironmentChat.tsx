@@ -424,7 +424,7 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
 
   useEffect(() => {
     const channel = supabase
-      .channel(`environment-messages-${environmentId}`)
+      .channel(`environment-messages:${environmentId}`)
       .on(
         "postgres_changes",
         {
@@ -452,7 +452,7 @@ export default function EnvironmentChat({ environmentId, members, tasks = [] }: 
 
   useEffect(() => {
     if (!user) return;
-    const channel = supabase.channel(`environment-typing-${environmentId}`, {
+    const channel = supabase.channel(`environment-typing:${environmentId}`, {
       config: { broadcast: { self: false } },
     });
 

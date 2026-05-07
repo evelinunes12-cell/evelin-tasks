@@ -92,7 +92,7 @@ export default function ThreadPanel({
 
   useEffect(() => {
     const channel = supabase
-      .channel(`env-thread-${threadId}`)
+      .channel(`env-thread:${threadId}`)
       .on(
         "postgres_changes",
         {
