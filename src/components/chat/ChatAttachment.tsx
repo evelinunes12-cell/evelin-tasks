@@ -90,7 +90,7 @@ export default function ChatAttachment({ attachment, isMe }: Props) {
           className="block rounded-lg overflow-hidden mb-1 max-w-[260px]"
         >
           <img
-            src={attachment.url}
+            src={url}
             alt={attachment.name}
             className="w-full h-auto max-h-[260px] object-cover hover:opacity-90 transition-opacity"
             loading="lazy"
@@ -99,7 +99,7 @@ export default function ChatAttachment({ attachment, isMe }: Props) {
         <AttachmentPreviewModal
           isOpen={previewOpen}
           onClose={() => setPreviewOpen(false)}
-          url={attachment.url}
+          url={url}
           fileName={attachment.name}
           fileType="image"
           onDownload={handleDownload}
@@ -155,7 +155,7 @@ export default function ChatAttachment({ attachment, isMe }: Props) {
         <AttachmentPreviewModal
           isOpen={previewOpen}
           onClose={() => setPreviewOpen(false)}
-          url={attachment.url}
+          url={url}
           fileName={attachment.name}
           fileType={kind === "pdf" ? "pdf" : "document"}
           onDownload={handleDownload}
