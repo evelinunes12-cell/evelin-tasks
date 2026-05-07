@@ -43,11 +43,36 @@ function getKind(type?: string | null, name?: string): "image" | "pdf" | "docume
 
 export default function ChatAttachment({ attachment, isMe }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const kind = getKind(attachment.type, attachment.name);
 
+  // Resolve storage path -> short-lived signed URL.
+  // For backwards compatibility, if attachment.url is already an absolute URL, use it as-is.
+  useEffect(() => {
+    let cancelled = false;
+    const raw = attachment.url;
+    if (!raw) return;
+    if (/^https?:\/\//i.test(raw)) {
+      setSignedUrl(raw);
+      return;
+    }
+    supabase.storage
+      .from("chat-attachments")
+      .createSignedUrl(raw, 3600)
+      .then(({ data }) => {
+        if (!cancelled) setSignedUrl(data?.signedUrl ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [attachment.url]);
+
+  const url = signedUrl ?? "";
+
   const handleDownload = () => {
+    if (!url) return;
     const a = document.createElement("a");
-    a.href = attachment.url;
+    a.href = url;
     a.download = attachment.name;
     a.target = "_blank";
     a.rel = "noopener noreferrer";
