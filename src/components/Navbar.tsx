@@ -2,12 +2,18 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { Mountain, LogOut, Plus, ArrowLeft, Sun, Moon } from "lucide-react";
+import { Mountain, LogOut, Plus, ArrowLeft, Sun, Moon, ListTodo, StickyNote, Target, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "./NotificationBell";
 import ShortcutsHelpDialog from "./ShortcutsHelpDialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,19 +24,54 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchSubjects } from "@/services/subjects";
+import { createNote, createGoal } from "@/services/planner";
+import { NoteDialog } from "@/components/planner/NoteDialog";
+import { GoalDialog } from "@/components/planner/GoalDialog";
+import { toast } from "sonner";
 
 interface NavbarProps {
   minimal?: boolean;
 }
 
 const Navbar = ({ minimal = false }: NavbarProps) => {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [goalDialogOpen, setGoalDialogOpen] = useState(false);
 
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
-  
+
+  const { data: subjects = [] } = useQuery({
+    queryKey: ["subjects"],
+    queryFn: fetchSubjects,
+    enabled: !!user && !minimal,
+  });
+
+  const createNoteMut = useMutation({
+    mutationFn: (data: { title: string; content: string; subject_id: string | null; task_id: string | null; planned_date: string | null }) =>
+      createNote(user!.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["planner-notes"] });
+      toast.success("Anotação criada!");
+    },
+    onError: () => toast.error("Erro ao criar anotação"),
+  });
+
+  const createGoalMut = useMutation({
+    mutationFn: (data: { title: string; description: string | null; subject_id: string | null; target_date: string | null }) =>
+      createGoal(user!.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["planner-goals"] });
+      toast.success("Meta criada!");
+    },
+    onError: () => toast.error("Erro ao criar meta"),
+  });
+
   return (
     <>
       <nav className="border-b bg-card shadow-sm w-full">
@@ -83,15 +124,34 @@ const Navbar = ({ minimal = false }: NavbarProps) => {
                   </TooltipTrigger>
                   <TooltipContent>Alternar tema claro/escuro</TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button onClick={() => navigate("/task/new")} size="sm" className="gap-1.5 sm:gap-2 rounded-xl sm:size-default">
-                      <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span className="hidden sm:inline">Nova Tarefa</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Criar uma nova tarefa</TooltipContent>
-                </Tooltip>
+                <DropdownMenu>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" className="gap-1.5 sm:gap-2 rounded-xl sm:size-default">
+                          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="hidden sm:inline">Criar</span>
+                          <ChevronDown className="w-3.5 h-3.5 hidden sm:inline" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Criar tarefa, anotação ou meta</TooltipContent>
+                  </Tooltip>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => navigate("/task/new")} className="gap-2">
+                      <ListTodo className="w-4 h-4" />
+                      Nova tarefa
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setNoteDialogOpen(true)} className="gap-2">
+                      <StickyNote className="w-4 h-4" />
+                      Nova anotação
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setGoalDialogOpen(true)} className="gap-2">
+                      <Target className="w-4 h-4" />
+                      Nova meta
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -112,6 +172,20 @@ const Navbar = ({ minimal = false }: NavbarProps) => {
           )}
         </div>
       </nav>
+
+      <NoteDialog
+        open={noteDialogOpen}
+        onOpenChange={setNoteDialogOpen}
+        subjects={subjects}
+        onSave={(data) => createNoteMut.mutate(data)}
+      />
+
+      <GoalDialog
+        open={goalDialogOpen}
+        onOpenChange={setGoalDialogOpen}
+        subjects={subjects}
+        onSave={(data) => createGoalMut.mutate(data)}
+      />
 
       <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
         <AlertDialogContent>
