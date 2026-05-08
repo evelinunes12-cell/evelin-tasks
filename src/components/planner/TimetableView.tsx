@@ -48,7 +48,7 @@ export function TimetableView() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: { title: string; type: "fixed" | "variable"; days: number[]; start_time: string; end_time: string; color: string }) => {
+    mutationFn: (data: { title: string; type: "fixed" | "variable"; days: number[]; start_time: string; end_time: string; color: string; specific_date?: string | null }) => {
       const records = data.days.map((day) => ({
         user_id: user!.id,
         day_of_week: day,
@@ -57,6 +57,7 @@ export function TimetableView() {
         title: data.title,
         type: data.type,
         color: data.color,
+        specific_date: data.type === "variable" ? data.specific_date ?? null : null,
       }));
       return createMultipleStudySchedules(records);
     },
@@ -69,7 +70,7 @@ export function TimetableView() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...data }: { id: string; title: string; type: "fixed" | "variable"; day_of_week: number; start_time: string; end_time: string; color: string }) =>
+    mutationFn: ({ id, ...data }: { id: string; title: string; type: "fixed" | "variable"; day_of_week: number; start_time: string; end_time: string; color: string; specific_date?: string | null }) =>
       updateStudySchedule(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["study-schedules"] });
