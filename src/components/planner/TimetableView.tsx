@@ -92,7 +92,7 @@ export function TimetableView() {
 
   const byDay = (day: number) =>
     schedules
-      .filter((s) => s.day_of_week === day)
+      .filter((s) => s.day_of_week === day && !(s.type === "variable" && s.specific_date))
       .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
   const openEdit = (block: StudySchedule) => {
