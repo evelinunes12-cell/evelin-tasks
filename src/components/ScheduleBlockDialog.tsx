@@ -97,7 +97,36 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDe
   };
 
   const handleSubmit = () => {
-    if (!title.trim() || selectedDays.length === 0 || !startTime || !endTime) return;
+    if (!title.trim() || !startTime || !endTime) return;
+
+    if (type === "variable") {
+      if (!specificDate) return;
+      const dow = new Date(specificDate + "T00:00:00").getDay();
+      if (editingBlock && onUpdate) {
+        onUpdate(editingBlock.id, {
+          title: title.trim(),
+          type,
+          day_of_week: dow,
+          start_time: startTime,
+          end_time: endTime,
+          color,
+          specific_date: specificDate,
+        });
+      } else {
+        onSave({
+          title: title.trim(),
+          type,
+          days: [dow],
+          start_time: startTime,
+          end_time: endTime,
+          color,
+          specific_date: specificDate,
+        });
+      }
+      return;
+    }
+
+    if (selectedDays.length === 0) return;
 
     if (editingBlock && onUpdate) {
       onUpdate(editingBlock.id, {
@@ -107,6 +136,7 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDe
         start_time: startTime,
         end_time: endTime,
         color,
+        specific_date: null,
       });
     } else {
       onSave({
@@ -116,11 +146,18 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDe
         start_time: startTime,
         end_time: endTime,
         color,
+        specific_date: null,
       });
     }
   };
 
-  const isValid = title.trim() && title.trim().length <= 255 && selectedDays.length > 0 && startTime && endTime && startTime < endTime;
+  const isValid =
+    title.trim() &&
+    title.trim().length <= 255 &&
+    startTime &&
+    endTime &&
+    startTime < endTime &&
+    (type === "variable" ? !!specificDate : selectedDays.length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
