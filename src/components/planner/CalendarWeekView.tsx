@@ -67,11 +67,24 @@ export function CalendarWeekView({
     return map;
   }, [goals]);
 
-  const schedulesByDow = useMemo(() => {
+  const fixedSchedulesByDow = useMemo(() => {
     const map = new Map<number, StudySchedule[]>();
     schedules.forEach((s) => {
+      if (s.type === "variable" && s.specific_date) return;
       if (!map.has(s.day_of_week)) map.set(s.day_of_week, []);
       map.get(s.day_of_week)!.push(s);
+    });
+    map.forEach((arr) => arr.sort((a, b) => a.start_time.localeCompare(b.start_time)));
+    return map;
+  }, [schedules]);
+
+  const variableSchedulesByDate = useMemo(() => {
+    const map = new Map<string, StudySchedule[]>();
+    schedules.forEach((s) => {
+      if (s.type === "variable" && s.specific_date) {
+        if (!map.has(s.specific_date)) map.set(s.specific_date, []);
+        map.get(s.specific_date)!.push(s);
+      }
     });
     map.forEach((arr) => arr.sort((a, b) => a.start_time.localeCompare(b.start_time)));
     return map;
