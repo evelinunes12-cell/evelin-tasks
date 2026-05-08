@@ -190,28 +190,40 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDe
             </RadioGroup>
           </div>
 
-          <div className="space-y-2">
-            <Label>{editingBlock ? "Dia da Semana" : "Dias da Semana"}</Label>
-            <div className="flex flex-wrap gap-2">
-              {DAYS.map((day) => (
-                <button
-                  key={day.value}
-                  type="button"
-                  onClick={() => toggleDay(day.value)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
-                    selectedDays.includes(day.value)
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-muted text-muted-foreground border-border hover:bg-accent"
-                  }`}
-                >
-                  {day.short}
-                </button>
-              ))}
+          {type === "variable" ? (
+            <div className="space-y-2">
+              <Label>Data</Label>
+              <Input
+                type="date"
+                value={specificDate}
+                onChange={(e) => setSpecificDate(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Horários variáveis são eventos únicos e não se repetem.</p>
             </div>
-            {!editingBlock && (
-              <p className="text-xs text-muted-foreground">Selecione vários dias para repetir o horário.</p>
-            )}
-          </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>{editingBlock ? "Dia da Semana" : "Dias da Semana"}</Label>
+              <div className="flex flex-wrap gap-2">
+                {DAYS.map((day) => (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleDay(day.value)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+                      selectedDays.includes(day.value)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted text-muted-foreground border-border hover:bg-accent"
+                    }`}
+                  >
+                    {day.short}
+                  </button>
+                ))}
+              </div>
+              {!editingBlock && (
+                <p className="text-xs text-muted-foreground">Selecione vários dias para repetir o horário.</p>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
