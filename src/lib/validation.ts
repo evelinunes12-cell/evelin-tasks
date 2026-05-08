@@ -117,6 +117,7 @@ export const studyScheduleSchema = z.object({
   start_time: z.string().regex(/^\d{2}:\d{2}$/, { message: 'Horário de início inválido' }),
   end_time: z.string().regex(/^\d{2}:\d{2}$/, { message: 'Horário de fim inválido' }),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, { message: 'Cor inválida' }).optional().or(z.literal('')).or(z.null()),
+  specific_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'Data inválida' }).optional().or(z.null()),
 }).refine((data) => data.start_time < data.end_time, {
   message: 'O horário de fim deve ser após o início',
   path: ['end_time'],
