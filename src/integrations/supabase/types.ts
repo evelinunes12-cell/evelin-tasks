@@ -1052,6 +1052,7 @@ export type Database = {
           day_of_week: number
           end_time: string
           id: string
+          specific_date: string | null
           start_time: string
           title: string
           type: string
@@ -1063,6 +1064,7 @@ export type Database = {
           day_of_week: number
           end_time: string
           id?: string
+          specific_date?: string | null
           start_time: string
           title: string
           type?: string
@@ -1074,6 +1076,7 @@ export type Database = {
           day_of_week?: number
           end_time?: string
           id?: string
+          specific_date?: string | null
           start_time?: string
           title?: string
           type?: string
