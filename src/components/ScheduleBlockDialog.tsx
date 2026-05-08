@@ -71,6 +71,7 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDe
       setTitle(editingBlock.title);
       setType(editingBlock.type);
       setSelectedDays([editingBlock.day_of_week]);
+      setSpecificDate(editingBlock.specific_date || "");
       setStartTime(editingBlock.start_time.slice(0, 5));
       setEndTime(editingBlock.end_time.slice(0, 5));
       setColor(editingBlock.color || COLORS[0]);
@@ -78,11 +79,12 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDe
       setTitle("");
       setType("fixed");
       setSelectedDays([]);
+      setSpecificDate(defaultDate || "");
       setStartTime("08:00");
       setEndTime("09:00");
       setColor(COLORS[0]);
     }
-  }, [editingBlock, open]);
+  }, [editingBlock, open, defaultDate]);
 
   const toggleDay = (day: number) => {
     if (editingBlock) {
