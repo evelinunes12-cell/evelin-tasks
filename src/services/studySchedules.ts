@@ -10,7 +10,7 @@ export interface StudySchedule {
   title: string;
   type: "fixed" | "variable";
   color: string | null;
-  specific_date: string | null;
+  specific_date?: string | null;
   created_at: string;
 }
 
