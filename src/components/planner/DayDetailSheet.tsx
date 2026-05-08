@@ -69,7 +69,13 @@ export function DayDetailSheet({
   const dow = getDay(date);
 
   const daySchedules = filters.schedules
-    ? schedules.filter((s) => s.day_of_week === dow).sort((a, b) => a.start_time.localeCompare(b.start_time))
+    ? schedules
+        .filter((s) =>
+          s.type === "variable" && s.specific_date
+            ? s.specific_date === dateStr
+            : s.day_of_week === dow
+        )
+        .sort((a, b) => a.start_time.localeCompare(b.start_time))
     : [];
   const dayNotes = filters.notes
     ? notes.filter((n) => (n.planned_date || format(new Date(n.created_at), "yyyy-MM-dd")) === dateStr)

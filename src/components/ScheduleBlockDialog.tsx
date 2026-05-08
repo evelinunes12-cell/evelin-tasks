@@ -41,6 +41,7 @@ interface Props {
     start_time: string;
     end_time: string;
     color: string;
+    specific_date?: string | null;
   }) => void;
   onUpdate?: (id: string, data: {
     title: string;
@@ -49,15 +50,18 @@ interface Props {
     start_time: string;
     end_time: string;
     color: string;
+    specific_date?: string | null;
   }) => void;
   onDelete?: (id: string) => void;
   editingBlock?: StudySchedule | null;
+  defaultDate?: string;
 }
 
-export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDelete, editingBlock }: Props) {
+export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDelete, editingBlock, defaultDate }: Props) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState<"fixed" | "variable">("fixed");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [specificDate, setSpecificDate] = useState<string>("");
   const [startTime, setStartTime] = useState("08:00");
   const [endTime, setEndTime] = useState("09:00");
   const [color, setColor] = useState(COLORS[0]);
@@ -67,6 +71,7 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDe
       setTitle(editingBlock.title);
       setType(editingBlock.type);
       setSelectedDays([editingBlock.day_of_week]);
+      setSpecificDate(editingBlock.specific_date || "");
       setStartTime(editingBlock.start_time.slice(0, 5));
       setEndTime(editingBlock.end_time.slice(0, 5));
       setColor(editingBlock.color || COLORS[0]);
@@ -74,11 +79,12 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDe
       setTitle("");
       setType("fixed");
       setSelectedDays([]);
+      setSpecificDate(defaultDate || "");
       setStartTime("08:00");
       setEndTime("09:00");
       setColor(COLORS[0]);
     }
-  }, [editingBlock, open]);
+  }, [editingBlock, open, defaultDate]);
 
   const toggleDay = (day: number) => {
     if (editingBlock) {
@@ -91,7 +97,36 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDe
   };
 
   const handleSubmit = () => {
-    if (!title.trim() || selectedDays.length === 0 || !startTime || !endTime) return;
+    if (!title.trim() || !startTime || !endTime) return;
+
+    if (type === "variable") {
+      if (!specificDate) return;
+      const dow = new Date(specificDate + "T00:00:00").getDay();
+      if (editingBlock && onUpdate) {
+        onUpdate(editingBlock.id, {
+          title: title.trim(),
+          type,
+          day_of_week: dow,
+          start_time: startTime,
+          end_time: endTime,
+          color,
+          specific_date: specificDate,
+        });
+      } else {
+        onSave({
+          title: title.trim(),
+          type,
+          days: [dow],
+          start_time: startTime,
+          end_time: endTime,
+          color,
+          specific_date: specificDate,
+        });
+      }
+      return;
+    }
+
+    if (selectedDays.length === 0) return;
 
     if (editingBlock && onUpdate) {
       onUpdate(editingBlock.id, {
@@ -101,6 +136,7 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDe
         start_time: startTime,
         end_time: endTime,
         color,
+        specific_date: null,
       });
     } else {
       onSave({
@@ -110,11 +146,18 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDe
         start_time: startTime,
         end_time: endTime,
         color,
+        specific_date: null,
       });
     }
   };
 
-  const isValid = title.trim() && title.trim().length <= 255 && selectedDays.length > 0 && startTime && endTime && startTime < endTime;
+  const isValid =
+    title.trim() &&
+    title.trim().length <= 255 &&
+    startTime &&
+    endTime &&
+    startTime < endTime &&
+    (type === "variable" ? !!specificDate : selectedDays.length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -147,28 +190,40 @@ export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDe
             </RadioGroup>
           </div>
 
-          <div className="space-y-2">
-            <Label>{editingBlock ? "Dia da Semana" : "Dias da Semana"}</Label>
-            <div className="flex flex-wrap gap-2">
-              {DAYS.map((day) => (
-                <button
-                  key={day.value}
-                  type="button"
-                  onClick={() => toggleDay(day.value)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
-                    selectedDays.includes(day.value)
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-muted text-muted-foreground border-border hover:bg-accent"
-                  }`}
-                >
-                  {day.short}
-                </button>
-              ))}
+          {type === "variable" ? (
+            <div className="space-y-2">
+              <Label>Data</Label>
+              <Input
+                type="date"
+                value={specificDate}
+                onChange={(e) => setSpecificDate(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Horários variáveis são eventos únicos e não se repetem.</p>
             </div>
-            {!editingBlock && (
-              <p className="text-xs text-muted-foreground">Selecione vários dias para repetir o horário.</p>
-            )}
-          </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>{editingBlock ? "Dia da Semana" : "Dias da Semana"}</Label>
+              <div className="flex flex-wrap gap-2">
+                {DAYS.map((day) => (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleDay(day.value)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+                      selectedDays.includes(day.value)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted text-muted-foreground border-border hover:bg-accent"
+                    }`}
+                  >
+                    {day.short}
+                  </button>
+                ))}
+              </div>
+              {!editingBlock && (
+                <p className="text-xs text-muted-foreground">Selecione vários dias para repetir o horário.</p>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
