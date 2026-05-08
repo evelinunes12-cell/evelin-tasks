@@ -41,6 +41,7 @@ interface Props {
     start_time: string;
     end_time: string;
     color: string;
+    specific_date?: string | null;
   }) => void;
   onUpdate?: (id: string, data: {
     title: string;
@@ -49,15 +50,18 @@ interface Props {
     start_time: string;
     end_time: string;
     color: string;
+    specific_date?: string | null;
   }) => void;
   onDelete?: (id: string) => void;
   editingBlock?: StudySchedule | null;
+  defaultDate?: string;
 }
 
-export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDelete, editingBlock }: Props) {
+export function ScheduleBlockDialog({ open, onOpenChange, onSave, onUpdate, onDelete, editingBlock, defaultDate }: Props) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState<"fixed" | "variable">("fixed");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [specificDate, setSpecificDate] = useState<string>("");
   const [startTime, setStartTime] = useState("08:00");
   const [endTime, setEndTime] = useState("09:00");
   const [color, setColor] = useState(COLORS[0]);
