@@ -131,7 +131,10 @@ export function CalendarWeekView({
 
           const dayNotes = filters.notes ? notesByDate.get(dateStr) || [] : [];
           const dayGoals = filters.goals ? goalsByDate.get(dateStr) || [] : [];
-          const daySchedules = filters.schedules ? schedulesByDow.get(dow) || [] : [];
+          const daySchedules = filters.schedules
+            ? [...(fixedSchedulesByDow.get(dow) || []), ...(variableSchedulesByDate.get(dateStr) || [])]
+                .sort((a, b) => a.start_time.localeCompare(b.start_time))
+            : [];
           const dayTasks = filters.tasks ? tasksByDate.get(dateStr) || [] : [];
 
           return (
