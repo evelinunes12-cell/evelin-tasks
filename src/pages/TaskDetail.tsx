@@ -525,6 +525,7 @@ const TaskDetail = () => {
       if (user?.id) {
         registerActivity(user.id);
         logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+        if (id) logXPForTaskAssignees(id, "edit_basic");
       }
     } catch (error) {
       logError("Error updating description", error);
