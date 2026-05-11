@@ -472,6 +472,7 @@ const TaskDetail = () => {
       if (newCompletedCount > previousCompletedCount && user?.id) {
         await registerActivity(user.id);
         logXP(user.id, "checklist_update", XP.CHECKLIST_UPDATE);
+        if (id) logXPForTaskAssignees(id, "checklist_update");
         queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
       }
 
@@ -480,6 +481,7 @@ const TaskDetail = () => {
       if (addedCount > 0 && user?.id) {
         for (let i = 0; i < addedCount; i++) {
           logXP(user.id, "checklist_item_added", XP.CHECKLIST_ITEM_ADDED);
+          if (id) logXPForTaskAssignees(id, "checklist_item_added");
         }
       }
 
