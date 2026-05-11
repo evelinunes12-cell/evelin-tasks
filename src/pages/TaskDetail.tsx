@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { logError } from "@/lib/logger";
 import { registerActivity } from "@/services/activity";
-import { logXP, XP } from "@/services/scoring";
+import { logXP, logXPForTaskAssignees, XP } from "@/services/scoring";
 import { uploadTaskFile } from "@/services/attachments";
 import { archiveTask } from "@/services/archive";
 import ChecklistManager from "@/components/ChecklistManager";
@@ -472,6 +472,7 @@ const TaskDetail = () => {
       if (newCompletedCount > previousCompletedCount && user?.id) {
         await registerActivity(user.id);
         logXP(user.id, "checklist_update", XP.CHECKLIST_UPDATE);
+        if (id) logXPForTaskAssignees(id, "checklist_update");
         queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
       }
 
@@ -480,6 +481,7 @@ const TaskDetail = () => {
       if (addedCount > 0 && user?.id) {
         for (let i = 0; i < addedCount; i++) {
           logXP(user.id, "checklist_item_added", XP.CHECKLIST_ITEM_ADDED);
+          if (id) logXPForTaskAssignees(id, "checklist_item_added");
         }
       }
 
@@ -523,6 +525,7 @@ const TaskDetail = () => {
       if (user?.id) {
         registerActivity(user.id);
         logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+        if (id) logXPForTaskAssignees(id, "edit_basic");
       }
     } catch (error) {
       logError("Error updating description", error);

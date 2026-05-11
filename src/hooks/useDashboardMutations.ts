@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Task } from "@/services/tasks";
 import { archiveTask } from "@/services/archive";
 import { registerActivity } from "@/services/activity";
-import { logXP, XP } from "@/services/scoring";
+import { logXP, logXPForTaskAssignees, XP } from "@/services/scoring";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
 
@@ -44,10 +44,12 @@ export const useDashboardMutations = () => {
           await registerActivity(user.id);
           queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
           logXP(user.id, "task_completed", XP.TASK_COMPLETED);
+          logXPForTaskAssignees(variables.taskId, "task_completed");
         } else {
           await registerActivity(user.id);
           queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
           logXP(user.id, "status_change", XP.STATUS_CHANGE);
+          logXPForTaskAssignees(variables.taskId, "status_change");
         }
       }
     },

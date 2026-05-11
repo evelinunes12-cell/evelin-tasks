@@ -1693,6 +1693,10 @@ export type Database = {
         Returns: boolean
       }
       log_user_xp: { Args: { p_action_type: string }; Returns: undefined }
+      log_xp_for_task_assignees: {
+        Args: { p_action_type: string; p_task_id: string }
+        Returns: undefined
+      }
       mark_environment_messages_notifications_read: {
         Args: { p_environment_id: string }
         Returns: undefined

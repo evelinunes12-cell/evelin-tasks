@@ -31,7 +31,7 @@ import { logError } from "@/lib/logger";
 import { taskFormSchema, linkSchema, checklistSchema } from "@/lib/validation";
 import AIChecklistGenerator from "@/components/AIChecklistGenerator";
 import { registerActivity } from "@/services/activity";
-import { logXP, XP } from "@/services/scoring";
+import { logXP, logXPForTaskAssignees, XP } from "@/services/scoring";
 
 
 const TaskForm = () => {
@@ -736,6 +736,9 @@ const TaskForm = () => {
       if (user) {
         registerActivity(user.id);
         logXP(user.id, isEditing ? "edit_basic" : "create_task", isEditing ? XP.EDIT_BASIC : XP.CREATE_ITEM);
+        if (isEditing && id) {
+          logXPForTaskAssignees(id, "edit_basic");
+        }
       }
 
       // Invalida o cache de tarefas para forçar atualização na Dashboard
