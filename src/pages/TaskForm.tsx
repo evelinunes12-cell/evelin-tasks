@@ -736,6 +736,9 @@ const TaskForm = () => {
       if (user) {
         registerActivity(user.id);
         logXP(user.id, isEditing ? "edit_basic" : "create_task", isEditing ? XP.EDIT_BASIC : XP.CREATE_ITEM);
+        if (isEditing && id) {
+          logXPForTaskAssignees(id, "edit_basic");
+        }
       }
 
       // Invalida o cache de tarefas para forçar atualização na Dashboard
