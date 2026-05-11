@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Task } from "@/services/tasks";
 import { archiveTask } from "@/services/archive";
 import { registerActivity } from "@/services/activity";
-import { logXP, XP } from "@/services/scoring";
+import { logXP, logXPForTaskAssignees, XP } from "@/services/scoring";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
 
