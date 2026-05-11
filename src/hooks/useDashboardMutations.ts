@@ -44,10 +44,12 @@ export const useDashboardMutations = () => {
           await registerActivity(user.id);
           queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
           logXP(user.id, "task_completed", XP.TASK_COMPLETED);
+          logXPForTaskAssignees(variables.taskId, "task_completed");
         } else {
           await registerActivity(user.id);
           queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
           logXP(user.id, "status_change", XP.STATUS_CHANGE);
+          logXPForTaskAssignees(variables.taskId, "status_change");
         }
       }
     },
