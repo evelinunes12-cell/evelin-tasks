@@ -12,7 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { X, Plus, Mail, Users, BookOpen, ListTodo, Trash2, Lock } from "lucide-react";
+import { X, Plus, Mail, Users, BookOpen, ListTodo, Trash2, Lock, Check, ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { logError } from "@/lib/logger";
 import { environmentFormSchema, memberSchema, subjectStatusSchema } from "@/lib/validation";
@@ -55,6 +56,40 @@ const EnvironmentForm = () => {
   const [newSubjectColor, setNewSubjectColor] = useState("#3b82f6");
   const [newStatusName, setNewStatusName] = useState("");
   const [newStatusColor, setNewStatusColor] = useState("#3b82f6");
+
+  // Stepper (only for new environment creation)
+  const [currentStep, setCurrentStep] = useState(0);
+  const steps = [
+    { key: "info", label: "Info", icon: Info },
+    { key: "subjects", label: "Disciplinas", icon: BookOpen, required: true },
+    { key: "members", label: "Membros", icon: Users },
+    { key: "statuses", label: "Status", icon: ListTodo },
+  ];
+
+  const validateStep = (stepIndex: number): boolean => {
+    if (stepIndex === 0) {
+      const v = environmentFormSchema.safeParse({ environment_name: environmentName, description });
+      if (!v.success) {
+        toast.error(v.error.errors[0]?.message || "Preencha as informações do grupo");
+        return false;
+      }
+      return true;
+    }
+    if (stepIndex === 1) {
+      if (subjects.length === 0) {
+        toast.error("Adicione ao menos uma disciplina para continuar");
+        return false;
+      }
+      return true;
+    }
+    return true;
+  };
+
+  const goNext = () => {
+    if (!validateStep(currentStep)) return;
+    setCurrentStep((s) => Math.min(s + 1, steps.length - 1));
+  };
+  const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0));
 
   const availablePermissions = [
     { value: "view", label: "Visualizar" },
@@ -204,6 +239,12 @@ const EnvironmentForm = () => {
     
     if (!user?.id) { toast.error("Usuário não autenticado"); return; }
 
+    if (isNewEnvironment && subjects.length === 0) {
+      toast.error("Adicione ao menos uma disciplina");
+      setCurrentStep(1);
+      return;
+    }
+
     try {
       setLoading(true);
       if (isNewEnvironment) {
@@ -250,6 +291,54 @@ const EnvironmentForm = () => {
       <div className="container mx-auto px-6 py-8 max-w-4xl">
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-8">{isNewEnvironment ? "Novo Grupo de Trabalho" : "Editar Grupo"}</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Stepper indicator (only for new environments) */}
+          {isNewEnvironment && (
+            <div className="flex items-center justify-between gap-2 px-1">
+              {steps.map((s, idx) => {
+                const Icon = s.icon;
+                const isActive = idx === currentStep;
+                const isComplete = idx < currentStep;
+                return (
+                  <div key={s.key} className="flex-1 flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (idx <= currentStep) setCurrentStep(idx);
+                        else if (validateStep(currentStep)) setCurrentStep(idx);
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 min-w-0",
+                        isActive ? "text-foreground" : isComplete ? "text-primary" : "text-muted-foreground"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex items-center justify-center w-8 h-8 rounded-full border-2 shrink-0 transition-colors",
+                          isActive
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : isComplete
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-background"
+                        )}
+                      >
+                        {isComplete ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                      </span>
+                      <span className="hidden sm:inline text-sm font-medium truncate">
+                        {s.label}
+                        {s.required && <span className="text-destructive ml-0.5">*</span>}
+                      </span>
+                    </button>
+                    {idx < steps.length - 1 && (
+                      <div className={cn("flex-1 h-0.5 mx-2", idx < currentStep ? "bg-primary" : "bg-border")} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* INFO step */}
+          {(!isNewEnvironment || currentStep === 0) && (
           <Card>
             <CardHeader><CardTitle>Informações do Grupo</CardTitle></CardHeader>
             <CardContent className="space-y-4">
@@ -275,7 +364,10 @@ const EnvironmentForm = () => {
               </div>
             </CardContent>
           </Card>
+          )}
 
+          {/* Edit mode keeps tab navigation */}
+          {!isNewEnvironment && (
           <Tabs defaultValue="members">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="members"><Users className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Membros</span></TabsTrigger>
@@ -314,8 +406,75 @@ const EnvironmentForm = () => {
               </Card>
             </TabsContent>
           </Tabs>
+          )}
 
-          <div className="flex gap-4 justify-end"><Button type="button" variant="outline" onClick={() => navigate("/shared-environments")}>Cancelar</Button><Button type="submit" disabled={loading}>{loading ? "Salvando..." : isNewEnvironment ? "Criar Grupo" : "Salvar"}</Button></div>
+          {/* New env: Subjects step (required) */}
+          {isNewEnvironment && currentStep === 1 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Disciplinas <span className="text-destructive">*</span></CardTitle>
+                <CardDescription>Adicione ao menos uma disciplina para usar nas tarefas deste grupo.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2"><Input value={newSubjectName} onChange={(e) => setNewSubjectName(e.target.value)} placeholder="Nome da disciplina" className="flex-1" /><Input type="color" value={newSubjectColor} onChange={(e) => setNewSubjectColor(e.target.value)} className="w-12" /><Button type="button" onClick={handleAddSubject}><Plus className="w-4 h-4" /></Button></div>
+                {subjects.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Nenhuma disciplina adicionada ainda.</p>
+                )}
+                {subjects.map(s => <div key={s.id} className="flex items-center justify-between p-3 bg-muted rounded-lg"><div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full" style={{ backgroundColor: s.color || "#3b82f6" }} /><span>{s.name}</span></div><Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveSubject(s.id)}><Trash2 className="w-4 h-4" /></Button></div>)}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* New env: Members step (optional) */}
+          {isNewEnvironment && currentStep === 2 && (
+            <Card>
+              <CardHeader><CardTitle>Membros</CardTitle><CardDescription>Opcional. Convide pessoas por email.</CardDescription></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2"><Input type="email" value={newMemberEmail} onChange={(e) => setNewMemberEmail(e.target.value)} placeholder="email@exemplo.com" className="flex-1" /><Button type="button" onClick={handleAddMember}><Plus className="w-4 h-4" /></Button></div>
+                <div className="flex flex-wrap gap-4">{availablePermissions.map(p => <div key={p.value} className="flex items-center space-x-2"><Checkbox checked={newMemberPermissions.includes(p.value)} onCheckedChange={() => handlePermissionToggle(p.value)} /><Label>{p.label}</Label></div>)}</div>
+                {members.map(m => <div key={m.email} className="flex items-center justify-between p-3 bg-muted rounded-lg"><div className="flex items-center gap-2"><Mail className="w-4 h-4" /><span>{m.email}</span></div><div className="flex items-center gap-2">{m.permissions.map(p => <Badge key={p} variant="secondary">{availablePermissions.find(ap => ap.value === p)?.label}</Badge>)}<Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveMember(m.email)}><X className="w-4 h-4" /></Button></div></div>)}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* New env: Statuses step (optional) */}
+          {isNewEnvironment && currentStep === 3 && (
+            <Card>
+              <CardHeader><CardTitle>Status</CardTitle><CardDescription>Opcional. Personalize os status disponíveis.</CardDescription></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2"><Input value={newStatusName} onChange={(e) => setNewStatusName(e.target.value)} placeholder="Nome do status" className="flex-1" /><Input type="color" value={newStatusColor} onChange={(e) => setNewStatusColor(e.target.value)} className="w-12" /><Button type="button" onClick={handleAddStatus}><Plus className="w-4 h-4" /></Button></div>
+                {statuses.map(s => <div key={s.id} className="flex items-center justify-between p-3 bg-muted rounded-lg"><div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full" style={{ backgroundColor: s.color || "#3b82f6" }} /><span>{s.name}</span>{s.is_default && <span className="text-xs text-muted-foreground">(padrão)</span>}</div>{!s.is_default && <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveStatus(s.id)}><Trash2 className="w-4 h-4" /></Button>}</div>)}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Footer actions */}
+          {isNewEnvironment ? (
+            <div className="flex flex-wrap gap-2 justify-between">
+              <Button type="button" variant="outline" onClick={() => navigate("/shared-environments")}>Cancelar</Button>
+              <div className="flex gap-2 ml-auto">
+                {currentStep > 0 && (
+                  <Button type="button" variant="outline" onClick={goBack}>
+                    <ChevronLeft className="w-4 h-4" /> Voltar
+                  </Button>
+                )}
+                {currentStep < steps.length - 1 ? (
+                  <Button type="button" onClick={goNext}>
+                    Próximo <ChevronRight className="w-4 h-4" />
+                  </Button>
+                ) : (
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "Criando..." : "Criar Grupo"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-4 justify-end">
+              <Button type="button" variant="outline" onClick={() => navigate("/shared-environments")}>Cancelar</Button>
+              <Button type="submit" disabled={loading}>{loading ? "Salvando..." : "Salvar"}</Button>
+            </div>
+          )}
         </form>
       </div>
     </div>
