@@ -8,7 +8,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Crown, Sparkles } from "lucide-react";
+import { Trophy, Medal, Crown, Sparkles, History } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { resolveUsername } from "@/lib/username";
@@ -188,8 +188,55 @@ function RankingContent() {
     staleTime: 60_000
   });
 
+  const { data: lastWeekWinners = [], isLoading: loadingLastWeek } = useQuery({
+    queryKey: ["leaderboard", "last_weekly"],
+    queryFn: () => fetchLeaderboard("last_weekly"),
+    staleTime: 5 * 60_000,
+  });
+
+  const { data: lastMonthWinners = [], isLoading: loadingLastMonth } = useQuery({
+    queryKey: ["leaderboard", "last_monthly"],
+    queryFn: () => fetchLeaderboard("last_monthly"),
+    staleTime: 5 * 60_000,
+  });
+
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3, 20);
+
+  const renderPastWinners = (
+    title: string,
+    winners: LeaderboardEntry[],
+    loading: boolean,
+  ) => (
+    <Card className="p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <History className="h-4 w-4 text-muted-foreground" />
+        <h2 className="text-sm font-semibold">{title}</h2>
+      </div>
+      {loading ? (
+        <div className="space-y-2">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-12 rounded-lg" />
+          ))}
+        </div>
+      ) : winners.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-2">
+          Sem registros neste período.
+        </p>
+      ) : (
+        <div className="space-y-1">
+          {winners.slice(0, 3).map((entry, i) => (
+            <ListItem
+              key={entry.user_id}
+              entry={entry}
+              rank={i + 1}
+              isCurrentUser={entry.user_id === user?.id}
+            />
+          ))}
+        </div>
+      )}
+    </Card>
+  );
 
   return (
     <>
@@ -263,6 +310,12 @@ function RankingContent() {
           )}
           </Card>
         }
+
+        {/* Past winners */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          {renderPastWinners("Top 3 da semana passada", lastWeekWinners, loadingLastWeek)}
+          {renderPastWinners("Top 3 do mês passado", lastMonthWinners, loadingLastMonth)}
+        </div>
       </div>
     </>);
 
