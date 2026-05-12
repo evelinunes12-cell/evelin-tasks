@@ -310,6 +310,12 @@ function RankingContent() {
           )}
           </Card>
         }
+
+        {/* Past winners */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          {renderPastWinners("Top 3 da semana passada", lastWeekWinners, loadingLastWeek)}
+          {renderPastWinners("Top 3 do mês passado", lastMonthWinners, loadingLastMonth)}
+        </div>
       </div>
     </>);
 
