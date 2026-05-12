@@ -239,6 +239,12 @@ const EnvironmentForm = () => {
     
     if (!user?.id) { toast.error("Usuário não autenticado"); return; }
 
+    if (isNewEnvironment && subjects.length === 0) {
+      toast.error("Adicione ao menos uma disciplina");
+      setCurrentStep(1);
+      return;
+    }
+
     try {
       setLoading(true);
       if (isNewEnvironment) {
