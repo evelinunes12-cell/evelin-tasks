@@ -57,6 +57,40 @@ const EnvironmentForm = () => {
   const [newStatusName, setNewStatusName] = useState("");
   const [newStatusColor, setNewStatusColor] = useState("#3b82f6");
 
+  // Stepper (only for new environment creation)
+  const [currentStep, setCurrentStep] = useState(0);
+  const steps = [
+    { key: "info", label: "Info", icon: Info },
+    { key: "subjects", label: "Disciplinas", icon: BookOpen, required: true },
+    { key: "members", label: "Membros", icon: Users },
+    { key: "statuses", label: "Status", icon: ListTodo },
+  ];
+
+  const validateStep = (stepIndex: number): boolean => {
+    if (stepIndex === 0) {
+      const v = environmentFormSchema.safeParse({ environment_name: environmentName, description });
+      if (!v.success) {
+        toast.error(v.error.errors[0]?.message || "Preencha as informações do grupo");
+        return false;
+      }
+      return true;
+    }
+    if (stepIndex === 1) {
+      if (subjects.length === 0) {
+        toast.error("Adicione ao menos uma disciplina para continuar");
+        return false;
+      }
+      return true;
+    }
+    return true;
+  };
+
+  const goNext = () => {
+    if (!validateStep(currentStep)) return;
+    setCurrentStep((s) => Math.min(s + 1, steps.length - 1));
+  };
+  const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0));
+
   const availablePermissions = [
     { value: "view", label: "Visualizar" },
     { value: "create", label: "Criar" },
