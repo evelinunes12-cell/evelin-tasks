@@ -31,6 +31,8 @@ import { CalendarIcon, X, LinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useForm } from "react-hook-form";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 
 interface TaskOption {
   id: string;
@@ -38,13 +40,10 @@ interface TaskOption {
   description: string | null;
 }
 
-const hasHtmlTags = (content: string) => /<[a-z][\s\S]*>/i.test(content);
-
-const formatInitialContent = (content?: string | null) => {
-  if (!content) return "";
-  if (hasHtmlTags(content)) return content;
-
-  return `<p>${content.replace(/\n/g, "<br/>")}</p>`;
+const formatContentForEditor = (text?: string | null) => {
+  if (!text) return "";
+  if (/<[a-z][\s\S]*>/i.test(text)) return text;
+  return `<p>${text.replace(/\n/g, "<br/>")}</p>`;
 };
 
 interface NoteDialogProps {
@@ -64,29 +63,45 @@ interface NoteDialogProps {
 }
 
 export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId, prefilledSubjectId, onSave }: NoteDialogProps) {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [subjectId, setSubjectId] = useState<string | null>(null);
-  const [taskId, setTaskId] = useState<string | null>(null);
-  const [plannedDate, setPlannedDate] = useState<Date | undefined>();
+  const defaultValues = {
+    title: "",
+    content: "",
+    subject_id: null as string | null,
+    task_id: null as string | null,
+    planned_date: undefined as Date | undefined,
+  };
+  const form = useForm({ defaultValues });
+  const subjectId = form.watch("subject_id");
+  const taskId = form.watch("task_id");
+  const plannedDate = form.watch("planned_date");
   const [tasks, setTasks] = useState<TaskOption[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      setTitle(note?.title || "");
-      setContent(formatInitialContent(note?.content));
-      setSubjectId(note?.subject_id || prefilledSubjectId || null);
-      setTaskId(note?.task_id || prefilledTaskId || null);
-      setPlannedDate(note?.planned_date ? new Date(note.planned_date + "T12:00:00") : undefined);
+    if (note && open) {
+      form.reset({
+        title: note.title,
+        content: formatContentForEditor(note.content),
+        subject_id: note.subject_id || prefilledSubjectId || null,
+        task_id: note.task_id || prefilledTaskId || null,
+        planned_date: note.planned_date ? new Date(note.planned_date + "T12:00:00") : undefined,
+      });
+    } else if (open) {
+      form.reset({
+        ...defaultValues,
+        subject_id: prefilledSubjectId || null,
+        task_id: prefilledTaskId || null,
+      });
+    } else {
+      form.reset(defaultValues);
     }
-  }, [open, note, prefilledTaskId, prefilledSubjectId]);
+  }, [note, open, prefilledTaskId, prefilledSubjectId, form]);
 
   // Fetch open tasks when subject changes
   useEffect(() => {
     if (!open || !subjectId) {
       setTasks([]);
-      if (!subjectId) setTaskId(null);
+      if (!subjectId) form.setValue("task_id", null);
       return;
     }
 
@@ -121,17 +136,18 @@ export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId
   // Clear task when subject changes and task doesn't match
   useEffect(() => {
     if (taskId && tasks.length > 0 && !tasks.find((t) => t.id === taskId)) {
-      setTaskId(null);
-    }
-  }, [tasks, taskId]);
+      form.setValue("task_id", null);
+  }
+  }, [tasks, taskId, form]);
 
   const handleSave = () => {
+    const values = form.getValues();
     onSave({
-      title,
-      content,
-      subject_id: subjectId,
-      task_id: taskId,
-      planned_date: plannedDate ? format(plannedDate, "yyyy-MM-dd") : null,
+      title: values.title,
+      content: values.content,
+      subject_id: values.subject_id,
+      task_id: values.task_id,
+      planned_date: values.planned_date ? format(values.planned_date, "yyyy-MM-dd") : null,
     });
     onOpenChange(false);
   };
@@ -143,29 +159,39 @@ export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId
           <DialogTitle>{note ? "Editar Anotação" : "Nova Anotação"}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <Form {...form}>
+        <div className="space-y-4" key={note?.id || "new_note"}>
           <div className="space-y-2">
             <Label>Título</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título da anotação" />
+            <Input value={form.watch("title")} onChange={(e) => form.setValue("title", e.target.value)} placeholder="Título da anotação" />
           </div>
 
-          <div className="space-y-2">
-            <Label>Conteúdo</Label>
-            <RichTextEditor
-              content={content}
-              onChange={setContent}
-              placeholder="Escreva sua anotação..."
-              minHeight="180px"
-              className="w-full"
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="content"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <Label>Conteúdo</Label>
+                <FormControl>
+                  <RichTextEditor
+                    key={note?.id || "new_note"}
+                    content={field.value}
+                    onChange={field.onChange}
+                    placeholder="Escreva sua anotação..."
+                    minHeight="180px"
+                    className="w-full"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Disciplina</Label>
               <Select
                 value={subjectId || "none"}
-                onValueChange={(v) => setSubjectId(v === "none" ? null : v)}
+                onValueChange={(v) => form.setValue("subject_id", v === "none" ? null : v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Nenhuma" />
@@ -201,14 +227,14 @@ export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId
                     <Calendar
                       mode="single"
                       selected={plannedDate}
-                      onSelect={setPlannedDate}
+                      onSelect={(value) => form.setValue("planned_date", value)}
                       locale={ptBR}
                       className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
                 {plannedDate && (
-                  <Button variant="ghost" size="icon" onClick={() => setPlannedDate(undefined)}>
+                  <Button variant="ghost" size="icon" onClick={() => form.setValue("planned_date", undefined)}>
                     <X className="h-4 w-4" />
                   </Button>
                 )}
@@ -224,7 +250,7 @@ export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId
               </Label>
               <Select
                 value={taskId || "none"}
-                onValueChange={(v) => setTaskId(v === "none" ? null : v)}
+                onValueChange={(v) => form.setValue("task_id", v === "none" ? null : v)}
                 disabled={loadingTasks}
               >
                 <SelectTrigger>
@@ -248,6 +274,7 @@ export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId
             </div>
           )}
         </div>
+        </Form>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
