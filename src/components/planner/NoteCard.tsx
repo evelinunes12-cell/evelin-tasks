@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { sanitizeHtml } from "@/utils/sanitize";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -83,9 +84,10 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleComplete
         </div>
 
         {note.content && (
-          <p className="text-xs text-muted-foreground line-clamp-4 whitespace-pre-wrap">
-            {note.content}
-          </p>
+          <div
+            className="prose prose-sm dark:prose-invert max-w-none line-clamp-4 text-xs text-muted-foreground"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.content) }}
+          />
         )}
 
         <div className="flex items-center gap-2 flex-wrap pt-1">

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/RichTextEditor";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -142,11 +142,12 @@ export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId
 
           <div className="space-y-2">
             <Label>Conteúdo</Label>
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+            <RichTextEditor
+              content={content}
+              onChange={setContent}
               placeholder="Escreva sua anotação..."
-              rows={6}
+              minHeight="180px"
+              className="w-full"
             />
           </div>
 
