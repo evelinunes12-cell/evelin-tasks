@@ -38,6 +38,15 @@ interface TaskOption {
   description: string | null;
 }
 
+const hasHtmlTags = (content: string) => /<[a-z][\s\S]*>/i.test(content);
+
+const formatInitialContent = (content?: string | null) => {
+  if (!content) return "";
+  if (hasHtmlTags(content)) return content;
+
+  return `<p>${content.replace(/\n/g, "<br/>")}</p>`;
+};
+
 interface NoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -66,7 +75,7 @@ export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId
   useEffect(() => {
     if (open) {
       setTitle(note?.title || "");
-      setContent(note?.content || "");
+      setContent(formatInitialContent(note?.content));
       setSubjectId(note?.subject_id || prefilledSubjectId || null);
       setTaskId(note?.task_id || prefilledTaskId || null);
       setPlannedDate(note?.planned_date ? new Date(note.planned_date + "T12:00:00") : undefined);
