@@ -83,9 +83,10 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleComplete
         </div>
 
         {note.content && (
-          <p className="text-xs text-muted-foreground line-clamp-4 whitespace-pre-wrap">
-            {note.content}
-          </p>
+          <div
+            className="prose prose-sm dark:prose-invert max-w-none line-clamp-4 text-xs text-muted-foreground"
+            dangerouslySetInnerHTML={{ __html: note.content }}
+          />
         )}
 
         <div className="flex items-center gap-2 flex-wrap pt-1">
