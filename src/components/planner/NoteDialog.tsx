@@ -54,6 +54,15 @@ interface NoteDialogProps {
   }) => void;
 }
 
+function formatInitialNoteContent(content: string | null | undefined): string {
+  if (!content) return "";
+
+  const hasHtml = /<[a-z][\s\S]*>/i.test(content);
+  if (hasHtml) return content;
+
+  return `<p>${content.replace(/\n/g, "<br/>")}</p>`;
+}
+
 export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId, prefilledSubjectId, onSave }: NoteDialogProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -66,7 +75,7 @@ export function NoteDialog({ open, onOpenChange, note, subjects, prefilledTaskId
   useEffect(() => {
     if (open) {
       setTitle(note?.title || "");
-      setContent(note?.content || "");
+      setContent(formatInitialNoteContent(note?.content));
       setSubjectId(note?.subject_id || prefilledSubjectId || null);
       setTaskId(note?.task_id || prefilledTaskId || null);
       setPlannedDate(note?.planned_date ? new Date(note.planned_date + "T12:00:00") : undefined);
