@@ -321,11 +321,15 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       const nextIdx = currentIndex + 1;
       setCurrentIndex(nextIdx);
       setElapsedSeconds(0);
+      lastSavedElapsedRef.current = 0;
       setTargetReached(false);
       persistProgress(cycle.id, nextIdx);
+      resetCycleElapsedTime(cycle.id).catch(() => {});
     } else {
       toast.success("🎉 Ciclo completo!");
       persistProgress(cycle.id, 0);
+      resetCycleElapsedTime(cycle.id).catch(() => {});
+      lastSavedElapsedRef.current = 0;
     }
   }, [cycle, clearTimer, isBreak, advanceToNextBlock, currentIndex, blocks.length, persistProgress]);
 
@@ -334,20 +338,29 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     setIsRunning(false);
     setIsPaused(false);
     setTargetReached(false);
-    if (isBreak) setBreakRemaining(BREAK_SECONDS);
-    else setElapsedSeconds(0);
-  }, [clearTimer, isBreak]);
+    if (isBreak) {
+      setBreakRemaining(BREAK_SECONDS);
+    } else {
+      setElapsedSeconds(0);
+      lastSavedElapsedRef.current = 0;
+      if (cycle) resetCycleElapsedTime(cycle.id).catch(() => {});
+    }
+  }, [clearTimer, isBreak, cycle]);
 
   const goToBlock = useCallback((index: number) => {
     if (!cycle || isBreak) return;
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
+    // Save current block's time before switching
+    void saveProgressAndLogTime();
     setCurrentIndex(index);
     setElapsedSeconds(0);
+    lastSavedElapsedRef.current = 0;
     setTargetReached(false);
     persistProgress(cycle.id, index);
-  }, [cycle, isBreak, clearTimer, persistProgress]);
+    resetCycleElapsedTime(cycle.id).catch(() => {});
+  }, [cycle, isBreak, clearTimer, persistProgress, saveProgressAndLogTime]);
 
   const setManualLogged = useCallback(({ blockIndex, markCompleted }: { blockIndex: number; markCompleted: boolean }) => {
     if (!cycle || !markCompleted || blockIndex < 0) return;
@@ -359,9 +372,11 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       const nextIdx = currentIndex + 1 < blocks.length ? currentIndex + 1 : 0;
       setCurrentIndex(nextIdx);
       setElapsedSeconds(0);
+      lastSavedElapsedRef.current = 0;
       setTargetReached(false);
       setMode("study");
       saveCycleProgress(cycle.id, nextIdx, null).catch(() => {});
+      resetCycleElapsedTime(cycle.id).catch(() => {});
     }
   }, [cycle, currentIndex, blocks.length, clearTimer]);
 
