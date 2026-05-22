@@ -171,3 +171,19 @@ export const saveCycleProgress = async (
 
   if (error) throw error;
 };
+
+export const incrementCycleElapsedTime = async (cycleId: string, seconds: number) => {
+  if (!seconds || seconds <= 0) return;
+  const { error } = await supabase.rpc("increment_cycle_elapsed_time", {
+    _cycle_id: cycleId,
+    _seconds: Math.round(seconds),
+  });
+  if (error) throw error;
+};
+
+export const resetCycleElapsedTime = async (cycleId: string) => {
+  const { error } = await supabase.rpc("reset_cycle_elapsed_time", {
+    _cycle_id: cycleId,
+  });
+  if (error) throw error;
+};
