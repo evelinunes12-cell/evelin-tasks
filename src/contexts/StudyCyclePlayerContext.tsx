@@ -166,10 +166,12 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     const savedIndex = Math.min(newCycle.current_block_index || 0, Math.max((newCycle.blocks?.length || 1) - 1, 0));
     const set = new Set<number>();
     for (let i = 0; i < savedIndex; i++) set.add(i);
+    const savedElapsed = Math.max(0, newCycle.current_block_elapsed_time || 0);
     setCycle(newCycle);
     setCurrentIndex(savedIndex);
     setCompletedBlocks(set);
-    setElapsedSeconds(0);
+    setElapsedSeconds(savedElapsed);
+    lastSavedElapsedRef.current = savedElapsed;
     setBreakRemaining(BREAK_SECONDS);
     setMode("study");
     setIsRunning(false);
@@ -184,6 +186,8 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
   const closePlayer = useCallback(() => {
     clearTimer();
     clearCurrentStudyInfo();
+    // Save any in-flight time before tearing down
+    void saveProgressAndLogTime();
     if (cycle && mode === "study") {
       persistProgress(cycle.id, currentIndex);
     }
@@ -192,8 +196,9 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     setIsRunning(false);
     setIsPaused(false);
     setElapsedSeconds(0);
+    lastSavedElapsedRef.current = 0;
     setMode("study");
-  }, [clearTimer, cycle, mode, currentIndex, persistProgress]);
+  }, [clearTimer, cycle, mode, currentIndex, persistProgress, saveProgressAndLogTime]);
 
   const startTimer = useCallback(() => {
     if (!cycle) return;
