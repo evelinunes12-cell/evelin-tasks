@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { StudyCycle, saveCycleProgress } from "@/services/studyCycles";
+import { StudyCycle, saveCycleProgress, incrementCycleElapsedTime, resetCycleElapsedTime } from "@/services/studyCycles";
 import { createFocusSession } from "@/services/focusSessions";
 import { registerActivity } from "@/services/activity";
 import { logXP, XP } from "@/services/scoring";
