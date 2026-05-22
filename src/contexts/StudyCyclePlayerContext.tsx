@@ -262,16 +262,27 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
 
     const realElapsed = elapsedSeconds;
     const realMinutes = Math.max(1, Math.round(realElapsed / 60));
+    // Log only the seconds not yet persisted (avoid double counting)
+    const unsavedSec = Math.max(0, realElapsed - lastSavedElapsedRef.current);
+    const unsavedMinutes = Math.max(1, Math.round(unsavedSec / 60));
 
     if (user) {
       await registerActivity(user.id);
       logXP(user.id, "study_block_completed", XP.STUDY_BLOCK_COMPLETED);
       const block = blocks[currentIndex];
-      if (block) {
-        const startedAt = new Date(Date.now() - realElapsed * 1000);
-        await createFocusSession(user.id, startedAt, realMinutes, block.subject_id, cycle.id);
+      if (block && unsavedSec > 0) {
+        const startedAt = new Date(Date.now() - unsavedSec * 1000);
+        await createFocusSession(user.id, startedAt, unsavedMinutes, block.subject_id, cycle.id);
       }
     }
+
+    // Block done: reset persisted elapsed and advance index
+    try {
+      await resetCycleElapsedTime(cycle.id);
+    } catch {
+      // silent
+    }
+    lastSavedElapsedRef.current = 0;
 
     toast.success(`✅ ${currentBlock?.subject?.name || "Bloco"} concluído! (${realMinutes}min)`);
 
