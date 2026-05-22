@@ -229,8 +229,9 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     clearCurrentStudyInfo();
     if (cycle && mode === "study") {
       persistProgress(cycle.id, currentIndex);
+      void saveProgressAndLogTime();
     }
-  }, [clearTimer, cycle, mode, currentIndex, persistProgress]);
+  }, [clearTimer, cycle, mode, currentIndex, persistProgress, saveProgressAndLogTime]);
 
   const togglePlayPause = useCallback(() => {
     if (isRunning) pauseTimer();
