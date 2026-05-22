@@ -61,6 +61,15 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
   const startTimeRef = useRef<number | null>(null);
   const elapsedAtStartRef = useRef(0);
   const breakEndTimeRef = useRef<number | null>(null);
+  /** Total seconds (within current block) already persisted to DB. */
+  const lastSavedElapsedRef = useRef(0);
+  /** Latest elapsedSeconds value, kept in a ref to use in cleanup/listeners. */
+  const elapsedSecondsRef = useRef(0);
+  const cycleRef = useRef<StudyCycle | null>(null);
+  const currentIndexRef = useRef(0);
+  const modeRef = useRef<CycleMode>("study");
+  const userIdRef = useRef<string | null>(null);
+  const currentBlockRef = useRef<typeof blocks[number] | null>(null);
 
   const { open: openPiPHook, isOpen: pipOpen, pipContainer, isSupported: pipSupported } = useDocumentPiP({ width: 280, height: 320 });
 
