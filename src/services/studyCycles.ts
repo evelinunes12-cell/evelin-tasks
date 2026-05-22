@@ -13,6 +13,7 @@ export interface StudyCycle {
   is_advanced: boolean;
   hours_per_day: number | null;
   hours_per_week: number | null;
+  current_block_elapsed_time?: number | null;
   blocks?: StudyCycleBlock[];
 }
 
