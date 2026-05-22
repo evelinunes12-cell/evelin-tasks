@@ -243,11 +243,13 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     const nextIdx = currentIndex + 1 < blocks.length ? currentIndex + 1 : 0;
     setCurrentIndex(nextIdx);
     setElapsedSeconds(0);
+    lastSavedElapsedRef.current = 0;
     setTargetReached(false);
     setMode("study");
     setIsRunning(false);
     setIsPaused(false);
     persistProgress(cycle.id, nextIdx);
+    resetCycleElapsedTime(cycle.id).catch(() => {});
   }, [cycle, currentIndex, blocks.length, persistProgress]);
 
   const completeBlock = useCallback(async () => {
