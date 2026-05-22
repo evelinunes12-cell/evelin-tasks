@@ -438,6 +438,23 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     }
   }, [openPiPHook]);
 
+  // Persist progress when the user closes the tab / switches away,
+  // and as a final safety net when the provider unmounts.
+  useEffect(() => {
+    const flush = () => { void saveProgressAndLogTime(); };
+    const onVisibility = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("beforeunload", flush);
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+      flush();
+    };
+  }, [saveProgressAndLogTime]);
+
+
   const value: StudyCyclePlayerContextValue = {
     cycle,
     isExpanded,
