@@ -225,7 +225,7 @@ const Planner = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["study-schedules"] });
-      if (user) { registerActivity(user.id); logXP(user.id, "create_schedule", XP.CREATE_ITEM); }
+      if (user) { registerActivity(user.id); logXP(user.id, "create_schedule", XP.CREATE_SCHEDULE); }
       toast.success("Horário criado!");
     },
     onError: () => toast.error("Erro ao criar horário"),
