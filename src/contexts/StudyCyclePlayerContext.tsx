@@ -69,7 +69,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
   const currentIndexRef = useRef(0);
   const modeRef = useRef<CycleMode>("study");
   const userIdRef = useRef<string | null>(null);
-  const currentBlockRef = useRef<typeof blocks[number] | null>(null);
+  const currentBlockRef = useRef<any>(null);
 
   const { open: openPiPHook, isOpen: pipOpen, pipContainer, isSupported: pipSupported } = useDocumentPiP({ width: 280, height: 320 });
 
