@@ -87,6 +87,54 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     breakEndTimeRef.current = null;
   }, []);
 
+  // Keep refs in sync for use in cleanup/listeners
+  useEffect(() => { elapsedSecondsRef.current = elapsedSeconds; }, [elapsedSeconds]);
+  useEffect(() => { cycleRef.current = cycle; }, [cycle]);
+  useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+  useEffect(() => { userIdRef.current = user?.id || null; }, [user]);
+  useEffect(() => { currentBlockRef.current = currentBlock; }, [currentBlock]);
+
+  /**
+   * Persists any unsaved studied seconds for the current block:
+   * - logs a focus_session for the delta (rounded minutes >= 1)
+   * - increments current_block_elapsed_time in the DB
+   * - registers daily activity / streak
+   */
+  const saveProgressAndLogTime = useCallback(async () => {
+    const c = cycleRef.current;
+    if (!c) return;
+    if (modeRef.current !== "study") return;
+    const totalElapsed = elapsedSecondsRef.current;
+    const unsavedSec = totalElapsed - lastSavedElapsedRef.current;
+    if (unsavedSec <= 0) return;
+
+    // Update baseline immediately to avoid double-saving on rapid calls
+    const secsToSave = unsavedSec;
+    lastSavedElapsedRef.current = totalElapsed;
+
+    try {
+      await incrementCycleElapsedTime(c.id, secsToSave);
+    } catch {
+      // restore baseline so it can retry next time
+      lastSavedElapsedRef.current = totalElapsed - secsToSave;
+      return;
+    }
+
+    const uid = userIdRef.current;
+    if (uid) {
+      const minutes = Math.max(1, Math.round(secsToSave / 60));
+      const block = currentBlockRef.current;
+      const startedAt = new Date(Date.now() - secsToSave * 1000);
+      try {
+        await createFocusSession(uid, startedAt, minutes, block?.subject_id, c.id);
+        await registerActivity(uid);
+      } catch {
+        // silent
+      }
+    }
+  }, []);
+
   const persistProgress = useCallback(async (cycleId: string, blockIdx: number) => {
     try {
       await saveCycleProgress(cycleId, blockIdx, null);
