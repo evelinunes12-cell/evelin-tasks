@@ -141,9 +141,13 @@ const Planner = () => {
 
   const updateNoteMut = useMutation({
     mutationFn: ({ id, ...data }: { id: string } & Parameters<typeof updateNote>[1]) => updateNote(id, data),
-    onSuccess: () => {
+    onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["planner-notes"] });
-      if (user) { registerActivity(user.id); logXP(user.id, "edit_basic", XP.EDIT_BASIC); }
+      if (user) {
+        registerActivity(user.id);
+        if (variables.completed === true) logXP(user.id, "note_completed", XP.NOTE_COMPLETED);
+        else logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+      }
       queryClient.invalidateQueries({ queryKey: ["user-streak"] });
       toast.success("Anotação atualizada!");
     },
@@ -221,7 +225,7 @@ const Planner = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["study-schedules"] });
-      if (user) { registerActivity(user.id); logXP(user.id, "create_schedule", XP.CREATE_ITEM); }
+      if (user) { registerActivity(user.id); logXP(user.id, "create_schedule", XP.CREATE_SCHEDULE); }
       toast.success("Horário criado!");
     },
     onError: () => toast.error("Erro ao criar horário"),

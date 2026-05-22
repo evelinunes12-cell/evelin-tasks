@@ -154,10 +154,11 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
           startedAt: Date.now() - elapsedSeconds * 1000,
         });
       }
+      if (user) logXP(user.id, "study_block_started", XP.STUDY_BLOCK_STARTED);
     }
     setIsRunning(true);
     setIsPaused(false);
-  }, [cycle, isBreak, breakRemaining, elapsedSeconds, currentBlock]);
+  }, [cycle, isBreak, breakRemaining, elapsedSeconds, currentBlock, user]);
 
   const pauseTimer = useCallback(() => {
     clearTimer();

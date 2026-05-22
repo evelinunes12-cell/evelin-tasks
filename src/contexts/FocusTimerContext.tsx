@@ -171,10 +171,11 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (!isBreak) {
       setSessionStartTime(new Date());
       setCurrentStudyInfo({ source: "pomodoro", subject: "Pomodoro", startedAt: now });
+      if (user) logXP(user.id, "pomodoro_started", XP.POMODORO_STARTED);
     } else {
       clearCurrentStudyInfo();
     }
-  }, [isBreak]);
+  }, [isBreak, user]);
 
   const pause = useCallback(() => {
     setIsRunning(false);
@@ -191,8 +192,9 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setIsPaused(false);
     if (!isBreak) {
       setCurrentStudyInfo({ source: "pomodoro", subject: "Pomodoro", startedAt: now });
+      if (user) logXP(user.id, "pomodoro_started", XP.POMODORO_STARTED);
     }
-  }, [timeRemaining, isBreak]);
+  }, [timeRemaining, isBreak, user]);
 
   const reset = useCallback(() => {
     setTimeRemaining(DEFAULT_TIME);
