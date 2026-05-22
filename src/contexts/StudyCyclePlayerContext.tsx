@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { StudyCycle, saveCycleProgress } from "@/services/studyCycles";
+import { StudyCycle, saveCycleProgress, incrementCycleElapsedTime, resetCycleElapsedTime } from "@/services/studyCycles";
 import { createFocusSession } from "@/services/focusSessions";
 import { registerActivity } from "@/services/activity";
 import { logXP, XP } from "@/services/scoring";
@@ -61,6 +61,15 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
   const startTimeRef = useRef<number | null>(null);
   const elapsedAtStartRef = useRef(0);
   const breakEndTimeRef = useRef<number | null>(null);
+  /** Total seconds (within current block) already persisted to DB. */
+  const lastSavedElapsedRef = useRef(0);
+  /** Latest elapsedSeconds value, kept in a ref to use in cleanup/listeners. */
+  const elapsedSecondsRef = useRef(0);
+  const cycleRef = useRef<StudyCycle | null>(null);
+  const currentIndexRef = useRef(0);
+  const modeRef = useRef<CycleMode>("study");
+  const userIdRef = useRef<string | null>(null);
+  const currentBlockRef = useRef<any>(null);
 
   const { open: openPiPHook, isOpen: pipOpen, pipContainer, isSupported: pipSupported } = useDocumentPiP({ width: 280, height: 320 });
 
@@ -76,6 +85,54 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     }
     startTimeRef.current = null;
     breakEndTimeRef.current = null;
+  }, []);
+
+  // Keep refs in sync for use in cleanup/listeners
+  useEffect(() => { elapsedSecondsRef.current = elapsedSeconds; }, [elapsedSeconds]);
+  useEffect(() => { cycleRef.current = cycle; }, [cycle]);
+  useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+  useEffect(() => { userIdRef.current = user?.id || null; }, [user]);
+  useEffect(() => { currentBlockRef.current = currentBlock; }, [currentBlock]);
+
+  /**
+   * Persists any unsaved studied seconds for the current block:
+   * - logs a focus_session for the delta (rounded minutes >= 1)
+   * - increments current_block_elapsed_time in the DB
+   * - registers daily activity / streak
+   */
+  const saveProgressAndLogTime = useCallback(async () => {
+    const c = cycleRef.current;
+    if (!c) return;
+    if (modeRef.current !== "study") return;
+    const totalElapsed = elapsedSecondsRef.current;
+    const unsavedSec = totalElapsed - lastSavedElapsedRef.current;
+    if (unsavedSec <= 0) return;
+
+    // Update baseline immediately to avoid double-saving on rapid calls
+    const secsToSave = unsavedSec;
+    lastSavedElapsedRef.current = totalElapsed;
+
+    try {
+      await incrementCycleElapsedTime(c.id, secsToSave);
+    } catch {
+      // restore baseline so it can retry next time
+      lastSavedElapsedRef.current = totalElapsed - secsToSave;
+      return;
+    }
+
+    const uid = userIdRef.current;
+    if (uid) {
+      const minutes = Math.max(1, Math.round(secsToSave / 60));
+      const block = currentBlockRef.current;
+      const startedAt = new Date(Date.now() - secsToSave * 1000);
+      try {
+        await createFocusSession(uid, startedAt, minutes, block?.subject_id, c.id);
+        await registerActivity(uid);
+      } catch {
+        // silent
+      }
+    }
   }, []);
 
   const persistProgress = useCallback(async (cycleId: string, blockIdx: number) => {
@@ -109,10 +166,12 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     const savedIndex = Math.min(newCycle.current_block_index || 0, Math.max((newCycle.blocks?.length || 1) - 1, 0));
     const set = new Set<number>();
     for (let i = 0; i < savedIndex; i++) set.add(i);
+    const savedElapsed = Math.max(0, newCycle.current_block_elapsed_time || 0);
     setCycle(newCycle);
     setCurrentIndex(savedIndex);
     setCompletedBlocks(set);
-    setElapsedSeconds(0);
+    setElapsedSeconds(savedElapsed);
+    lastSavedElapsedRef.current = savedElapsed;
     setBreakRemaining(BREAK_SECONDS);
     setMode("study");
     setIsRunning(false);
@@ -127,6 +186,8 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
   const closePlayer = useCallback(() => {
     clearTimer();
     clearCurrentStudyInfo();
+    // Save any in-flight time before tearing down
+    void saveProgressAndLogTime();
     if (cycle && mode === "study") {
       persistProgress(cycle.id, currentIndex);
     }
@@ -135,8 +196,9 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     setIsRunning(false);
     setIsPaused(false);
     setElapsedSeconds(0);
+    lastSavedElapsedRef.current = 0;
     setMode("study");
-  }, [clearTimer, cycle, mode, currentIndex, persistProgress]);
+  }, [clearTimer, cycle, mode, currentIndex, persistProgress, saveProgressAndLogTime]);
 
   const startTimer = useCallback(() => {
     if (!cycle) return;
@@ -167,8 +229,9 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     clearCurrentStudyInfo();
     if (cycle && mode === "study") {
       persistProgress(cycle.id, currentIndex);
+      void saveProgressAndLogTime();
     }
-  }, [clearTimer, cycle, mode, currentIndex, persistProgress]);
+  }, [clearTimer, cycle, mode, currentIndex, persistProgress, saveProgressAndLogTime]);
 
   const togglePlayPause = useCallback(() => {
     if (isRunning) pauseTimer();
@@ -180,11 +243,13 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     const nextIdx = currentIndex + 1 < blocks.length ? currentIndex + 1 : 0;
     setCurrentIndex(nextIdx);
     setElapsedSeconds(0);
+    lastSavedElapsedRef.current = 0;
     setTargetReached(false);
     setMode("study");
     setIsRunning(false);
     setIsPaused(false);
     persistProgress(cycle.id, nextIdx);
+    resetCycleElapsedTime(cycle.id).catch(() => {});
   }, [cycle, currentIndex, blocks.length, persistProgress]);
 
   const completeBlock = useCallback(async () => {
@@ -197,16 +262,27 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
 
     const realElapsed = elapsedSeconds;
     const realMinutes = Math.max(1, Math.round(realElapsed / 60));
+    // Log only the seconds not yet persisted (avoid double counting)
+    const unsavedSec = Math.max(0, realElapsed - lastSavedElapsedRef.current);
+    const unsavedMinutes = Math.max(1, Math.round(unsavedSec / 60));
 
     if (user) {
       await registerActivity(user.id);
       logXP(user.id, "study_block_completed", XP.STUDY_BLOCK_COMPLETED);
       const block = blocks[currentIndex];
-      if (block) {
-        const startedAt = new Date(Date.now() - realElapsed * 1000);
-        await createFocusSession(user.id, startedAt, realMinutes, block.subject_id, cycle.id);
+      if (block && unsavedSec > 0) {
+        const startedAt = new Date(Date.now() - unsavedSec * 1000);
+        await createFocusSession(user.id, startedAt, unsavedMinutes, block.subject_id, cycle.id);
       }
     }
+
+    // Block done: reset persisted elapsed and advance index
+    try {
+      await resetCycleElapsedTime(cycle.id);
+    } catch {
+      // silent
+    }
+    lastSavedElapsedRef.current = 0;
 
     toast.success(`✅ ${currentBlock?.subject?.name || "Bloco"} concluído! (${realMinutes}min)`);
 
@@ -245,11 +321,15 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       const nextIdx = currentIndex + 1;
       setCurrentIndex(nextIdx);
       setElapsedSeconds(0);
+      lastSavedElapsedRef.current = 0;
       setTargetReached(false);
       persistProgress(cycle.id, nextIdx);
+      resetCycleElapsedTime(cycle.id).catch(() => {});
     } else {
       toast.success("🎉 Ciclo completo!");
       persistProgress(cycle.id, 0);
+      resetCycleElapsedTime(cycle.id).catch(() => {});
+      lastSavedElapsedRef.current = 0;
     }
   }, [cycle, clearTimer, isBreak, advanceToNextBlock, currentIndex, blocks.length, persistProgress]);
 
@@ -258,20 +338,29 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     setIsRunning(false);
     setIsPaused(false);
     setTargetReached(false);
-    if (isBreak) setBreakRemaining(BREAK_SECONDS);
-    else setElapsedSeconds(0);
-  }, [clearTimer, isBreak]);
+    if (isBreak) {
+      setBreakRemaining(BREAK_SECONDS);
+    } else {
+      setElapsedSeconds(0);
+      lastSavedElapsedRef.current = 0;
+      if (cycle) resetCycleElapsedTime(cycle.id).catch(() => {});
+    }
+  }, [clearTimer, isBreak, cycle]);
 
   const goToBlock = useCallback((index: number) => {
     if (!cycle || isBreak) return;
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
+    // Save current block's time before switching
+    void saveProgressAndLogTime();
     setCurrentIndex(index);
     setElapsedSeconds(0);
+    lastSavedElapsedRef.current = 0;
     setTargetReached(false);
     persistProgress(cycle.id, index);
-  }, [cycle, isBreak, clearTimer, persistProgress]);
+    resetCycleElapsedTime(cycle.id).catch(() => {});
+  }, [cycle, isBreak, clearTimer, persistProgress, saveProgressAndLogTime]);
 
   const setManualLogged = useCallback(({ blockIndex, markCompleted }: { blockIndex: number; markCompleted: boolean }) => {
     if (!cycle || !markCompleted || blockIndex < 0) return;
@@ -283,9 +372,11 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       const nextIdx = currentIndex + 1 < blocks.length ? currentIndex + 1 : 0;
       setCurrentIndex(nextIdx);
       setElapsedSeconds(0);
+      lastSavedElapsedRef.current = 0;
       setTargetReached(false);
       setMode("study");
       saveCycleProgress(cycle.id, nextIdx, null).catch(() => {});
+      resetCycleElapsedTime(cycle.id).catch(() => {});
     }
   }, [cycle, currentIndex, blocks.length, clearTimer]);
 
@@ -346,6 +437,23 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       toast.error("Seu navegador não suporta janela flutuante. Tente Chrome ou Edge.");
     }
   }, [openPiPHook]);
+
+  // Persist progress when the user closes the tab / switches away,
+  // and as a final safety net when the provider unmounts.
+  useEffect(() => {
+    const flush = () => { void saveProgressAndLogTime(); };
+    const onVisibility = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("beforeunload", flush);
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+      flush();
+    };
+  }, [saveProgressAndLogTime]);
+
 
   const value: StudyCyclePlayerContextValue = {
     cycle,

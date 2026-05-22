@@ -876,6 +876,7 @@ export type Database = {
       study_cycles: {
         Row: {
           created_at: string
+          current_block_elapsed_time: number
           current_block_index: number
           current_block_remaining_seconds: number | null
           end_date: string | null
@@ -890,6 +891,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_block_elapsed_time?: number
           current_block_index?: number
           current_block_remaining_seconds?: number | null
           end_date?: string | null
@@ -904,6 +906,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_block_elapsed_time?: number
           current_block_index?: number
           current_block_remaining_seconds?: number | null
           end_date?: string | null
@@ -1680,6 +1683,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_cycle_elapsed_time: {
+        Args: { _cycle_id: string; _seconds: number }
+        Returns: undefined
+      }
       is_environment_member: {
         Args: { _environment_id: string; _user_id: string }
         Returns: boolean
@@ -1706,6 +1713,10 @@ export type Database = {
         Returns: undefined
       }
       purge_old_focus_sessions: { Args: never; Returns: undefined }
+      reset_cycle_elapsed_time: {
+        Args: { _cycle_id: string }
+        Returns: undefined
+      }
       reset_streak_achievements: { Args: never; Returns: undefined }
       send_broadcast_notification:
         | {

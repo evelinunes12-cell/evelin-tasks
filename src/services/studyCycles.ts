@@ -13,6 +13,7 @@ export interface StudyCycle {
   is_advanced: boolean;
   hours_per_day: number | null;
   hours_per_week: number | null;
+  current_block_elapsed_time?: number | null;
   blocks?: StudyCycleBlock[];
 }
 
@@ -168,5 +169,21 @@ export const saveCycleProgress = async (
     })
     .eq("id", cycleId);
 
+  if (error) throw error;
+};
+
+export const incrementCycleElapsedTime = async (cycleId: string, seconds: number) => {
+  if (!seconds || seconds <= 0) return;
+  const { error } = await (supabase.rpc as any)("increment_cycle_elapsed_time", {
+    _cycle_id: cycleId,
+    _seconds: Math.round(seconds),
+  });
+  if (error) throw error;
+};
+
+export const resetCycleElapsedTime = async (cycleId: string) => {
+  const { error } = await (supabase.rpc as any)("reset_cycle_elapsed_time", {
+    _cycle_id: cycleId,
+  });
   if (error) throw error;
 };
