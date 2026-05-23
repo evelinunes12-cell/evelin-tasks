@@ -48,6 +48,8 @@ const ManualStudyLogDialog = ({
   const [minutes, setMinutes] = useState("30");
   const [studiedAt, setStudiedAt] = useState("");
   const [markCompleted, setMarkCompleted] = useState(true);
+  const [questionsTotal, setQuestionsTotal] = useState("");
+  const [questionsCorrect, setQuestionsCorrect] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -59,6 +61,8 @@ const ManualStudyLogDialog = ({
       setSelectedBlockId(defaultBlock?.id || "");
       setHours("0");
       setMinutes("30");
+      setQuestionsTotal("");
+      setQuestionsCorrect("");
       // Datetime-local format for "now"
       const now = new Date();
       const offset = now.getTimezoneOffset() * 60000;
@@ -92,7 +96,11 @@ const ManualStudyLogDialog = ({
         return;
       }
 
-      await createFocusSession(user.id, startedAt, totalMinutes, block.subject_id, cycle.id);
+      const qTotal = Math.max(0, parseInt(questionsTotal) || 0);
+      let qCorrect = Math.max(0, parseInt(questionsCorrect) || 0);
+      if (qCorrect > qTotal) qCorrect = qTotal;
+
+      await createFocusSession(user.id, startedAt, totalMinutes, block.subject_id, cycle.id, qTotal, qCorrect);
       await registerActivity(user.id);
       logXP(user.id, "study_block_completed", XP.STUDY_BLOCK_COMPLETED);
 
@@ -183,6 +191,33 @@ const ManualStudyLogDialog = ({
               value={studiedAt}
               onChange={(e) => setStudiedAt(e.target.value)}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Desempenho em questões (opcional)</Label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <Input
+                  type="number"
+                  min={0}
+                  value={questionsTotal}
+                  onChange={(e) => setQuestionsTotal(e.target.value)}
+                  placeholder="0"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1 text-center">total</p>
+              </div>
+              <span className="text-muted-foreground pb-5">/</span>
+              <div className="flex-1">
+                <Input
+                  type="number"
+                  min={0}
+                  value={questionsCorrect}
+                  onChange={(e) => setQuestionsCorrect(e.target.value)}
+                  placeholder="0"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1 text-center">acertos</p>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-start gap-2 pt-1">
