@@ -8,7 +8,8 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateRangePicker } from "@/components/DateRangePicker";
-import { Clock, Repeat, Timer, CheckCircle, TrendingUp, BookOpen } from "lucide-react";
+import { Clock, Repeat, Timer, CheckCircle, TrendingUp, BookOpen, Target } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import ActiveCycleProgressCard from "@/components/ActiveCycleProgressCard";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
@@ -96,7 +97,36 @@ const StudyAnalyticsPage = () => {
     });
     const byCycle = Array.from(cycleMap.values()).sort((a, b) => b.minutes - a.minutes);
 
-    return { totalMinutes, cycleMinutes, pomodoroMinutes, totalSessions, bySubject, byCycle };
+    // Questions performance
+    const totalQuestions = sessions.reduce((a, s) => a + (s.questions_total || 0), 0);
+    const totalCorrect = sessions.reduce((a, s) => a + (s.questions_correct || 0), 0);
+    const overallAccuracy = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
+
+    const subjectQMap = new Map<string, { name: string; color: string | null; total: number; correct: number }>();
+    sessions.forEach((s) => {
+      if (!s.questions_total) return;
+      const key = s.subject_name || "Sem Matéria Definida";
+      const existing = subjectQMap.get(key);
+      if (existing) {
+        existing.total += s.questions_total;
+        existing.correct += s.questions_correct || 0;
+      } else {
+        subjectQMap.set(key, {
+          name: key,
+          color: s.subject_color,
+          total: s.questions_total,
+          correct: s.questions_correct || 0,
+        });
+      }
+    });
+    const questionsBySubject = Array.from(subjectQMap.values())
+      .map((s) => ({ ...s, accuracy: s.total > 0 ? (s.correct / s.total) * 100 : 0 }))
+      .sort((a, b) => b.total - a.total);
+
+    return {
+      totalMinutes, cycleMinutes, pomodoroMinutes, totalSessions, bySubject, byCycle,
+      totalQuestions, totalCorrect, overallAccuracy, questionsBySubject,
+    };
   }, [sessions]);
 
   const formatTime = (mins: number) => {
