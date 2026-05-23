@@ -276,7 +276,7 @@ const StudyCyclePlayer = () => {
                     "h-12 w-12 rounded-full border-border/50",
                     (isRunning || isPaused) && "border-primary/50 text-primary hover:bg-primary/10"
                   )}
-                  onClick={completeBlock}
+                  onClick={handleCompleteBlock}
                   disabled={allDone || (!isRunning && !isPaused && elapsedSeconds === 0)}
                   title="Concluir bloco"
                 >
@@ -299,6 +299,39 @@ const StudyCyclePlayer = () => {
               <p className="text-xs text-muted-foreground text-center">
                 Clique em <CheckCircle2 className="h-3.5 w-3.5 inline -mt-0.5" /> para concluir e salvar o tempo estudado
               </p>
+            )}
+
+            {!isBreak && (
+              <div className="w-full max-w-xs space-y-1.5 rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm px-3 py-2.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground/70">
+                  Desempenho em questões (opcional)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <Input
+                      type="number"
+                      min={0}
+                      value={questionsTotal}
+                      onChange={(e) => setQuestionsTotal(e.target.value)}
+                      placeholder="0"
+                      className="h-8 text-sm text-center"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-0.5 text-center">resolvidas</p>
+                  </div>
+                  <span className="text-muted-foreground pb-4">/</span>
+                  <div className="flex-1">
+                    <Input
+                      type="number"
+                      min={0}
+                      value={questionsCorrect}
+                      onChange={(e) => setQuestionsCorrect(e.target.value)}
+                      placeholder="0"
+                      className="h-8 text-sm text-center"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-0.5 text-center">acertos</p>
+                  </div>
+                </div>
+              </div>
             )}
 
             {!isBreak && (
