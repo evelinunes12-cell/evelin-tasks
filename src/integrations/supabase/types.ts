@@ -387,6 +387,8 @@ export type Database = {
           duration_minutes: number
           ended_at: string
           id: string
+          questions_correct: number
+          questions_total: number
           started_at: string
           study_cycle_id: string | null
           subject_id: string | null
@@ -397,6 +399,8 @@ export type Database = {
           duration_minutes?: number
           ended_at?: string
           id?: string
+          questions_correct?: number
+          questions_total?: number
           started_at?: string
           study_cycle_id?: string | null
           subject_id?: string | null
@@ -407,6 +411,8 @@ export type Database = {
           duration_minutes?: number
           ended_at?: string
           id?: string
+          questions_correct?: number
+          questions_total?: number
           started_at?: string
           study_cycle_id?: string | null
           subject_id?: string | null
