@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Play, Pause, SkipForward, RotateCcw, X, Coffee, CheckCircle2, ClipboardEdit, PictureInPicture2, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DonutTimer } from "@/components/DonutTimer";
@@ -76,6 +78,21 @@ const StudyCyclePlayer = () => {
   } = useStudyCyclePlayer();
 
   const [manualLogOpen, setManualLogOpen] = useState(false);
+  const [questionsTotal, setQuestionsTotal] = useState("");
+  const [questionsCorrect, setQuestionsCorrect] = useState("");
+
+  // Reset questions inputs when changing block or entering break mode
+  useEffect(() => {
+    setQuestionsTotal("");
+    setQuestionsCorrect("");
+  }, [currentIndex, mode]);
+
+  const handleCompleteBlock = () => {
+    const total = Math.max(0, parseInt(questionsTotal) || 0);
+    let correct = Math.max(0, parseInt(questionsCorrect) || 0);
+    if (correct > total) correct = total;
+    void completeBlock({ total, correct });
+  };
 
   if (!cycle) return null;
 
