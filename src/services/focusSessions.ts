@@ -9,6 +9,8 @@ export interface FocusSession {
   duration_minutes: number;
   created_at: string;
   subject_id: string | null;
+  questions_total?: number;
+  questions_correct?: number;
 }
 
 export const createFocusSession = async (
@@ -16,7 +18,9 @@ export const createFocusSession = async (
   startedAt: Date,
   durationMinutes: number,
   subjectId?: string | null,
-  studyCycleId?: string | null
+  studyCycleId?: string | null,
+  questionsTotal?: number,
+  questionsCorrect?: number
 ): Promise<FocusSession | null> => {
   if (!userId) return null;
 
@@ -30,6 +34,8 @@ export const createFocusSession = async (
       duration_minutes: durationMinutes,
       ...(subjectId ? { subject_id: subjectId } : {}),
       ...(studyCycleId ? { study_cycle_id: studyCycleId } : {}),
+      questions_total: Math.max(0, Math.floor(questionsTotal || 0)),
+      questions_correct: Math.max(0, Math.floor(questionsCorrect || 0)),
     };
 
     const { data, error } = await supabase
