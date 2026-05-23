@@ -34,7 +34,7 @@ interface StudyCyclePlayerContextValue {
   startTimer: () => void;
   pauseTimer: () => void;
   togglePlayPause: () => void;
-  completeBlock: () => Promise<void>;
+  completeBlock: (questions?: { total: number; correct: number }) => Promise<void>;
   skip: () => void;
   restart: () => void;
   goToBlock: (idx: number) => void;
@@ -252,7 +252,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     resetCycleElapsedTime(cycle.id).catch(() => {});
   }, [cycle, currentIndex, blocks.length, persistProgress]);
 
-  const completeBlock = useCallback(async () => {
+  const completeBlock = useCallback(async (questions?: { total: number; correct: number }) => {
     if (!cycle) return;
     clearTimer();
     setIsRunning(false);
@@ -266,13 +266,25 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     const unsavedSec = Math.max(0, realElapsed - lastSavedElapsedRef.current);
     const unsavedMinutes = Math.max(1, Math.round(unsavedSec / 60));
 
+    const qTotal = Math.max(0, Math.floor(questions?.total || 0));
+    let qCorrect = Math.max(0, Math.floor(questions?.correct || 0));
+    if (qCorrect > qTotal) qCorrect = qTotal;
+
     if (user) {
       await registerActivity(user.id);
       logXP(user.id, "study_block_completed", XP.STUDY_BLOCK_COMPLETED);
       const block = blocks[currentIndex];
-      if (block && unsavedSec > 0) {
-        const startedAt = new Date(Date.now() - unsavedSec * 1000);
-        await createFocusSession(user.id, startedAt, unsavedMinutes, block.subject_id, cycle.id);
+      if (block && (unsavedSec > 0 || qTotal > 0)) {
+        const startedAt = new Date(Date.now() - Math.max(unsavedSec, 1) * 1000);
+        await createFocusSession(
+          user.id,
+          startedAt,
+          unsavedSec > 0 ? unsavedMinutes : 0,
+          block.subject_id,
+          cycle.id,
+          qTotal,
+          qCorrect,
+        );
       }
     }
 
