@@ -724,7 +724,6 @@ export type Database = {
           onboarding_completed: boolean
           phone: string | null
           pomodoro_sessions: number | null
-          role: string | null
           terms_accepted: boolean | null
           updated_at: string | null
           username: string | null
@@ -746,7 +745,6 @@ export type Database = {
           onboarding_completed?: boolean
           phone?: string | null
           pomodoro_sessions?: number | null
-          role?: string | null
           terms_accepted?: boolean | null
           updated_at?: string | null
           username?: string | null
@@ -768,7 +766,6 @@ export type Database = {
           onboarding_completed?: boolean
           phone?: string | null
           pomodoro_sessions?: number | null
-          role?: string | null
           terms_accepted?: boolean | null
           updated_at?: string | null
           username?: string | null
