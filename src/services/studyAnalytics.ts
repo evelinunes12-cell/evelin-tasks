@@ -13,6 +13,8 @@ export interface FocusSessionWithDetails {
   subject_color: string | null;
   study_cycle_id: string | null;
   study_cycle_name: string | null;
+  questions_total: number;
+  questions_correct: number;
 }
 
 export const fetchFocusSessionsWithDetails = async (
@@ -54,6 +56,8 @@ export const fetchFocusSessionsWithDetails = async (
       subject_color: s.subjects?.color ?? null,
       study_cycle_id: s.study_cycle_id,
       study_cycle_name: s.study_cycles?.name ?? null,
+      questions_total: s.questions_total ?? 0,
+      questions_correct: s.questions_correct ?? 0,
     }));
   } catch (error) {
     logError("Erro ao buscar sessões com detalhes", error);
