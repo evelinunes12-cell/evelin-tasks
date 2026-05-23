@@ -282,6 +282,134 @@ const StudyAnalyticsPage = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Performance in Questions */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold text-foreground">Desempenho em Questões</h2>
+              </div>
+
+              {analytics.totalQuestions === 0 ? (
+                <Card>
+                  <CardContent className="py-10 text-center">
+                    <Target className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma questão registrada ainda. Use os campos no Ciclo de Estudos ou no registro manual para acompanhar seu desempenho.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Overall accuracy donut */}
+                  <Card>
+                    <CardHeader><CardTitle className="text-base">Taxa de Acerto Geral</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="relative">
+                          <ResponsiveContainer width={220} height={220}>
+                            <PieChart>
+                              <Pie
+                                data={[
+                                  { name: "Acertos", value: analytics.totalCorrect },
+                                  { name: "Erros", value: Math.max(0, analytics.totalQuestions - analytics.totalCorrect) },
+                                ]}
+                                dataKey="value"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={70}
+                                outerRadius={100}
+                                startAngle={90}
+                                endAngle={-270}
+                              >
+                                <Cell fill={
+                                  analytics.overallAccuracy >= 75
+                                    ? "hsl(var(--success, 142 76% 36%))"
+                                    : analytics.overallAccuracy >= 50
+                                    ? "hsl(38 92% 50%)"
+                                    : "hsl(var(--destructive))"
+                                } />
+                                <Cell fill="hsl(var(--muted))" />
+                              </Pie>
+                            </PieChart>
+                          </ResponsiveContainer>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span className="text-3xl font-bold text-foreground tabular-nums">
+                              {analytics.overallAccuracy.toFixed(0)}%
+                            </span>
+                            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">acerto</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6 text-sm">
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground">Total</p>
+                            <p className="font-semibold text-foreground tabular-nums">{analytics.totalQuestions}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground">Acertos</p>
+                            <p className="font-semibold text-foreground tabular-nums">{analytics.totalCorrect}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground">Erros</p>
+                            <p className="font-semibold text-foreground tabular-nums">
+                              {Math.max(0, analytics.totalQuestions - analytics.totalCorrect)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Per-subject accuracy */}
+                  <Card>
+                    <CardHeader><CardTitle className="text-base">Raio-X por Disciplina</CardTitle></CardHeader>
+                    <CardContent>
+                      {analytics.questionsBySubject.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-8 text-sm">Sem dados por disciplina</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {analytics.questionsBySubject.map((s) => {
+                            const barColor =
+                              s.accuracy >= 75
+                                ? "hsl(var(--success, 142 76% 36%))"
+                                : s.accuracy >= 50
+                                ? "hsl(38 92% 50%)"
+                                : "hsl(var(--destructive))";
+                            return (
+                              <div key={s.name} className="space-y-1">
+                                <div className="flex items-center justify-between gap-2 text-sm min-w-0">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    {s.color && (
+                                      <span
+                                        className="h-2.5 w-2.5 rounded-full shrink-0"
+                                        style={{ backgroundColor: s.color }}
+                                      />
+                                    )}
+                                    <span className="truncate text-foreground">{s.name}</span>
+                                  </div>
+                                  <span className="text-muted-foreground tabular-nums shrink-0">
+                                    {s.correct}/{s.total} · {s.accuracy.toFixed(0)}%
+                                  </span>
+                                </div>
+                                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all"
+                                    style={{
+                                      width: `${Math.min(100, s.accuracy)}%`,
+                                      backgroundColor: barColor,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
