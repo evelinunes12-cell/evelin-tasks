@@ -17,6 +17,7 @@ import { uploadTaskFile } from "@/services/attachments";
 import { archiveTask } from "@/services/archive";
 import ChecklistManager from "@/components/ChecklistManager";
 import { AttachmentPreviewModal } from "@/components/AttachmentPreviewModal";
+import { safeOpen } from "@/utils/sanitize";
 import {
   AlertDialog,
   AlertDialogAction,
