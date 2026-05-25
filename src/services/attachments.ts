@@ -152,7 +152,7 @@ export const deleteAttachment = async (
 
 export const downloadAttachment = async (attachment: Attachment) => {
   if (attachment.is_link) {
-    window.open(attachment.file_path, "_blank");
+    safeOpen(attachment.file_path);
     return null;
   }
 
