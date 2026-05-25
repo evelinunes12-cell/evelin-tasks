@@ -221,7 +221,7 @@ export function TaskQuickView({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(task.canva_link!, "_blank")}
+                  onClick={() => safeOpen(task.canva_link)}
                   className="gap-1"
                 >
                   <ExternalLink className="w-3 h-3" />
