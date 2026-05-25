@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { sanitizeHtml } from "@/utils/sanitize";
+import { sanitizeHtml, safeOpen } from "@/utils/sanitize";
 
 interface TaskQuickViewProps {
   taskId: string | null;
@@ -210,7 +210,7 @@ export function TaskQuickView({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(task.google_docs_link!, "_blank")}
+                  onClick={() => safeOpen(task.google_docs_link)}
                   className="gap-1"
                 >
                   <ExternalLink className="w-3 h-3" />
@@ -221,7 +221,7 @@ export function TaskQuickView({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(task.canva_link!, "_blank")}
+                  onClick={() => safeOpen(task.canva_link)}
                   className="gap-1"
                 >
                   <ExternalLink className="w-3 h-3" />
