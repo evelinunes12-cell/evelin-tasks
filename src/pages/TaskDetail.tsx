@@ -325,7 +325,7 @@ const TaskDetail = () => {
   const downloadAttachment = async (attachment: Attachment) => {
     try {
       if (attachment.is_link) {
-        window.open(attachment.file_path, "_blank");
+        safeOpen(attachment.file_path);
         return;
       }
 
