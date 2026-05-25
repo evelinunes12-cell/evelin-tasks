@@ -258,11 +258,10 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     setIsRunning(false);
     setIsPaused(false);
     clearCurrentStudyInfo();
-    setCompletedBlocks((prev) => new Set(prev).add(currentIndex));
 
-    const realElapsed = elapsedSeconds;
+    const realElapsed = elapsedSeconds; // total accumulated for this block (saved + current session)
     const realMinutes = Math.max(1, Math.round(realElapsed / 60));
-    // Log only the seconds not yet persisted (avoid double counting)
+    // Only the seconds not yet persisted to DB (delta of current session)
     const unsavedSec = Math.max(0, realElapsed - lastSavedElapsedRef.current);
     const unsavedMinutes = Math.max(1, Math.round(unsavedSec / 60));
 
@@ -270,9 +269,12 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     let qCorrect = Math.max(0, Math.floor(questions?.correct || 0));
     if (qCorrect > qTotal) qCorrect = qTotal;
 
+    const target = (blocks[currentIndex]?.allocated_minutes || 0) * 60;
+    const blockFinished = target > 0 ? realElapsed >= target : realElapsed > 0;
+
+    // Always log unsaved session time + questions to analytics (Condition A and B)
     if (user) {
       await registerActivity(user.id);
-      logXP(user.id, "study_block_completed", XP.STUDY_BLOCK_COMPLETED);
       const block = blocks[currentIndex];
       if (block && (unsavedSec > 0 || qTotal > 0)) {
         const startedAt = new Date(Date.now() - Math.max(unsavedSec, 1) * 1000);
@@ -288,13 +290,38 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       }
     }
 
-    // Block done: reset persisted elapsed and advance index
+    if (!blockFinished) {
+      // Condition A: Fractional study — persist delta, keep block active, exit player
+      if (unsavedSec > 0) {
+        try {
+          await incrementCycleElapsedTime(cycle.id, unsavedSec);
+        } catch {
+          // silent
+        }
+      }
+      lastSavedElapsedRef.current = realElapsed;
+      const remainingMin = Math.max(0, Math.ceil((target - realElapsed) / 60));
+      toast.success(
+        `⏸️ ${currentBlock?.subject?.name || "Bloco"} pausado (${realMinutes}min). Faltam ~${remainingMin}min — você retoma de onde parou.`
+      );
+      // Update in-memory cycle so reopening reflects new accumulated time
+      setCycle((prev) => prev ? { ...prev, current_block_elapsed_time: realElapsed } : prev);
+      setIsExpanded(false);
+      return;
+    }
+
+    // Condition B: Block completed (target reached or overtime) — advance
+    setCompletedBlocks((prev) => new Set(prev).add(currentIndex));
+    if (user) {
+      logXP(user.id, "study_block_completed", XP.STUDY_BLOCK_COMPLETED);
+    }
     try {
       await resetCycleElapsedTime(cycle.id);
     } catch {
       // silent
     }
     lastSavedElapsedRef.current = 0;
+    setCycle((prev) => prev ? { ...prev, current_block_elapsed_time: 0 } : prev);
 
     toast.success(`✅ ${currentBlock?.subject?.name || "Bloco"} concluído! (${realMinutes}min)`);
 
