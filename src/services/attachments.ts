@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { linkSchema } from "@/lib/validation";
+import { safeOpen } from "@/utils/sanitize";
 
 export interface Attachment {
   id: string;
