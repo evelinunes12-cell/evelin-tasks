@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { sanitizeHtml } from "@/utils/sanitize";
+import { sanitizeHtml, safeOpen } from "@/utils/sanitize";
 
 interface TaskQuickViewProps {
   taskId: string | null;
