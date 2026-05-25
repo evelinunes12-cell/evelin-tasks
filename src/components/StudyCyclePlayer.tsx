@@ -208,26 +208,33 @@ const StudyCyclePlayer = () => {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               {pipSupported && !isBreak && (
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  size="sm"
+                  className="h-8 gap-2 px-3 rounded-lg border border-border/50 bg-card/40 text-muted-foreground hover:text-foreground hover:bg-card/70"
                   onClick={openPiP}
                   title={pipOpen ? "Janela flutuante ativa" : "Abrir janela flutuante"}
                   disabled={pipOpen}
                 >
                   <PictureInPicture2 className="h-4 w-4" />
+                  <span className="text-xs font-medium">Miniplayer</span>
                 </Button>
               )}
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={closePlayer} title="Encerrar ciclo">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-lg border border-border/50 bg-card/40 text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/40"
+                onClick={closePlayer}
+                title="Encerrar ciclo"
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8 max-w-lg mx-auto w-full">
+          <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8 max-w-lg mx-auto w-full py-6">
             <DonutTimer
               timeLeft={formattedTime}
               progress={progress}
@@ -247,6 +254,7 @@ const StudyCyclePlayer = () => {
                 className="h-12 w-12 rounded-full border-border/50"
                 onClick={restart}
                 disabled={allDone && !isBreak}
+                title="Recomeçar"
               >
                 <RotateCcw className="h-5 w-5" />
               </Button>
@@ -268,82 +276,88 @@ const StudyCyclePlayer = () => {
                 )}
               </Button>
 
-              {!isBreak ? (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className={cn(
-                    "h-12 w-12 rounded-full border-border/50",
-                    (isRunning || isPaused) && "border-primary/50 text-primary hover:bg-primary/10"
-                  )}
-                  onClick={handleCompleteBlock}
-                  disabled={allDone || (!isRunning && !isPaused && elapsedSeconds === 0)}
-                  title="Concluir bloco"
-                >
-                  <CheckCircle2 className="h-5 w-5" />
-                </Button>
-              ) : (
+              {isBreak && (
                 <Button
                   variant="outline"
                   size="icon"
                   className="h-12 w-12 rounded-full border-border/50"
                   onClick={skip}
                   disabled={allDone}
+                  title="Pular intervalo"
                 >
                   <SkipForward className="h-5 w-5" />
                 </Button>
               )}
+
+              {!isBreak && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-12 w-12 rounded-full bg-success/10 border-success/30 text-success hover:bg-success/20 hover:text-success"
+                  onClick={handleCompleteBlock}
+                  disabled={allDone || (!isRunning && !isPaused && elapsedSeconds === 0)}
+                  title="Concluir bloco rapidamente"
+                >
+                  <CheckCircle2 className="h-5 w-5" />
+                </Button>
+              )}
             </div>
 
-            {!isBreak && (isRunning || isPaused) && (
-              <p className="text-xs text-muted-foreground text-center">
-                Clique em <CheckCircle2 className="h-3.5 w-3.5 inline -mt-0.5" /> para concluir e salvar o tempo estudado
-              </p>
-            )}
-
             {!isBreak && (
-              <div className="w-full max-w-xs space-y-1.5 rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm px-3 py-2.5">
-                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground/70">
-                  Desempenho em questões (opcional)
-                </Label>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
+              <div className="w-full max-w-sm rounded-3xl border border-border/50 bg-card/40 backdrop-blur-xl p-5 shadow-2xl space-y-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Desempenho no Bloco
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setManualLogOpen(true)}
+                    className="h-7 gap-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:text-primary hover:bg-primary/10"
+                  >
+                    <ClipboardEdit className="h-3.5 w-3.5" />
+                    Registro Manual
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="text-[10px] font-medium text-muted-foreground/80 px-1 uppercase tracking-wider">
+                      Resolvidas
+                    </Label>
                     <Input
                       type="number"
                       min={0}
                       value={questionsTotal}
                       onChange={(e) => setQuestionsTotal(e.target.value)}
                       placeholder="0"
-                      className="h-8 text-sm text-center"
+                      className="h-11 rounded-xl text-center font-bold text-base"
                     />
-                    <p className="text-[10px] text-muted-foreground mt-0.5 text-center">resolvidas</p>
                   </div>
-                  <span className="text-muted-foreground pb-4">/</span>
-                  <div className="flex-1">
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="text-[10px] font-medium text-muted-foreground/80 px-1 uppercase tracking-wider">
+                      Acertos
+                    </Label>
                     <Input
                       type="number"
                       min={0}
                       value={questionsCorrect}
                       onChange={(e) => setQuestionsCorrect(e.target.value)}
                       placeholder="0"
-                      className="h-8 text-sm text-center"
+                      className="h-11 rounded-xl text-center font-bold text-base text-success"
                     />
-                    <p className="text-[10px] text-muted-foreground mt-0.5 text-center">acertos</p>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {!isBreak && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setManualLogOpen(true)}
-                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-              >
-                <ClipboardEdit className="h-3.5 w-3.5" />
-                Registrar estudo manualmente
-              </Button>
+                <Button
+                  onClick={handleCompleteBlock}
+                  disabled={allDone || (!isRunning && !isPaused && elapsedSeconds === 0)}
+                  className="w-full h-12 rounded-xl text-sm font-bold bg-success text-success-foreground hover:bg-success/90 shadow-lg gap-2"
+                >
+                  <CheckCircle2 className="h-5 w-5" />
+                  Concluir Bloco de Estudo
+                </Button>
+              </div>
             )}
 
             {isBreak && (
@@ -352,6 +366,7 @@ const StudyCyclePlayer = () => {
               </Button>
             )}
           </div>
+
 
           <div className="border-t border-border/40 px-5 py-4 bg-muted/30 backdrop-blur-sm">
             <p className="text-[11px] font-semibold text-muted-foreground/60 mb-2.5 uppercase tracking-widest">
