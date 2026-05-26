@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useFocusTimer } from "@/contexts/FocusTimerContext";
 import { Button } from "@/components/ui/button";
 import {
   Flame, Target, Zap, Maximize2, Minimize2, Play, Pause, RotateCcw,
-  Coffee, Timer, BookOpen, X,
+  Coffee, Timer, BookOpen, X, PictureInPicture2,
 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
