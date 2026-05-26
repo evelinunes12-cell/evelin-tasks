@@ -266,6 +266,10 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         selectedSubjectId,
         selectedSubjectName,
         setSelectedSubject,
+        pipSupported,
+        pipOpen,
+        pipContainer,
+        openPiP,
       }}
     >
       {children}
