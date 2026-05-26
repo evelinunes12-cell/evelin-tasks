@@ -22,6 +22,10 @@ interface FocusTimerContextType {
   selectedSubjectId: string | null;
   selectedSubjectName: string | null;
   setSelectedSubject: (subject: { id: string; name: string } | null) => void;
+  pipSupported: boolean;
+  pipOpen: boolean;
+  pipContainer: HTMLElement | null;
+  openPiP: () => Promise<void>;
 }
 
 const FocusTimerContext = createContext<FocusTimerContextType | undefined>(undefined);
