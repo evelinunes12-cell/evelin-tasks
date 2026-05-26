@@ -316,6 +316,43 @@ const PomodoroPage = () => {
           </p>
         </div>
       )}
+
+      {/* PiP portal */}
+      {pipContainer && createPortal(
+        <div className="flex flex-col items-center justify-center gap-4 h-screen w-screen p-4 bg-background text-foreground">
+          <div className="text-[11px] uppercase tracking-widest text-muted-foreground/70 truncate max-w-full text-center px-2">
+            {selectedSubjectName || (isBreak ? "Pausa" : "Pomodoro")}
+          </div>
+          <div className={cn(
+            "text-5xl font-bold tabular-nums",
+            isRunning && !isBreak && "text-primary",
+            isRunning && isBreak && "text-success",
+            isPaused && "text-warning",
+            isCompleted && "text-success",
+            !hasStarted && "text-muted-foreground"
+          )}>
+            {formattedTime}
+          </div>
+          <Button
+            size="icon"
+            className={cn(
+              "h-14 w-14 rounded-full shadow-lg",
+              isBreak ? "bg-success text-success-foreground" : "bg-primary text-primary-foreground"
+            )}
+            onClick={handlePlayPause}
+          >
+            {isRunning ? (
+              <Pause className="h-6 w-6" />
+            ) : (
+              <Play className="h-6 w-6 ml-0.5" />
+            )}
+          </Button>
+          <div className="text-[10px] text-muted-foreground/60">
+            {isBreak ? "Intervalo" : isRunning ? "Focando" : isPaused ? "Pausado" : "Pronto"}
+          </div>
+        </div>,
+        pipContainer
+      )}
     </div>
   );
 };
