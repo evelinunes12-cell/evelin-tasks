@@ -1,10 +1,18 @@
 import { useEffect, useState } from "react";
-import { FocusTimer } from "@/components/FocusTimer";
 import { useFocusTimer } from "@/contexts/FocusTimerContext";
 import { Button } from "@/components/ui/button";
-import { Flame, Target, Zap, Maximize2, Minimize2, Play, Pause, RotateCcw, Coffee, Timer } from "lucide-react";
+import {
+  Flame, Target, Zap, Maximize2, Minimize2, Play, Pause, RotateCcw,
+  Coffee, Timer, BookOpen, X,
+} from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { fetchSubjects } from "@/services/subjects";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { useAuth } from "@/hooks/useAuth";
 
 const motivationalTips = [
   { icon: Flame, text: "Mantenha o foco por 25 minutos e descanse. Seu cérebro agradece!" },
@@ -13,8 +21,19 @@ const motivationalTips = [
 ];
 
 const PomodoroPage = () => {
-  const { timeRemaining, isRunning, isPaused, isBreak, totalTime, isCompleted, start, pause, resume, reset } = useFocusTimer();
+  const {
+    timeRemaining, isRunning, isPaused, isBreak, totalTime, isCompleted,
+    start, pause, resume, reset,
+    selectedSubjectId, selectedSubjectName, setSelectedSubject,
+  } = useFocusTimer();
+  const { user } = useAuth();
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const { data: subjects = [] } = useQuery({
+    queryKey: ["subjects", user?.id],
+    queryFn: fetchSubjects,
+    enabled: !!user,
+  });
 
   const hasStarted = isRunning || isPaused || timeRemaining < totalTime;
   const minutes = Math.floor(timeRemaining / 60);
@@ -22,17 +41,13 @@ const PomodoroPage = () => {
   const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   const progress = ((totalTime - timeRemaining) / totalTime) * 100;
 
-  // Auto-exit fullscreen if timer fully reset
   useEffect(() => {
     if (!hasStarted && isFullscreen) setIsFullscreen(false);
   }, [hasStarted, isFullscreen]);
 
-  // ESC to exit fullscreen
   useEffect(() => {
     if (!isFullscreen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsFullscreen(false);
-    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setIsFullscreen(false); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [isFullscreen]);
@@ -43,40 +58,164 @@ const PomodoroPage = () => {
     else start();
   };
 
+  const handleSubjectChange = (value: string) => {
+    if (value === "__none__") {
+      setSelectedSubject(null);
+      return;
+    }
+    const subj = subjects.find((s) => s.id === value);
+    if (subj) setSelectedSubject({ id: subj.id, name: subj.name });
+  };
+
+  const ringColor = isBreak ? "text-success" : "text-primary";
+  const timeColor = isBreak ? "text-success" : "text-primary";
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border px-4 py-3 flex items-center gap-3">
         <SidebarTrigger className="md:hidden" />
         <h1 className="text-lg font-bold text-foreground">Modo Foco</h1>
       </header>
-      <div className="flex flex-col items-center justify-center px-4 py-12 md:py-20">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Modo Foco</h1>
-        <p className="text-muted-foreground mb-10 text-center max-w-md">
-          Use o timer Pomodoro para manter a concentração e aumentar sua produtividade.
-        </p>
 
-        <div className="mb-6 scale-150">
-          <FocusTimer />
+      <div className="flex flex-col items-center px-4 py-8 md:py-12">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-3">
+            {isBreak ? <Coffee className="w-3.5 h-3.5 text-success" /> : <Timer className="w-3.5 h-3.5 text-primary" />}
+            <span className="text-xs font-medium uppercase tracking-wider text-foreground">
+              {isBreak ? "Pausa Curta" : "Modo Foco · Pomodoro"}
+            </span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+            {hasStarted ? (isBreak ? "Hora de respirar" : "Foco total agora") : "Pronto para começar?"}
+          </h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            {selectedSubjectName
+              ? <>Estudando <span className="text-primary font-medium">{selectedSubjectName}</span> · 25 min de foco + 5 min de pausa</>
+              : "Inicie um ciclo de 25 minutos. Opcionalmente, escolha uma disciplina para registrar nos seus relatórios."}
+          </p>
         </div>
 
-        {hasStarted && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsFullscreen(true)}
-            className="mb-10 gap-2"
-          >
-            <Maximize2 className="w-4 h-4" />
-            Tela cheia
-          </Button>
-        )}
+        {/* Hero Player */}
+        <div className="w-full max-w-md rounded-3xl border border-border bg-card/40 backdrop-blur-xl p-6 md:p-8 shadow-elegant">
+          {/* Big donut */}
+          <div className="relative flex items-center justify-center mb-6">
+            <svg className="w-64 h-64 md:w-72 md:h-72 transform -rotate-90">
+              <circle
+                cx="50%" cy="50%" r="45%"
+                stroke="currentColor" strokeWidth="6" fill="none"
+                className="text-muted/20"
+              />
+              <circle
+                cx="50%" cy="50%" r="45%"
+                stroke="currentColor" strokeWidth="6" fill="none"
+                pathLength={100} strokeDasharray="100"
+                strokeDashoffset={100 - progress}
+                strokeLinecap="round"
+                className={cn("transition-all duration-1000", ringColor, isPaused && "text-warning")}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className={cn(
+                "font-mono font-bold tabular-nums text-6xl md:text-7xl",
+                timeColor, isPaused && "text-warning"
+              )}>
+                {formattedTime}
+              </span>
+              <span className="mt-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                {isRunning && !isBreak && "Focando…"}
+                {isRunning && isBreak && "Descansando…"}
+                {isPaused && "Pausado"}
+                {!hasStarted && "Pronto"}
+                {isCompleted && !isRunning && "Concluído"}
+              </span>
+            </div>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl w-full mt-4">
-          {motivationalTips.map((tip, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center gap-3 rounded-xl border bg-card p-5 text-center shadow-sm"
+          {/* Subject selector */}
+          <div className="mb-5">
+            <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2">
+              <BookOpen className="w-3.5 h-3.5" />
+              Disciplina (opcional)
+            </label>
+            <div className="flex gap-2">
+              <Select
+                value={selectedSubjectId ?? "__none__"}
+                onValueChange={handleSubjectChange}
+                disabled={isRunning}
+              >
+                <SelectTrigger className="flex-1 bg-background/60">
+                  <SelectValue placeholder="Sem disciplina associada" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Sem disciplina associada</SelectItem>
+                  {subjects.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedSubjectId && !isRunning && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedSubject(null)}
+                  aria-label="Remover disciplina"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Primary CTA */}
+          <Button
+            size="lg"
+            onClick={handlePlayPause}
+            className={cn(
+              "w-full h-14 text-base font-semibold rounded-2xl gap-2 shadow-lg transition-all",
+              !isRunning && !isPaused && "bg-primary hover:bg-primary/90 text-primary-foreground hover:scale-[1.02]",
+              isRunning && "bg-warning hover:bg-warning/90 text-warning-foreground",
+              isPaused && "bg-primary hover:bg-primary/90 text-primary-foreground",
+            )}
+          >
+            {isRunning ? (
+              <><Pause className="w-5 h-5" /> Pausar</>
+            ) : isPaused ? (
+              <><Play className="w-5 h-5 ml-0.5" /> Retomar foco</>
+            ) : (
+              <><Play className="w-5 h-5 ml-0.5" /> {isBreak ? "Iniciar pausa" : "Iniciar Pomodoro"}</>
+            )}
+          </Button>
+
+          {/* Secondary controls */}
+          <div className="flex items-center justify-center gap-2 mt-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={reset}
+              disabled={!hasStarted && timeRemaining === totalTime}
+              className="gap-1.5"
             >
+              <RotateCcw className="w-4 h-4" />
+              Reiniciar
+            </Button>
+            {hasStarted && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsFullscreen(true)}
+                className="gap-1.5"
+              >
+                <Maximize2 className="w-4 h-4" />
+                Tela cheia
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Tips */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl w-full mt-10">
+          {motivationalTips.map((tip, i) => (
+            <div key={i} className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-5 text-center shadow-sm">
               <div className="p-2 rounded-lg bg-primary/10">
                 <tip.icon className="h-5 w-5 text-primary" />
               </div>
@@ -89,8 +228,7 @@ const PomodoroPage = () => {
       {isFullscreen && (
         <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-md flex flex-col items-center justify-center p-6 animate-in fade-in">
           <Button
-            variant="ghost"
-            size="icon"
+            variant="ghost" size="icon"
             onClick={() => setIsFullscreen(false)}
             className="absolute top-4 right-4 h-10 w-10 rounded-full"
             aria-label="Sair da tela cheia"
@@ -98,33 +236,23 @@ const PomodoroPage = () => {
             <Minimize2 className="w-5 h-5" />
           </Button>
 
-          <div className="flex items-center gap-2 mb-8 text-muted-foreground">
+          <div className="flex items-center gap-2 mb-4 text-muted-foreground">
             {isBreak ? <Coffee className="w-5 h-5" /> : <Timer className="w-5 h-5" />}
             <span className="text-sm uppercase tracking-widest">
               {isBreak ? "Pausa Curta" : "Modo Foco"}
             </span>
           </div>
+          {selectedSubjectName && (
+            <div className="mb-4 text-sm text-primary font-medium">{selectedSubjectName}</div>
+          )}
 
           <div className="relative">
             <svg className="w-[min(80vw,80vh)] h-[min(80vw,80vh)] transform -rotate-90">
+              <circle cx="50%" cy="50%" r="46%" stroke="currentColor" strokeWidth="4" fill="none" className="text-muted/20" />
               <circle
-                cx="50%"
-                cy="50%"
-                r="46%"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-                className="text-muted/20"
-              />
-              <circle
-                cx="50%"
-                cy="50%"
-                r="46%"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-                pathLength={100}
-                strokeDasharray="100"
+                cx="50%" cy="50%" r="46%"
+                stroke="currentColor" strokeWidth="4" fill="none"
+                pathLength={100} strokeDasharray="100"
                 strokeDashoffset={100 - progress}
                 strokeLinecap="round"
                 className={cn(
@@ -138,33 +266,24 @@ const PomodoroPage = () => {
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span
-                className={cn(
-                  "font-mono font-bold tabular-nums text-[clamp(3rem,18vw,12rem)]",
-                  isRunning && !isBreak && "text-primary",
-                  isRunning && isBreak && "text-success",
-                  isPaused && "text-warning",
-                  isCompleted && "text-success"
-                )}
-              >
+              <span className={cn(
+                "font-mono font-bold tabular-nums text-[clamp(3rem,18vw,12rem)]",
+                isRunning && !isBreak && "text-primary",
+                isRunning && isBreak && "text-success",
+                isPaused && "text-warning",
+                isCompleted && "text-success"
+              )}>
                 {formattedTime}
               </span>
             </div>
           </div>
 
           <div className="flex items-center justify-center gap-4 mt-10">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handlePlayPause}
-              className="h-14 w-14 rounded-full"
-            >
+            <Button variant="outline" size="icon" onClick={handlePlayPause} className="h-14 w-14 rounded-full">
               {isRunning ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
             </Button>
             <Button
-              variant="outline"
-              size="icon"
-              onClick={reset}
+              variant="outline" size="icon" onClick={reset}
               className="h-14 w-14 rounded-full"
               disabled={!hasStarted && timeRemaining === totalTime}
             >
