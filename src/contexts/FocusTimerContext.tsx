@@ -6,6 +6,7 @@ import { createFocusSession } from "@/services/focusSessions";
 import { logXP, XP } from "@/services/scoring";
 import { setCurrentStudyInfo, clearCurrentStudyInfo } from "@/lib/studyPresence";
 import { toast } from "sonner";
+import { useDocumentPiP } from "@/hooks/useDocumentPiP";
 
 interface FocusTimerContextType {
   timeRemaining: number;
@@ -21,6 +22,10 @@ interface FocusTimerContextType {
   selectedSubjectId: string | null;
   selectedSubjectName: string | null;
   setSelectedSubject: (subject: { id: string; name: string } | null) => void;
+  pipSupported: boolean;
+  pipOpen: boolean;
+  pipContainer: HTMLElement | null;
+  openPiP: () => Promise<void>;
 }
 
 const FocusTimerContext = createContext<FocusTimerContextType | undefined>(undefined);
@@ -69,6 +74,16 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasCompletedRef = useRef(false);
+
+  const { open: openPiPHook, isOpen: pipOpen, pipContainer, isSupported: pipSupported } = useDocumentPiP({ width: 280, height: 320 });
+
+  const openPiP = useCallback(async () => {
+    try {
+      await openPiPHook();
+    } catch {
+      toast.error("Seu navegador não suporta janela flutuante. Tente Chrome ou Edge.");
+    }
+  }, [openPiPHook]);
 
   // Load state from sessionStorage on mount
   useEffect(() => {
@@ -251,6 +266,10 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         selectedSubjectId,
         selectedSubjectName,
         setSelectedSubject,
+        pipSupported,
+        pipOpen,
+        pipContainer,
+        openPiP,
       }}
     >
       {children}

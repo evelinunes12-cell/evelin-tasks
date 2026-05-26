@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useFocusTimer } from "@/contexts/FocusTimerContext";
 import { Button } from "@/components/ui/button";
 import {
   Flame, Target, Zap, Maximize2, Minimize2, Play, Pause, RotateCcw,
-  Coffee, Timer, BookOpen, X,
+  Coffee, Timer, BookOpen, X, PictureInPicture2,
 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ const PomodoroPage = () => {
     timeRemaining, isRunning, isPaused, isBreak, totalTime, isCompleted,
     start, pause, resume, reset,
     selectedSubjectId, selectedSubjectName, setSelectedSubject,
+    pipSupported, pipOpen, pipContainer, openPiP,
   } = useFocusTimer();
   const { user } = useAuth();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -72,9 +74,24 @@ const PomodoroPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border px-4 py-3 flex items-center gap-3">
-        <SidebarTrigger className="md:hidden" />
-        <h1 className="text-lg font-bold text-foreground">Modo Foco</h1>
+      <header className="border-b border-border px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="md:hidden" />
+          <h1 className="text-lg font-bold text-foreground">Modo Foco</h1>
+        </div>
+        {pipSupported && hasStarted && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={openPiP}
+            disabled={pipOpen}
+            className="h-8 gap-2 px-3 rounded-lg border border-border/50 bg-card/40 text-muted-foreground hover:text-foreground hover:bg-card/70"
+            title={pipOpen ? "Miniplayer ativo" : "Abrir miniplayer flutuante"}
+          >
+            <PictureInPicture2 className="h-4 w-4" />
+            <span className="text-xs font-medium hidden sm:inline">Miniplayer</span>
+          </Button>
+        )}
       </header>
 
       <div className="flex flex-col items-center px-4 py-8 md:py-12">
@@ -298,6 +315,43 @@ const PomodoroPage = () => {
             {isCompleted && "🎉 Ciclo concluído!"}
           </p>
         </div>
+      )}
+
+      {/* PiP portal */}
+      {pipContainer && createPortal(
+        <div className="flex flex-col items-center justify-center gap-4 h-screen w-screen p-4 bg-background text-foreground">
+          <div className="text-[11px] uppercase tracking-widest text-muted-foreground/70 truncate max-w-full text-center px-2">
+            {selectedSubjectName || (isBreak ? "Pausa" : "Pomodoro")}
+          </div>
+          <div className={cn(
+            "text-5xl font-bold tabular-nums",
+            isRunning && !isBreak && "text-primary",
+            isRunning && isBreak && "text-success",
+            isPaused && "text-warning",
+            isCompleted && "text-success",
+            !hasStarted && "text-muted-foreground"
+          )}>
+            {formattedTime}
+          </div>
+          <Button
+            size="icon"
+            className={cn(
+              "h-14 w-14 rounded-full shadow-lg",
+              isBreak ? "bg-success text-success-foreground" : "bg-primary text-primary-foreground"
+            )}
+            onClick={handlePlayPause}
+          >
+            {isRunning ? (
+              <Pause className="h-6 w-6" />
+            ) : (
+              <Play className="h-6 w-6 ml-0.5" />
+            )}
+          </Button>
+          <div className="text-[10px] text-muted-foreground/60">
+            {isBreak ? "Intervalo" : isRunning ? "Focando" : isPaused ? "Pausado" : "Pronto"}
+          </div>
+        </div>,
+        pipContainer
       )}
     </div>
   );

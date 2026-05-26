@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useFocusTimer } from "@/contexts/FocusTimerContext";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Play, Pause, RotateCcw, Timer, Coffee } from "lucide-react";
+import { Play, Pause, RotateCcw, Timer, Coffee, PictureInPicture2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const FocusTimer = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { timeRemaining, isRunning, isPaused, isBreak, start, pause, resume, reset, totalTime, isCompleted } = useFocusTimer();
+  const { timeRemaining, isRunning, isPaused, isBreak, start, pause, resume, reset, totalTime, isCompleted, pipSupported, pipOpen, openPiP } = useFocusTimer();
 
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
@@ -64,9 +64,23 @@ export const FocusTimer = () => {
       <PopoverContent className="w-64 p-4" align="end">
         <div className="space-y-4">
           <div className="text-center">
-            <h3 className="font-semibold text-sm text-muted-foreground mb-2">
-              {isBreak ? "☕ Pausa Curta" : "🍅 Modo Foco"}
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-sm text-muted-foreground">
+                {isBreak ? "☕ Pausa Curta" : "🍅 Modo Foco"}
+              </h3>
+              {pipSupported && hasStarted && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground"
+                  onClick={openPiP}
+                  disabled={pipOpen}
+                  title={pipOpen ? "Miniplayer ativo" : "Abrir miniplayer flutuante"}
+                >
+                  <PictureInPicture2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
             <div className="relative">
               {/* Circular Progress */}
               <svg className="w-28 h-28 mx-auto transform -rotate-90">
