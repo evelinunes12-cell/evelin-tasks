@@ -74,9 +74,24 @@ const PomodoroPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border px-4 py-3 flex items-center gap-3">
-        <SidebarTrigger className="md:hidden" />
-        <h1 className="text-lg font-bold text-foreground">Modo Foco</h1>
+      <header className="border-b border-border px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="md:hidden" />
+          <h1 className="text-lg font-bold text-foreground">Modo Foco</h1>
+        </div>
+        {pipSupported && hasStarted && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={openPiP}
+            disabled={pipOpen}
+            className="h-8 gap-2 px-3 rounded-lg border border-border/50 bg-card/40 text-muted-foreground hover:text-foreground hover:bg-card/70"
+            title={pipOpen ? "Miniplayer ativo" : "Abrir miniplayer flutuante"}
+          >
+            <PictureInPicture2 className="h-4 w-4" />
+            <span className="text-xs font-medium hidden sm:inline">Miniplayer</span>
+          </Button>
+        )}
       </header>
 
       <div className="flex flex-col items-center px-4 py-8 md:py-12">
