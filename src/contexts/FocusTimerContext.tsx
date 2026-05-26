@@ -130,7 +130,7 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       
       // Registra a sessão de foco no histórico
       if (sessionStartTime) {
-        await createFocusSession(user.id, sessionStartTime, DEFAULT_TIME / 60);
+        await createFocusSession(user.id, sessionStartTime, DEFAULT_TIME / 60, selectedSubjectId);
         setSessionStartTime(null);
       }
       
