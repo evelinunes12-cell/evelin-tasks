@@ -47,6 +47,26 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isCompleted, setIsCompleted] = useState(false);
   const [endTime, setEndTime] = useState<number | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const SUBJECT_STORAGE_KEY = "focus_timer_subject";
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(() => {
+    try { return sessionStorage.getItem(SUBJECT_STORAGE_KEY + "_id"); } catch { return null; }
+  });
+  const [selectedSubjectName, setSelectedSubjectName] = useState<string | null>(() => {
+    try { return sessionStorage.getItem(SUBJECT_STORAGE_KEY + "_name"); } catch { return null; }
+  });
+  const setSelectedSubject = useCallback((subject: { id: string; name: string } | null) => {
+    setSelectedSubjectId(subject?.id ?? null);
+    setSelectedSubjectName(subject?.name ?? null);
+    try {
+      if (subject) {
+        sessionStorage.setItem(SUBJECT_STORAGE_KEY + "_id", subject.id);
+        sessionStorage.setItem(SUBJECT_STORAGE_KEY + "_name", subject.name);
+      } else {
+        sessionStorage.removeItem(SUBJECT_STORAGE_KEY + "_id");
+        sessionStorage.removeItem(SUBJECT_STORAGE_KEY + "_name");
+      }
+    } catch {}
+  }, []);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasCompletedRef = useRef(false);
 
