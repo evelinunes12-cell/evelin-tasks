@@ -154,7 +154,7 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
 
     hasCompletedRef.current = false;
-  }, [user, queryClient, sessionStartTime]);
+  }, [user, queryClient, sessionStartTime, selectedSubjectId]);
 
   // Timer tick effect
   useEffect(() => {
