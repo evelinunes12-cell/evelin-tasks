@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 export const FocusTimer = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { timeRemaining, isRunning, isPaused, isBreak, start, pause, resume, reset, totalTime, isCompleted } = useFocusTimer();
+  const { timeRemaining, isRunning, isPaused, isBreak, start, pause, resume, reset, totalTime, isCompleted, pipSupported, pipOpen, openPiP } = useFocusTimer();
 
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
