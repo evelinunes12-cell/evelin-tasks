@@ -6,6 +6,7 @@ import { createFocusSession } from "@/services/focusSessions";
 import { logXP, XP } from "@/services/scoring";
 import { setCurrentStudyInfo, clearCurrentStudyInfo } from "@/lib/studyPresence";
 import { toast } from "sonner";
+import { useDocumentPiP } from "@/hooks/useDocumentPiP";
 
 interface FocusTimerContextType {
   timeRemaining: number;
