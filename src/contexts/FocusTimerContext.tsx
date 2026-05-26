@@ -248,6 +248,9 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         reset,
         totalTime,
         isCompleted,
+        selectedSubjectId,
+        selectedSubjectName,
+        setSelectedSubject,
       }}
     >
       {children}
