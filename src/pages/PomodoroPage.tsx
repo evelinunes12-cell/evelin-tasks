@@ -26,6 +26,7 @@ const PomodoroPage = () => {
     timeRemaining, isRunning, isPaused, isBreak, totalTime, isCompleted,
     start, pause, resume, reset,
     selectedSubjectId, selectedSubjectName, setSelectedSubject,
+    pipSupported, pipOpen, pipContainer, openPiP,
   } = useFocusTimer();
   const { user } = useAuth();
   const [isFullscreen, setIsFullscreen] = useState(false);
