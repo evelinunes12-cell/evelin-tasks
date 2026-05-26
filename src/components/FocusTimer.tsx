@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useFocusTimer } from "@/contexts/FocusTimerContext";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Play, Pause, RotateCcw, Timer, Coffee } from "lucide-react";
+import { Play, Pause, RotateCcw, Timer, Coffee, PictureInPicture2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const FocusTimer = () => {
