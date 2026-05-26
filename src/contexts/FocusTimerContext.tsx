@@ -75,6 +75,16 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasCompletedRef = useRef(false);
 
+  const { open: openPiPHook, isOpen: pipOpen, pipContainer, isSupported: pipSupported } = useDocumentPiP({ width: 280, height: 320 });
+
+  const openPiP = useCallback(async () => {
+    try {
+      await openPiPHook();
+    } catch {
+      toast.error("Seu navegador não suporta janela flutuante. Tente Chrome ou Edge.");
+    }
+  }, [openPiPHook]);
+
   // Load state from sessionStorage on mount
   useEffect(() => {
     const stored = sessionStorage.getItem(STORAGE_KEY);
