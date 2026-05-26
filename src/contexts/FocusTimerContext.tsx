@@ -18,6 +18,9 @@ interface FocusTimerContextType {
   reset: () => void;
   totalTime: number;
   isCompleted: boolean;
+  selectedSubjectId: string | null;
+  selectedSubjectName: string | null;
+  setSelectedSubject: (subject: { id: string; name: string } | null) => void;
 }
 
 const FocusTimerContext = createContext<FocusTimerContextType | undefined>(undefined);
