@@ -80,12 +80,21 @@ const StudyCyclePlayer = () => {
   const [manualLogOpen, setManualLogOpen] = useState(false);
   const [questionsTotal, setQuestionsTotal] = useState("");
   const [questionsCorrect, setQuestionsCorrect] = useState("");
+  const [sheetExpanded, setSheetExpanded] = useState(false);
+  const sheetScrollRef = useRef<HTMLDivElement>(null);
+  const dragStartY = useRef<number | null>(null);
+  const dragDeltaY = useRef(0);
 
   // Reset questions inputs when changing block or entering break mode
   useEffect(() => {
     setQuestionsTotal("");
     setQuestionsCorrect("");
   }, [currentIndex, mode]);
+
+  // Collapse sheet when switching to break
+  useEffect(() => {
+    if (mode === "break") setSheetExpanded(false);
+  }, [mode]);
 
   const handleCompleteBlock = () => {
     const total = Math.max(0, parseInt(questionsTotal) || 0);
