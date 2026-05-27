@@ -1,0 +1,14 @@
+# Zenit
+
+> Plataforma de estudos e produtividade que reúne Pomodoro, ciclos de estudo, planner, tarefas e relatórios de desempenho para ajudar estudantes a alcançar o ponto máximo do seu foco.
+
+Zenit é um app web (PWA) em português brasileiro voltado para concurseiros, vestibulandos e estudantes em geral. Os recursos principais incluem temporizador Pomodoro com miniplayer, ciclos de estudo configuráveis, planner com calendário e metas, gerenciamento de disciplinas e tarefas, gamificação (XP, streak, conquistas), grupos de estudo colaborativos e relatórios de desempenho.
+
+## Pages
+
+- [Página inicial](/): Visão geral da plataforma Zenit e ponto de entrada para login.
+- [Entrar / Cadastrar](/auth): Tela de autenticação para acessar a plataforma.
+
+## Optional
+
+- [Status de publicação](https://zenit-io.lovable.app/): Domínio oficial em produção.
