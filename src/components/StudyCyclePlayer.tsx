@@ -245,180 +245,259 @@ const StudyCyclePlayer = () => {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8 max-w-lg mx-auto w-full py-6">
-            <DonutTimer
-              timeLeft={formattedTime}
-              progress={progress}
-              mode={isBreak ? "break" : "study"}
-              label={isBreak ? "Intervalo" : (currentBlock?.subject?.name || "Disciplina")}
-              subjectColor={subjectColor}
-              isRunning={isRunning}
-              isPaused={isPaused}
-              isOvertime={isOvertime}
-              overtimeText={overtimeText}
-            />
+          <div className="relative flex-1 overflow-hidden">
+            {/* Player content — dims and recedes when sheet expands */}
+            <div
+              className={cn(
+                "absolute inset-0 overflow-y-auto transition-all duration-500 ease-out",
+                sheetExpanded && "scale-[0.92] opacity-30 blur-[2px] pointer-events-none"
+              )}
+              style={{ paddingBottom: 200 }}
+            >
+              <div className="min-h-full flex flex-col items-center justify-center px-6 gap-8 max-w-lg mx-auto w-full py-6">
+                <DonutTimer
+                  timeLeft={formattedTime}
+                  progress={progress}
+                  mode={isBreak ? "break" : "study"}
+                  label={isBreak ? "Intervalo" : (currentBlock?.subject?.name || "Disciplina")}
+                  subjectColor={subjectColor}
+                  isRunning={isRunning}
+                  isPaused={isPaused}
+                  isOvertime={isOvertime}
+                  overtimeText={overtimeText}
+                />
 
-            <div className="flex items-center gap-5">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-12 w-12 rounded-full border-border/50"
-                onClick={restart}
-                disabled={allDone && !isBreak}
-                title="Recomeçar"
-              >
-                <RotateCcw className="h-5 w-5" />
-              </Button>
+                <div className="flex items-center gap-5">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-12 w-12 rounded-full border-border/50"
+                    onClick={restart}
+                    disabled={allDone && !isBreak}
+                    title="Recomeçar"
+                  >
+                    <RotateCcw className="h-5 w-5" />
+                  </Button>
 
-              <Button
-                size="icon"
-                className="h-16 w-16 rounded-full shadow-lg transition-shadow duration-300"
-                style={{
-                  backgroundColor: subjectColor,
-                  boxShadow: isRunning ? `0 0 30px ${subjectColor}44, 0 4px 20px ${subjectColor}33` : undefined,
-                }}
-                onClick={togglePlayPause}
-                disabled={allDone && !isBreak}
-              >
-                {isRunning ? (
-                  <Pause className="h-7 w-7 text-white" />
-                ) : (
-                  <Play className="h-7 w-7 text-white ml-0.5" />
+                  <Button
+                    size="icon"
+                    className="h-16 w-16 rounded-full shadow-lg transition-shadow duration-300"
+                    style={{
+                      backgroundColor: subjectColor,
+                      boxShadow: isRunning ? `0 0 30px ${subjectColor}44, 0 4px 20px ${subjectColor}33` : undefined,
+                    }}
+                    onClick={togglePlayPause}
+                    disabled={allDone && !isBreak}
+                  >
+                    {isRunning ? (
+                      <Pause className="h-7 w-7 text-white" />
+                    ) : (
+                      <Play className="h-7 w-7 text-white ml-0.5" />
+                    )}
+                  </Button>
+
+                  {isBreak && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12 rounded-full border-border/50"
+                      onClick={skip}
+                      disabled={allDone}
+                      title="Pular intervalo"
+                    >
+                      <SkipForward className="h-5 w-5" />
+                    </Button>
+                  )}
+
+                  {!isBreak && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12 rounded-full bg-success/10 border-success/30 text-success hover:bg-success/20 hover:text-success"
+                      onClick={handleCompleteBlock}
+                      disabled={allDone || (!isRunning && !isPaused && elapsedSeconds === 0)}
+                      title="Concluir bloco rapidamente"
+                    >
+                      <CheckCircle2 className="h-5 w-5" />
+                    </Button>
+                  )}
+                </div>
+
+                {!isBreak && (
+                  <div className="w-full max-w-sm rounded-3xl border border-border/50 bg-card/40 backdrop-blur-xl p-5 shadow-2xl space-y-5">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        Desempenho no Bloco
+                      </h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setManualLogOpen(true)}
+                        className="h-7 gap-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:text-primary hover:bg-primary/10"
+                      >
+                        <ClipboardEdit className="h-3.5 w-3.5" />
+                        Registro Manual
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-[10px] font-medium text-muted-foreground/80 px-1 uppercase tracking-wider">
+                          Resolvidas
+                        </Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={questionsTotal}
+                          onChange={(e) => setQuestionsTotal(e.target.value)}
+                          placeholder="0"
+                          className="h-11 rounded-xl text-center font-bold text-base"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-[10px] font-medium text-muted-foreground/80 px-1 uppercase tracking-wider">
+                          Acertos
+                        </Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={questionsCorrect}
+                          onChange={(e) => setQuestionsCorrect(e.target.value)}
+                          placeholder="0"
+                          className="h-11 rounded-xl text-center font-bold text-base text-success"
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleCompleteBlock}
+                      disabled={allDone || (!isRunning && !isPaused && elapsedSeconds === 0)}
+                      className="w-full h-12 rounded-xl text-sm font-bold bg-success text-success-foreground hover:bg-success/90 shadow-lg gap-2"
+                    >
+                      <CheckCircle2 className="h-5 w-5" />
+                      Concluir Bloco de Estudo
+                    </Button>
+                  </div>
                 )}
-              </Button>
 
-              {isBreak && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-12 w-12 rounded-full border-border/50"
-                  onClick={skip}
-                  disabled={allDone}
-                  title="Pular intervalo"
-                >
-                  <SkipForward className="h-5 w-5" />
-                </Button>
-              )}
-
-              {!isBreak && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-12 w-12 rounded-full bg-success/10 border-success/30 text-success hover:bg-success/20 hover:text-success"
-                  onClick={handleCompleteBlock}
-                  disabled={allDone || (!isRunning && !isPaused && elapsedSeconds === 0)}
-                  title="Concluir bloco rapidamente"
-                >
-                  <CheckCircle2 className="h-5 w-5" />
-                </Button>
-              )}
+                {isBreak && (
+                  <Button variant="ghost" size="sm" onClick={skip} className="text-xs text-muted-foreground hover:text-foreground">
+                    Pular intervalo e ir para a próxima matéria →
+                  </Button>
+                )}
+              </div>
             </div>
 
-            {!isBreak && (
-              <div className="w-full max-w-sm rounded-3xl border border-border/50 bg-card/40 backdrop-blur-xl p-5 shadow-2xl space-y-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Desempenho no Bloco
-                  </h3>
+            {/* Dim backdrop behind sheet when expanded */}
+            {sheetExpanded && (
+              <button
+                aria-label="Recolher lista"
+                onClick={() => setSheetExpanded(false)}
+                className="absolute inset-0 bg-background/40 backdrop-blur-[2px] animate-in fade-in duration-300"
+              />
+            )}
+
+            {/* Expandable bottom sheet */}
+            <div
+              className={cn(
+                "absolute left-0 right-0 bottom-0 bg-card/95 backdrop-blur-xl border-t border-border/60 rounded-t-3xl shadow-2xl flex flex-col transition-[height] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                sheetExpanded ? "h-[85%]" : "h-[200px]"
+              )}
+              onWheel={(e) => {
+                if (isBreak) return;
+                const el = sheetScrollRef.current;
+                if (!sheetExpanded && e.deltaY < -10) setSheetExpanded(true);
+                else if (sheetExpanded && el && el.scrollTop <= 0 && e.deltaY > 10) setSheetExpanded(false);
+              }}
+              onTouchStart={(e) => {
+                dragStartY.current = e.touches[0].clientY;
+                dragDeltaY.current = 0;
+              }}
+              onTouchMove={(e) => {
+                if (dragStartY.current == null) return;
+                dragDeltaY.current = e.touches[0].clientY - dragStartY.current;
+              }}
+              onTouchEnd={() => {
+                if (isBreak) { dragStartY.current = null; return; }
+                const d = dragDeltaY.current;
+                const el = sheetScrollRef.current;
+                if (!sheetExpanded && d < -40) setSheetExpanded(true);
+                else if (sheetExpanded && d > 60 && (!el || el.scrollTop <= 0)) setSheetExpanded(false);
+                dragStartY.current = null;
+                dragDeltaY.current = 0;
+              }}
+            >
+              {/* Drag handle */}
+              <button
+                onClick={() => !isBreak && setSheetExpanded((v) => !v)}
+                className="w-full flex flex-col items-center pt-2.5 pb-1 group"
+                aria-label={sheetExpanded ? "Recolher lista" : "Expandir lista"}
+                disabled={isBreak}
+              >
+                <span className="h-1.5 w-12 rounded-full bg-muted-foreground/30 group-hover:bg-muted-foreground/50 transition-colors" />
+              </button>
+
+              <div className="flex items-center justify-between px-5 pt-1 pb-2">
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest">
+                    {isBreak ? "Próximas disciplinas" : "Disciplinas do ciclo"}
+                  </p>
+                  <span className="text-[10px] text-muted-foreground/60 tabular-nums px-1.5 py-0.5 rounded-full bg-muted/60">
+                    {completedBlocks.size}/{blocks.length}
+                  </span>
+                </div>
+                {!isBreak && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setManualLogOpen(true)}
-                    className="h-7 gap-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:text-primary hover:bg-primary/10"
+                    className="h-7 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground gap-1"
+                    onClick={() => setSheetExpanded((v) => !v)}
                   >
-                    <ClipboardEdit className="h-3.5 w-3.5" />
-                    Registro Manual
+                    {sheetExpanded ? (
+                      <>Recolher <ChevronDown className="h-3.5 w-3.5" /></>
+                    ) : (
+                      <>Ver todas <ChevronUp className="h-3.5 w-3.5" /></>
+                    )}
                   </Button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label className="text-[10px] font-medium text-muted-foreground/80 px-1 uppercase tracking-wider">
-                      Resolvidas
-                    </Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={questionsTotal}
-                      onChange={(e) => setQuestionsTotal(e.target.value)}
-                      placeholder="0"
-                      className="h-11 rounded-xl text-center font-bold text-base"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label className="text-[10px] font-medium text-muted-foreground/80 px-1 uppercase tracking-wider">
-                      Acertos
-                    </Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={questionsCorrect}
-                      onChange={(e) => setQuestionsCorrect(e.target.value)}
-                      placeholder="0"
-                      className="h-11 rounded-xl text-center font-bold text-base text-success"
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleCompleteBlock}
-                  disabled={allDone || (!isRunning && !isPaused && elapsedSeconds === 0)}
-                  className="w-full h-12 rounded-xl text-sm font-bold bg-success text-success-foreground hover:bg-success/90 shadow-lg gap-2"
-                >
-                  <CheckCircle2 className="h-5 w-5" />
-                  Concluir Bloco de Estudo
-                </Button>
+                )}
               </div>
-            )}
 
-            {isBreak && (
-              <Button variant="ghost" size="sm" onClick={skip} className="text-xs text-muted-foreground hover:text-foreground">
-                Pular intervalo e ir para a próxima matéria →
-              </Button>
-            )}
-          </div>
-
-
-          <div className="border-t border-border/40 px-5 py-4 bg-muted/30 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-2.5">
-              <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest">
-                {isBreak ? "Próximas disciplinas" : "Todas as disciplinas do ciclo"}
-              </p>
-              <span className="text-[10px] text-muted-foreground/60 tabular-nums">
-                {completedBlocks.size}/{blocks.length} concluídas
-              </span>
-            </div>
-            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
-              {!isBreak && (
-                <QueueChip
-                  name={currentBlock?.subject?.name || "—"}
-                  color={currentBlock?.subject?.color || null}
-                  minutes={currentBlock?.allocated_minutes || 0}
-                  isDone={false}
-                  isCurrent
-                  disabled
-                />
-              )}
-              {upcomingBlocks.map((block, i) => {
-                const isDone = completedBlocks.has(block._idx);
-                return (
+              <div ref={sheetScrollRef} className="flex-1 overflow-y-auto px-5 pb-5 space-y-1.5">
+                {!isBreak && (
                   <QueueChip
-                    key={`${block.id}-${i}`}
-                    name={block.subject?.name || "—"}
-                    color={block.subject?.color || null}
-                    minutes={block.allocated_minutes}
-                    isDone={isDone}
-                    onClick={() => !isBreak && goToBlock(block._idx)}
-                    disabled={isBreak}
+                    name={currentBlock?.subject?.name || "—"}
+                    color={currentBlock?.subject?.color || null}
+                    minutes={currentBlock?.allocated_minutes || 0}
+                    isDone={false}
+                    isCurrent
+                    disabled
                   />
-                );
-              })}
+                )}
+                {upcomingBlocks.map((block, i) => {
+                  const isDone = completedBlocks.has(block._idx);
+                  return (
+                    <QueueChip
+                      key={`${block.id}-${i}`}
+                      name={block.subject?.name || "—"}
+                      color={block.subject?.color || null}
+                      minutes={block.allocated_minutes}
+                      isDone={isDone}
+                      onClick={() => {
+                        if (isBreak) return;
+                        goToBlock(block._idx);
+                        setSheetExpanded(false);
+                      }}
+                      disabled={isBreak}
+                    />
+                  );
+                })}
+                {!isBreak && !sheetExpanded && pendingCount > 0 && (
+                  <p className="text-[10px] text-muted-foreground/50 pt-1 text-center">
+                    Arraste para cima para ver todas
+                  </p>
+                )}
+              </div>
             </div>
-            {!isBreak && pendingCount > 0 && (
-              <p className="text-[10px] text-muted-foreground/50 mt-2 text-center">
-                Toque em qualquer disciplina para focar nela agora
-              </p>
-            )}
           </div>
 
           <ManualStudyLogDialog
