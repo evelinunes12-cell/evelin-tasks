@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Play, Pause, SkipForward, RotateCcw, X, Coffee, CheckCircle2, ClipboardEdit, PictureInPicture2, ArrowLeft } from "lucide-react";
+import { Play, Pause, SkipForward, RotateCcw, X, Coffee, CheckCircle2, ClipboardEdit, PictureInPicture2, ArrowLeft, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DonutTimer } from "@/components/DonutTimer";
 import { toast } from "sonner";
