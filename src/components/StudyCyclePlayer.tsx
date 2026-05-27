@@ -123,11 +123,13 @@ const StudyCyclePlayer = () => {
   const allDone = completedBlocks.size === blocks.length;
   const subjectColor = isBreak ? "hsl(var(--primary))" : currentBlock?.subject?.color || "hsl(var(--primary))";
 
+  // Full ordered list starting after current block (wraps around), excluding current
   const upcomingBlocks: Array<typeof blocks[number] & { _idx: number }> = [];
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; i < blocks.length; i++) {
     const idx = (currentIndex + i) % blocks.length;
-    if (idx !== currentIndex) upcomingBlocks.push({ ...blocks[idx], _idx: idx });
+    upcomingBlocks.push({ ...blocks[idx], _idx: idx });
   }
+  const pendingCount = blocks.length - completedBlocks.size - (isBreak ? 0 : 1);
 
   const handleBack = async () => {
     // Try to open PiP automatically so user keeps seeing the timer
