@@ -123,11 +123,13 @@ const StudyCyclePlayer = () => {
   const allDone = completedBlocks.size === blocks.length;
   const subjectColor = isBreak ? "hsl(var(--primary))" : currentBlock?.subject?.color || "hsl(var(--primary))";
 
+  // Full ordered list starting after current block (wraps around), excluding current
   const upcomingBlocks: Array<typeof blocks[number] & { _idx: number }> = [];
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; i < blocks.length; i++) {
     const idx = (currentIndex + i) % blocks.length;
-    if (idx !== currentIndex) upcomingBlocks.push({ ...blocks[idx], _idx: idx });
+    upcomingBlocks.push({ ...blocks[idx], _idx: idx });
   }
+  const pendingCount = blocks.length - completedBlocks.size - (isBreak ? 0 : 1);
 
   const handleBack = async () => {
     // Try to open PiP automatically so user keeps seeing the timer
@@ -369,10 +371,15 @@ const StudyCyclePlayer = () => {
 
 
           <div className="border-t border-border/40 px-5 py-4 bg-muted/30 backdrop-blur-sm">
-            <p className="text-[11px] font-semibold text-muted-foreground/60 mb-2.5 uppercase tracking-widest">
-              {isBreak ? "Próxima" : "Fila"}
-            </p>
-            <div className="space-y-1.5 max-h-36 overflow-y-auto">
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest">
+                {isBreak ? "Próximas disciplinas" : "Todas as disciplinas do ciclo"}
+              </p>
+              <span className="text-[10px] text-muted-foreground/60 tabular-nums">
+                {completedBlocks.size}/{blocks.length} concluídas
+              </span>
+            </div>
+            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
               {!isBreak && (
                 <QueueChip
                   name={currentBlock?.subject?.name || "—"}
@@ -398,6 +405,11 @@ const StudyCyclePlayer = () => {
                 );
               })}
             </div>
+            {!isBreak && pendingCount > 0 && (
+              <p className="text-[10px] text-muted-foreground/50 mt-2 text-center">
+                Toque em qualquer disciplina para focar nela agora
+              </p>
+            )}
           </div>
 
           <ManualStudyLogDialog
