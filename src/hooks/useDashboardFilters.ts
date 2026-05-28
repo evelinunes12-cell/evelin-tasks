@@ -18,7 +18,13 @@ export const useDashboardFilters = () => {
   const overdueFilter = searchParams.get("overdue") === "true";
   const dueTodayFilter = searchParams.get("due") === "today";
   const sortBy = searchParams.get("sortBy") || "due_date";
-  const viewMode = (searchParams.get("view") as "list" | "board") || "list";
+  // View mode: URL param takes precedence, then localStorage, then default
+  const urlViewMode = searchParams.get("view") as "list" | "board" | null;
+  const storedViewMode = typeof window !== "undefined"
+    ? (localStorage.getItem(VIEW_MODE_STORAGE_KEY) as "list" | "board" | null)
+    : null;
+  const resolvedViewMode = urlViewMode || storedViewMode || "list";
+  const [viewMode, setViewModeState] = useState<"list" | "board">(resolvedViewMode);
 
   const [searchQuery, setSearchQuery] = useState<string>(searchParams.get("q") || "");
   const debouncedSearch = useDebounce(searchQuery, 300);
