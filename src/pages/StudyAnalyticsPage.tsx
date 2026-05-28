@@ -1,22 +1,27 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchFocusSessionsWithDetails, FocusSessionWithDetails } from "@/services/studyAnalytics";
 import { fetchStudyCycles } from "@/services/studyCycles";
+import { fetchSubjects } from "@/services/subjects";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateRangePicker } from "@/components/DateRangePicker";
-import { Clock, Repeat, Timer, CheckCircle, TrendingUp, BookOpen, Target } from "lucide-react";
+import { Clock, Repeat, Timer, CheckCircle, TrendingUp, BookOpen, Target, Pencil, ListChecks } from "lucide-react";
 
 import ActiveCycleProgressCard from "@/components/ActiveCycleProgressCard";
+import EditFocusSessionDialog from "@/components/EditFocusSessionDialog";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { subDays } from "date-fns";
+import { subDays, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
+
 
 const COLORS = [
   "hsl(262, 83%, 58%)", "hsl(142, 76%, 36%)", "hsl(38, 92%, 50%)",
