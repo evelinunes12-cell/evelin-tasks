@@ -91,3 +91,66 @@ export const getTotalFocusMinutes = async (
   const sessions = await fetchFocusSessions(userId, fromDate, toDate);
   return sessions.reduce((acc, session) => acc + session.duration_minutes, 0);
 };
+
+export interface UpdateFocusSessionInput {
+  startedAt?: Date;
+  durationMinutes?: number;
+  questionsTotal?: number;
+  questionsCorrect?: number;
+  subjectId?: string | null;
+}
+
+export const updateFocusSession = async (
+  sessionId: string,
+  input: UpdateFocusSessionInput
+): Promise<boolean> => {
+  try {
+    const patch: any = {};
+    const started = input.startedAt;
+    const duration = input.durationMinutes;
+    if (started && typeof duration === "number") {
+      patch.started_at = started.toISOString();
+      patch.ended_at = new Date(started.getTime() + duration * 60 * 1000).toISOString();
+      patch.duration_minutes = duration;
+    } else if (started) {
+      patch.started_at = started.toISOString();
+    } else if (typeof duration === "number") {
+      patch.duration_minutes = duration;
+    }
+    if (typeof input.questionsTotal === "number") {
+      patch.questions_total = Math.max(0, Math.floor(input.questionsTotal));
+    }
+    if (typeof input.questionsCorrect === "number") {
+      patch.questions_correct = Math.max(0, Math.floor(input.questionsCorrect));
+    }
+    if (input.subjectId !== undefined) {
+      patch.subject_id = input.subjectId;
+    }
+
+    const { error } = await supabase
+      .from("focus_sessions")
+      .update(patch)
+      .eq("id", sessionId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    logError("Erro ao atualizar sessão de foco", error);
+    return false;
+  }
+};
+
+export const deleteFocusSession = async (sessionId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from("focus_sessions")
+      .delete()
+      .eq("id", sessionId);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    logError("Erro ao excluir sessão de foco", error);
+    return false;
+  }
+};
+
