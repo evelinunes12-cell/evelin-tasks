@@ -57,6 +57,8 @@ export const useDashboardFilters = () => {
   };
   const setSortBy = (v: string) => setFilter("sortBy", v, "due_date");
   const setViewMode = (value: "list" | "board") => {
+    setViewModeState(value);
+    localStorage.setItem(VIEW_MODE_STORAGE_KEY, value);
     setSearchParams(prev => {
       if (value === "list") prev.delete("view");
       else prev.set("view", value);
