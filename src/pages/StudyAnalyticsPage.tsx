@@ -30,9 +30,9 @@ const COLORS = [
 ];
 
 type OriginFilter = "all" | "cycle" | "pomodoro";
-
 const StudyAnalyticsPage = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 6),
@@ -40,9 +40,12 @@ const StudyAnalyticsPage = () => {
   });
   const [originFilter, setOriginFilter] = useState<OriginFilter>("all");
   const [selectedCycleId, setSelectedCycleId] = useState<string>("all");
+  const [editingSession, setEditingSession] = useState<FocusSessionWithDetails | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
+  const sessionsQueryKey = ["study-analytics", user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()];
   const { data: allSessions = [], isLoading } = useQuery({
-    queryKey: ["study-analytics", user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
+    queryKey: sessionsQueryKey,
     queryFn: () => fetchFocusSessionsWithDetails(user!.id, dateRange?.from, dateRange?.to),
     enabled: !!user?.id,
   });
@@ -51,6 +54,14 @@ const StudyAnalyticsPage = () => {
     queryKey: ["study-cycles-list"],
     queryFn: fetchStudyCycles,
     enabled: !!user?.id,
+  });
+
+  const { data: subjects = [] } = useQuery({
+    queryKey: ["subjects-list", user?.id],
+    queryFn: fetchSubjects,
+    enabled: !!user?.id,
+  });
+
   });
 
   // Apply origin + cycle filters
