@@ -62,7 +62,7 @@ const StudyAnalyticsPage = () => {
     enabled: !!user?.id,
   });
 
-  });
+
 
   // Apply origin + cycle filters
   const sessions = useMemo(() => {
