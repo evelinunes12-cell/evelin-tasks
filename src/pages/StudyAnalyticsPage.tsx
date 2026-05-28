@@ -426,12 +426,108 @@ const StudyAnalyticsPage = () => {
                 </div>
               )}
             </div>
+
+            {/* Registros */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center gap-2">
+                <ListChecks className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold text-foreground">Registros de Estudo</h2>
+              </div>
+              <Card>
+                <CardContent className="p-0">
+                  {sessions.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8 text-sm">
+                      Nenhum registro encontrado.
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-border">
+                      {sessions.map((s) => {
+                        const accuracy =
+                          s.questions_total > 0
+                            ? Math.round((s.questions_correct / s.questions_total) * 100)
+                            : null;
+                        return (
+                          <li
+                            key={s.id}
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors"
+                          >
+                            <span
+                              className="h-3 w-3 rounded-full shrink-0"
+                              style={{
+                                backgroundColor: s.subject_color || "hsl(var(--muted-foreground))",
+                              }}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-medium text-foreground truncate">
+                                  {s.subject_name || "Sem disciplina"}
+                                </span>
+                                {s.study_cycle_name && (
+                                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                                    {s.study_cycle_name}
+                                  </span>
+                                )}
+                                {!s.study_cycle_id && (
+                                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                    Pomodoro
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                                <span>
+                                  {format(new Date(s.started_at), "dd 'de' MMM, HH:mm", {
+                                    locale: ptBR,
+                                  })}
+                                </span>
+                                <span>·</span>
+                                <span>{formatTime(s.duration_minutes)}</span>
+                                {s.questions_total > 0 && (
+                                  <>
+                                    <span>·</span>
+                                    <span>
+                                      {s.questions_correct}/{s.questions_total} ({accuracy}%)
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingSession(s);
+                                setEditOpen(true);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </>
         )}
       </div>
+
+      <EditFocusSessionDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        session={editingSession}
+        subjects={subjects.map((s) => ({ id: s.id, name: s.name, color: s.color }))}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: sessionsQueryKey });
+          queryClient.invalidateQueries({ queryKey: ["study-analytics"] });
+        }}
+      />
     </div>
   );
 };
+
 
 function KpiCard({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
   return (
