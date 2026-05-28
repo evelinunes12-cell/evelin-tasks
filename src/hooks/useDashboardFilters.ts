@@ -5,6 +5,8 @@ import { Task, parseDueDate } from "@/services/tasks";
 import { isPast, isToday, parseISO } from "date-fns";
 import { stripHtml } from "@/utils/sanitize";
 
+const VIEW_MODE_STORAGE_KEY = "zenit_dashboard_view_mode";
+
 export const useDashboardFilters = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
