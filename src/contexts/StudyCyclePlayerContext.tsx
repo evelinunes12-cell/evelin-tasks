@@ -412,6 +412,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     } else {
       setElapsedSeconds(0);
       lastSavedElapsedRef.current = 0;
+      currentBlockSessionIdRef.current = null;
       if (cycle) resetCycleElapsedTime(cycle.id).catch(() => {});
     }
   }, [clearTimer, isBreak, cycle]);
@@ -421,8 +422,9 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
-    // Save current block's time before switching
+    // Save current block's time as a single record before switching
     void saveProgressAndLogTime();
+    currentBlockSessionIdRef.current = null;
     setCurrentIndex(index);
     setElapsedSeconds(0);
     lastSavedElapsedRef.current = 0;
@@ -442,6 +444,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       setCurrentIndex(nextIdx);
       setElapsedSeconds(0);
       lastSavedElapsedRef.current = 0;
+      currentBlockSessionIdRef.current = null;
       setTargetReached(false);
       setMode("study");
       saveCycleProgress(cycle.id, nextIdx, null).catch(() => {});
