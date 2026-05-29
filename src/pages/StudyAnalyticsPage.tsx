@@ -572,11 +572,33 @@ const StudyAnalyticsPage = () => {
         onOpenChange={setEditOpen}
         session={editingSession}
         subjects={subjects.map((s) => ({ id: s.id, name: s.name, color: s.color }))}
-        onSaved={() => {
-          queryClient.invalidateQueries({ queryKey: sessionsQueryKey });
-          queryClient.invalidateQueries({ queryKey: ["study-analytics"] });
-        }}
+        onSaved={refreshAnalytics}
       />
+
+      <AlertDialog
+        open={!!deletingSession}
+        onOpenChange={(open) => { if (!open) setDeletingSession(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir registro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O tempo e o desempenho desta sessão
+              serão removidos dos seus relatórios.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSession}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
