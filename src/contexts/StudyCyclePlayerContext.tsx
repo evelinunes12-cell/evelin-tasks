@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { StudyCycle, saveCycleProgress, incrementCycleElapsedTime, resetCycleElapsedTime } from "@/services/studyCycles";
-import { createFocusSession } from "@/services/focusSessions";
+import { createFocusSession, updateFocusSession } from "@/services/focusSessions";
 import { registerActivity } from "@/services/activity";
 import { logXP, XP } from "@/services/scoring";
 import { useAuth } from "@/hooks/useAuth";
@@ -70,6 +70,8 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
   const modeRef = useRef<CycleMode>("study");
   const userIdRef = useRef<string | null>(null);
   const currentBlockRef = useRef<any>(null);
+  /** Focus session id for the block currently being studied (one record per block). */
+  const currentBlockSessionIdRef = useRef<string | null>(null);
 
   const { open: openPiPHook, isOpen: pipOpen, pipContainer, isSupported: pipSupported } = useDocumentPiP({ width: 280, height: 320 });
 
