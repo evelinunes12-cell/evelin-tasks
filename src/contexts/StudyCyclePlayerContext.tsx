@@ -255,6 +255,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     setCurrentIndex(nextIdx);
     setElapsedSeconds(0);
     lastSavedElapsedRef.current = 0;
+    currentBlockSessionIdRef.current = null;
     setTargetReached(false);
     setMode("study");
     setIsRunning(false);
