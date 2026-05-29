@@ -98,9 +98,10 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
   useEffect(() => { currentBlockRef.current = currentBlock; }, [currentBlock]);
 
   /**
-   * Persists any unsaved studied seconds for the current block:
-   * - logs a focus_session for the delta (rounded minutes >= 1)
-   * - increments current_block_elapsed_time in the DB
+   * Persists studied time for the current block WITHOUT fragmenting it:
+   * - increments current_block_elapsed_time in the DB (for resume)
+   * - keeps a SINGLE focus_session per block, updated to the total elapsed time
+   *   (block-based record instead of one record per minute)
    * - registers daily activity / streak
    */
   const saveProgressAndLogTime = useCallback(async () => {
@@ -108,32 +109,38 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     if (!c) return;
     if (modeRef.current !== "study") return;
     const totalElapsed = elapsedSecondsRef.current;
+    if (totalElapsed <= 0) return;
+
+    // Persist resume time to the cycle (delta vs last saved)
     const unsavedSec = totalElapsed - lastSavedElapsedRef.current;
-    if (unsavedSec <= 0) return;
-
-    // Update baseline immediately to avoid double-saving on rapid calls
-    const secsToSave = unsavedSec;
-    lastSavedElapsedRef.current = totalElapsed;
-
-    try {
-      await incrementCycleElapsedTime(c.id, secsToSave);
-    } catch {
-      // restore baseline so it can retry next time
-      lastSavedElapsedRef.current = totalElapsed - secsToSave;
-      return;
+    if (unsavedSec > 0) {
+      try {
+        await incrementCycleElapsedTime(c.id, unsavedSec);
+        lastSavedElapsedRef.current = totalElapsed;
+      } catch {
+        // keep baseline so it can retry next time
+      }
     }
 
+    // Upsert a SINGLE focus session covering the whole current block
     const uid = userIdRef.current;
-    if (uid) {
-      const minutes = Math.max(1, Math.round(secsToSave / 60));
-      const block = currentBlockRef.current;
-      const startedAt = new Date(Date.now() - secsToSave * 1000);
-      try {
-        await createFocusSession(uid, startedAt, minutes, block?.subject_id, c.id);
-        await registerActivity(uid);
-      } catch {
-        // silent
+    if (!uid) return;
+    const minutes = Math.max(1, Math.round(totalElapsed / 60));
+    const block = currentBlockRef.current;
+    const startedAt = new Date(Date.now() - totalElapsed * 1000);
+    try {
+      if (currentBlockSessionIdRef.current) {
+        await updateFocusSession(currentBlockSessionIdRef.current, {
+          startedAt,
+          durationMinutes: minutes,
+        });
+      } else {
+        const created = await createFocusSession(uid, startedAt, minutes, block?.subject_id, c.id);
+        currentBlockSessionIdRef.current = created?.id ?? null;
       }
+      await registerActivity(uid);
+    } catch {
+      // silent
     }
   }, []);
 
