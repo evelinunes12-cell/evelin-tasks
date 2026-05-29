@@ -271,11 +271,10 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     setIsPaused(false);
     clearCurrentStudyInfo();
 
-    const realElapsed = elapsedSeconds; // total accumulated for this block (saved + current session)
+    const realElapsed = elapsedSeconds; // total accumulated for this block
     const realMinutes = Math.max(1, Math.round(realElapsed / 60));
-    // Only the seconds not yet persisted to DB (delta of current session)
+    // Seconds not yet persisted to the cycle (for resume tracking)
     const unsavedSec = Math.max(0, realElapsed - lastSavedElapsedRef.current);
-    const unsavedMinutes = Math.max(1, Math.round(unsavedSec / 60));
 
     const qTotal = Math.max(0, Math.floor(questions?.total || 0));
     let qCorrect = Math.max(0, Math.floor(questions?.correct || 0));
@@ -284,26 +283,41 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     const target = (blocks[currentIndex]?.allocated_minutes || 0) * 60;
     const blockFinished = target > 0 ? realElapsed >= target : realElapsed > 0;
 
-    // Always log unsaved session time + questions to analytics (Condition A and B)
-    if (user) {
+    // Upsert the SINGLE block record with the full studied time + questions
+    if (user && (realElapsed > 0 || qTotal > 0)) {
       await registerActivity(user.id);
       const block = blocks[currentIndex];
-      if (block && (unsavedSec > 0 || qTotal > 0)) {
-        const startedAt = new Date(Date.now() - Math.max(unsavedSec, 1) * 1000);
-        await createFocusSession(
-          user.id,
-          startedAt,
-          unsavedSec > 0 ? unsavedMinutes : 0,
-          block.subject_id,
-          cycle.id,
-          qTotal,
-          qCorrect,
-        );
+      const minutes = realElapsed > 0 ? realMinutes : 0;
+      const startedAt = new Date(Date.now() - Math.max(realElapsed, 1) * 1000);
+      try {
+        if (currentBlockSessionIdRef.current) {
+          await updateFocusSession(currentBlockSessionIdRef.current, {
+            startedAt,
+            durationMinutes: minutes,
+            questionsTotal: qTotal,
+            questionsCorrect: qCorrect,
+            subjectId: block?.subject_id ?? null,
+          });
+        } else {
+          const created = await createFocusSession(
+            user.id,
+            startedAt,
+            minutes,
+            block?.subject_id,
+            cycle.id,
+            qTotal,
+            qCorrect,
+          );
+          currentBlockSessionIdRef.current = created?.id ?? null;
+        }
+      } catch {
+        // silent
       }
     }
 
     if (!blockFinished) {
-      // Condition A: Fractional study — persist delta, keep block active, exit player
+      // Condition A: Fractional study — persist delta, keep block active, exit player.
+      // The single block record stays open and continues updating on resume.
       if (unsavedSec > 0) {
         try {
           await incrementCycleElapsedTime(cycle.id, unsavedSec);
@@ -322,7 +336,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       return;
     }
 
-    // Condition B: Block completed (target reached or overtime) — advance
+    // Condition B: Block completed (target reached or overtime) — finalize and advance
     setCompletedBlocks((prev) => new Set(prev).add(currentIndex));
     if (user) {
       logXP(user.id, "study_block_completed", XP.STUDY_BLOCK_COMPLETED);
@@ -333,6 +347,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       // silent
     }
     lastSavedElapsedRef.current = 0;
+    currentBlockSessionIdRef.current = null; // next block starts a fresh record
     setCycle((prev) => prev ? { ...prev, current_block_elapsed_time: 0 } : prev);
 
     toast.success(`✅ ${currentBlock?.subject?.name || "Bloco"} concluído! (${realMinutes}min)`);
