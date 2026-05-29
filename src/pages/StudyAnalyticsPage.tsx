@@ -56,6 +56,26 @@ const StudyAnalyticsPage = () => {
   const [selectedCycleId, setSelectedCycleId] = useState<string>("all");
   const [editingSession, setEditingSession] = useState<FocusSessionWithDetails | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [deletingSession, setDeletingSession] = useState<FocusSessionWithDetails | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const refreshAnalytics = () => {
+    queryClient.invalidateQueries({ queryKey: ["study-analytics"] });
+  };
+
+  const handleDeleteSession = async () => {
+    if (!deletingSession) return;
+    setDeleting(true);
+    const ok = await deleteFocusSession(deletingSession.id);
+    setDeleting(false);
+    if (ok) {
+      toast.success("Registro excluído.");
+      setDeletingSession(null);
+      refreshAnalytics();
+    } else {
+      toast.error("Erro ao excluir registro.");
+    }
+  };
 
   const sessionsQueryKey = ["study-analytics", user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()];
   const { data: allSessions = [], isLoading } = useQuery({
