@@ -480,6 +480,8 @@ const StudyAnalyticsPage = () => {
                           s.questions_total > 0
                             ? Math.round((s.questions_correct / s.questions_total) * 100)
                             : null;
+                        const isEditable =
+                          Date.now() - new Date(s.started_at).getTime() <= EDIT_WINDOW_MS;
                         return (
                           <li
                             key={s.id}
@@ -525,17 +527,34 @@ const StudyAnalyticsPage = () => {
                                 )}
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setEditingSession(s);
-                                setEditOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4 mr-1" />
-                              Editar
-                            </Button>
+                            {isEditable ? (
+                              <div className="flex items-center gap-1 shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingSession(s);
+                                    setEditOpen(true);
+                                  }}
+                                >
+                                  <Pencil className="h-4 w-4 mr-1" />
+                                  Editar
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => setDeletingSession(s)}
+                                  aria-label="Excluir registro"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-muted-foreground shrink-0">
+                                Bloqueado p/ edição
+                              </span>
+                            )}
                           </li>
                         );
                       })}
