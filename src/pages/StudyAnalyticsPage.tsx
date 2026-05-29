@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchFocusSessionsWithDetails, FocusSessionWithDetails } from "@/services/studyAnalytics";
+import { deleteFocusSession } from "@/services/focusSessions";
 import { fetchStudyCycles } from "@/services/studyCycles";
 import { fetchSubjects } from "@/services/subjects";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +10,19 @@ import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DateRangePicker } from "@/components/DateRangePicker";
-import { Clock, Repeat, Timer, CheckCircle, TrendingUp, BookOpen, Target, Pencil, ListChecks } from "lucide-react";
+import { Clock, Repeat, Timer, CheckCircle, TrendingUp, BookOpen, Target, Pencil, ListChecks, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import ActiveCycleProgressCard from "@/components/ActiveCycleProgressCard";
 import EditFocusSessionDialog from "@/components/EditFocusSessionDialog";
@@ -21,6 +33,8 @@ import {
 import { subDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
+
+const EDIT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 
 const COLORS = [
@@ -42,6 +56,26 @@ const StudyAnalyticsPage = () => {
   const [selectedCycleId, setSelectedCycleId] = useState<string>("all");
   const [editingSession, setEditingSession] = useState<FocusSessionWithDetails | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [deletingSession, setDeletingSession] = useState<FocusSessionWithDetails | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const refreshAnalytics = () => {
+    queryClient.invalidateQueries({ queryKey: ["study-analytics"] });
+  };
+
+  const handleDeleteSession = async () => {
+    if (!deletingSession) return;
+    setDeleting(true);
+    const ok = await deleteFocusSession(deletingSession.id);
+    setDeleting(false);
+    if (ok) {
+      toast.success("Registro excluído.");
+      setDeletingSession(null);
+      refreshAnalytics();
+    } else {
+      toast.error("Erro ao excluir registro.");
+    }
+  };
 
   const sessionsQueryKey = ["study-analytics", user?.id, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()];
   const { data: allSessions = [], isLoading } = useQuery({
@@ -446,6 +480,8 @@ const StudyAnalyticsPage = () => {
                           s.questions_total > 0
                             ? Math.round((s.questions_correct / s.questions_total) * 100)
                             : null;
+                        const isEditable =
+                          Date.now() - new Date(s.started_at).getTime() <= EDIT_WINDOW_MS;
                         return (
                           <li
                             key={s.id}
@@ -491,17 +527,34 @@ const StudyAnalyticsPage = () => {
                                 )}
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setEditingSession(s);
-                                setEditOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4 mr-1" />
-                              Editar
-                            </Button>
+                            {isEditable ? (
+                              <div className="flex items-center gap-1 shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingSession(s);
+                                    setEditOpen(true);
+                                  }}
+                                >
+                                  <Pencil className="h-4 w-4 mr-1" />
+                                  Editar
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => setDeletingSession(s)}
+                                  aria-label="Excluir registro"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-muted-foreground shrink-0">
+                                Bloqueado p/ edição
+                              </span>
+                            )}
                           </li>
                         );
                       })}
@@ -519,11 +572,33 @@ const StudyAnalyticsPage = () => {
         onOpenChange={setEditOpen}
         session={editingSession}
         subjects={subjects.map((s) => ({ id: s.id, name: s.name, color: s.color }))}
-        onSaved={() => {
-          queryClient.invalidateQueries({ queryKey: sessionsQueryKey });
-          queryClient.invalidateQueries({ queryKey: ["study-analytics"] });
-        }}
+        onSaved={refreshAnalytics}
       />
+
+      <AlertDialog
+        open={!!deletingSession}
+        onOpenChange={(open) => { if (!open) setDeletingSession(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir registro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O tempo e o desempenho desta sessão
+              serão removidos dos seus relatórios.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSession}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
