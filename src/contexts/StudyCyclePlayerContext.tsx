@@ -382,6 +382,9 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       advanceToNextBlock();
       return;
     }
+    // Save the studied time of the current block as a single record before skipping
+    void saveProgressAndLogTime();
+    currentBlockSessionIdRef.current = null;
     setCompletedBlocks((prev) => new Set(prev).add(currentIndex));
     if (currentIndex < blocks.length - 1) {
       const nextIdx = currentIndex + 1;
@@ -397,7 +400,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       resetCycleElapsedTime(cycle.id).catch(() => {});
       lastSavedElapsedRef.current = 0;
     }
-  }, [cycle, clearTimer, isBreak, advanceToNextBlock, currentIndex, blocks.length, persistProgress]);
+  }, [cycle, clearTimer, isBreak, advanceToNextBlock, currentIndex, blocks.length, persistProgress, saveProgressAndLogTime]);
 
   const restart = useCallback(() => {
     clearTimer();
