@@ -169,16 +169,23 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     if (!uid) return;
     const minutes = Math.max(1, Math.round(totalElapsed / 60));
     const block = currentBlockRef.current;
+    const blockIdx = currentIndexRef.current;
     const startedAt = new Date(Date.now() - totalElapsed * 1000);
     try {
-      if (currentBlockSessionIdRef.current) {
-        await updateFocusSession(currentBlockSessionIdRef.current, {
+      // Resolve the block's session id from memory or persisted marker so a
+      // remount never causes a new fragmented record.
+      const sessionId = currentBlockSessionIdRef.current || readActiveSession(c.id, blockIdx);
+      if (sessionId) {
+        await updateFocusSession(sessionId, {
           startedAt,
           durationMinutes: minutes,
         });
+        currentBlockSessionIdRef.current = sessionId;
+        writeActiveSession(c.id, blockIdx, sessionId);
       } else {
         const created = await createFocusSession(uid, startedAt, minutes, block?.subject_id, c.id);
         currentBlockSessionIdRef.current = created?.id ?? null;
+        if (created?.id) writeActiveSession(c.id, blockIdx, created.id);
       }
       await registerActivity(uid);
     } catch {
