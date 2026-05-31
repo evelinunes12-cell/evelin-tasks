@@ -10,6 +10,48 @@ import { useDocumentPiP } from "@/hooks/useDocumentPiP";
 
 const BREAK_SECONDS = 300;
 
+/**
+ * Persists the focus_session id for the block currently being studied so the
+ * record survives provider remounts (navigation / PiP / tab switches). This
+ * guarantees ONE record per block instead of fragmented 1-min records.
+ */
+const ACTIVE_SESSION_KEY = "zenit_cycle_active_session";
+interface ActiveSessionMarker {
+  cycleId: string;
+  blockIndex: number;
+  sessionId: string;
+}
+const readActiveSession = (cycleId: string, blockIndex: number): string | null => {
+  try {
+    const raw = localStorage.getItem(ACTIVE_SESSION_KEY);
+    if (!raw) return null;
+    const m = JSON.parse(raw) as ActiveSessionMarker;
+    if (m.cycleId === cycleId && m.blockIndex === blockIndex && m.sessionId) {
+      return m.sessionId;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+};
+const writeActiveSession = (cycleId: string, blockIndex: number, sessionId: string) => {
+  try {
+    localStorage.setItem(
+      ACTIVE_SESSION_KEY,
+      JSON.stringify({ cycleId, blockIndex, sessionId } satisfies ActiveSessionMarker)
+    );
+  } catch {
+    // ignore
+  }
+};
+const clearActiveSession = () => {
+  try {
+    localStorage.removeItem(ACTIVE_SESSION_KEY);
+  } catch {
+    // ignore
+  }
+};
+
 export type CycleMode = "study" | "break";
 
 interface StudyCyclePlayerContextValue {
@@ -127,16 +169,23 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     if (!uid) return;
     const minutes = Math.max(1, Math.round(totalElapsed / 60));
     const block = currentBlockRef.current;
+    const blockIdx = currentIndexRef.current;
     const startedAt = new Date(Date.now() - totalElapsed * 1000);
     try {
-      if (currentBlockSessionIdRef.current) {
-        await updateFocusSession(currentBlockSessionIdRef.current, {
+      // Resolve the block's session id from memory or persisted marker so a
+      // remount never causes a new fragmented record.
+      const sessionId = currentBlockSessionIdRef.current || readActiveSession(c.id, blockIdx);
+      if (sessionId) {
+        await updateFocusSession(sessionId, {
           startedAt,
           durationMinutes: minutes,
         });
+        currentBlockSessionIdRef.current = sessionId;
+        writeActiveSession(c.id, blockIdx, sessionId);
       } else {
         const created = await createFocusSession(uid, startedAt, minutes, block?.subject_id, c.id);
         currentBlockSessionIdRef.current = created?.id ?? null;
+        if (created?.id) writeActiveSession(c.id, blockIdx, created.id);
       }
       await registerActivity(uid);
     } catch {
@@ -256,6 +305,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     setElapsedSeconds(0);
     lastSavedElapsedRef.current = 0;
     currentBlockSessionIdRef.current = null;
+    clearActiveSession();
     setTargetReached(false);
     setMode("study");
     setIsRunning(false);
@@ -290,14 +340,17 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       const minutes = realElapsed > 0 ? realMinutes : 0;
       const startedAt = new Date(Date.now() - Math.max(realElapsed, 1) * 1000);
       try {
-        if (currentBlockSessionIdRef.current) {
-          await updateFocusSession(currentBlockSessionIdRef.current, {
+        const sessionId = currentBlockSessionIdRef.current || readActiveSession(cycle.id, currentIndex);
+        if (sessionId) {
+          await updateFocusSession(sessionId, {
             startedAt,
             durationMinutes: minutes,
             questionsTotal: qTotal,
             questionsCorrect: qCorrect,
             subjectId: block?.subject_id ?? null,
           });
+          currentBlockSessionIdRef.current = sessionId;
+          if (!blockFinished) writeActiveSession(cycle.id, currentIndex, sessionId);
         } else {
           const created = await createFocusSession(
             user.id,
@@ -309,6 +362,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
             qCorrect,
           );
           currentBlockSessionIdRef.current = created?.id ?? null;
+          if (created?.id && !blockFinished) writeActiveSession(cycle.id, currentIndex, created.id);
         }
       } catch {
         // silent
@@ -348,6 +402,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     }
     lastSavedElapsedRef.current = 0;
     currentBlockSessionIdRef.current = null; // next block starts a fresh record
+    clearActiveSession();
     setCycle((prev) => prev ? { ...prev, current_block_elapsed_time: 0 } : prev);
 
     toast.success(`✅ ${currentBlock?.subject?.name || "Bloco"} concluído! (${realMinutes}min)`);
@@ -373,7 +428,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     advanceToNextBlock();
   }, [cycle, clearTimer, completedBlocks, blocks.length, advanceToNextBlock, persistProgress, playAlarm]);
 
-  const skip = useCallback(() => {
+  const skip = useCallback(async () => {
     if (!cycle) return;
     clearTimer();
     setIsRunning(false);
@@ -382,9 +437,11 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       advanceToNextBlock();
       return;
     }
-    // Save the studied time of the current block as a single record before skipping
-    void saveProgressAndLogTime();
+    // Finalize the current block as a single record before switching, then
+    // clear the marker so the next block starts a fresh record.
+    await saveProgressAndLogTime();
     currentBlockSessionIdRef.current = null;
+    clearActiveSession();
     setCompletedBlocks((prev) => new Set(prev).add(currentIndex));
     if (currentIndex < blocks.length - 1) {
       const nextIdx = currentIndex + 1;
@@ -413,18 +470,20 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       setElapsedSeconds(0);
       lastSavedElapsedRef.current = 0;
       currentBlockSessionIdRef.current = null;
+      clearActiveSession();
       if (cycle) resetCycleElapsedTime(cycle.id).catch(() => {});
     }
   }, [clearTimer, isBreak, cycle]);
 
-  const goToBlock = useCallback((index: number) => {
+  const goToBlock = useCallback(async (index: number) => {
     if (!cycle || isBreak) return;
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
-    // Save current block's time as a single record before switching
-    void saveProgressAndLogTime();
+    // Finalize current block's record before switching, then clear the marker.
+    await saveProgressAndLogTime();
     currentBlockSessionIdRef.current = null;
+    clearActiveSession();
     setCurrentIndex(index);
     setElapsedSeconds(0);
     lastSavedElapsedRef.current = 0;
@@ -445,6 +504,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       setElapsedSeconds(0);
       lastSavedElapsedRef.current = 0;
       currentBlockSessionIdRef.current = null;
+      clearActiveSession();
       setTargetReached(false);
       setMode("study");
       saveCycleProgress(cycle.id, nextIdx, null).catch(() => {});
