@@ -10,6 +10,48 @@ import { useDocumentPiP } from "@/hooks/useDocumentPiP";
 
 const BREAK_SECONDS = 300;
 
+/**
+ * Persists the focus_session id for the block currently being studied so the
+ * record survives provider remounts (navigation / PiP / tab switches). This
+ * guarantees ONE record per block instead of fragmented 1-min records.
+ */
+const ACTIVE_SESSION_KEY = "zenit_cycle_active_session";
+interface ActiveSessionMarker {
+  cycleId: string;
+  blockIndex: number;
+  sessionId: string;
+}
+const readActiveSession = (cycleId: string, blockIndex: number): string | null => {
+  try {
+    const raw = localStorage.getItem(ACTIVE_SESSION_KEY);
+    if (!raw) return null;
+    const m = JSON.parse(raw) as ActiveSessionMarker;
+    if (m.cycleId === cycleId && m.blockIndex === blockIndex && m.sessionId) {
+      return m.sessionId;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+};
+const writeActiveSession = (cycleId: string, blockIndex: number, sessionId: string) => {
+  try {
+    localStorage.setItem(
+      ACTIVE_SESSION_KEY,
+      JSON.stringify({ cycleId, blockIndex, sessionId } satisfies ActiveSessionMarker)
+    );
+  } catch {
+    // ignore
+  }
+};
+const clearActiveSession = () => {
+  try {
+    localStorage.removeItem(ACTIVE_SESSION_KEY);
+  } catch {
+    // ignore
+  }
+};
+
 export type CycleMode = "study" | "break";
 
 interface StudyCyclePlayerContextValue {
