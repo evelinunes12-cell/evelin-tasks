@@ -339,14 +339,17 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       const minutes = realElapsed > 0 ? realMinutes : 0;
       const startedAt = new Date(Date.now() - Math.max(realElapsed, 1) * 1000);
       try {
-        if (currentBlockSessionIdRef.current) {
-          await updateFocusSession(currentBlockSessionIdRef.current, {
+        const sessionId = currentBlockSessionIdRef.current || readActiveSession(cycle.id, currentIndex);
+        if (sessionId) {
+          await updateFocusSession(sessionId, {
             startedAt,
             durationMinutes: minutes,
             questionsTotal: qTotal,
             questionsCorrect: qCorrect,
             subjectId: block?.subject_id ?? null,
           });
+          currentBlockSessionIdRef.current = sessionId;
+          if (!blockFinished) writeActiveSession(cycle.id, currentIndex, sessionId);
         } else {
           const created = await createFocusSession(
             user.id,
@@ -358,6 +361,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
             qCorrect,
           );
           currentBlockSessionIdRef.current = created?.id ?? null;
+          if (created?.id && !blockFinished) writeActiveSession(cycle.id, currentIndex, created.id);
         }
       } catch {
         // silent
