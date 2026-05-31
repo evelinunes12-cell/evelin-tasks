@@ -427,7 +427,7 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     advanceToNextBlock();
   }, [cycle, clearTimer, completedBlocks, blocks.length, advanceToNextBlock, persistProgress, playAlarm]);
 
-  const skip = useCallback(() => {
+  const skip = useCallback(async () => {
     if (!cycle) return;
     clearTimer();
     setIsRunning(false);
@@ -436,9 +436,11 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
       advanceToNextBlock();
       return;
     }
-    // Save the studied time of the current block as a single record before skipping
-    void saveProgressAndLogTime();
+    // Finalize the current block as a single record before switching, then
+    // clear the marker so the next block starts a fresh record.
+    await saveProgressAndLogTime();
     currentBlockSessionIdRef.current = null;
+    clearActiveSession();
     setCompletedBlocks((prev) => new Set(prev).add(currentIndex));
     if (currentIndex < blocks.length - 1) {
       const nextIdx = currentIndex + 1;
