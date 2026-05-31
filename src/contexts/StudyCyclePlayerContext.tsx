@@ -473,14 +473,15 @@ export const StudyCyclePlayerProvider: React.FC<{ children: React.ReactNode }> =
     }
   }, [clearTimer, isBreak, cycle]);
 
-  const goToBlock = useCallback((index: number) => {
+  const goToBlock = useCallback(async (index: number) => {
     if (!cycle || isBreak) return;
     clearTimer();
     setIsRunning(false);
     setIsPaused(false);
-    // Save current block's time as a single record before switching
-    void saveProgressAndLogTime();
+    // Finalize current block's record before switching, then clear the marker.
+    await saveProgressAndLogTime();
     currentBlockSessionIdRef.current = null;
+    clearActiveSession();
     setCurrentIndex(index);
     setElapsedSeconds(0);
     lastSavedElapsedRef.current = 0;
