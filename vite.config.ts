@@ -21,6 +21,24 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
         importScripts: ["/custom-sw.js"],
+        // Always discard stale precaches from older builds.
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        // Serve the HTML shell network-first so installed/mobile apps always
+        // boot the latest deploy instead of an old cached version.
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }: { request: Request }) =>
+              request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "html-shell",
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 8 },
+            },
+          },
+        ],
       },
       manifest: {
         name: "Zenit",
