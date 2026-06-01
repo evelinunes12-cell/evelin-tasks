@@ -141,14 +141,15 @@ const StudyCyclePlayer = () => {
   const pendingCount = blocks.length - completedBlocks.size - (isBreak ? 0 : 1);
 
   const handleBack = async () => {
-    // Try to open PiP automatically so user keeps seeing the timer
-    if (pipSupported && !pipOpen && !isBreak) {
+    // Try to open PiP automatically so user keeps seeing the timer,
+    // but only if they have actually started the counter at least once.
+    if (pipSupported && !pipOpen && !isBreak && elapsedSeconds > 0) {
       try {
         await openPiP();
       } catch {
         // ignore
       }
-    } else if (!pipSupported) {
+    } else if (!pipSupported && elapsedSeconds > 0) {
       toast.info("Estudo continua em segundo plano.");
     }
     collapse();
