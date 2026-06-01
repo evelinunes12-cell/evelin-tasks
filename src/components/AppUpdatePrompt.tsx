@@ -42,6 +42,13 @@ const AppUpdatePrompt = () => {
   // Track the last version we already showed a "new version" toast for on this
   // device, so we don't re-toast on every reload of the same version.
   const TOASTED_VERSION_KEY = "zenit:toasted-version";
+  // The version this device has already updated to. After the user clicks
+  // "Atualizar" we store the target version here BEFORE reloading. On the next
+  // load, if the DB version still equals the acknowledged version, we must NOT
+  // prompt again — otherwise (especially for critical/DB-only bumps with no new
+  // deploy to fetch) the modal would loop forever ("fica eternamente
+  // processando" / "a versão anterior está voltando").
+  const ACKED_VERSION_KEY = "zenit:acked-version";
 
   const showNewVersionToast = (version: string, message: string | null) => {
     toast.success(`Nova versão ${version} disponível`, {
