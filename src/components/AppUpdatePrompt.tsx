@@ -70,7 +70,6 @@ const AppUpdatePrompt = () => {
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
   } = useRegisterSW({
     immediate: true,
     onRegisteredSW(_swUrl, registration) {
