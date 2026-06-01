@@ -221,7 +221,7 @@ const StudyCyclePlayer = () => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {pipSupported && !isBreak && (
+              {pipSupported && !isBreak && elapsedSeconds > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
