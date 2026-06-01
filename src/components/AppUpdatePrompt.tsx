@@ -218,7 +218,23 @@ const AppUpdatePrompt = () => {
   };
 
   const handleUpdate = async () => {
+    if (updating) return;
     setUpdating(true);
+
+    // SAFETY NET: no matter what happens below (cache APIs hanging, SW calls
+    // never resolving on installed/mobile apps), force a reload after 3s so the
+    // button can never spin forever ("fica eternamente processando").
+    const safetyReload = window.setTimeout(hardReload, 3000);
+
+    // Mark this version as acknowledged BEFORE reloading. On the next load the
+    // prompt will stay silent for this version, breaking the update loop when
+    // there is no new deploy to fetch (DB-only / critical bumps).
+    try {
+      const v = pendingVersionRef.current ?? lastSeenVersionRef.current;
+      if (v) localStorage.setItem(ACKED_VERSION_KEY, v);
+    } catch {
+      /* ignore */
+    }
 
     // Clear postponed reminder — user is updating now.
     try {
@@ -238,7 +254,10 @@ const AppUpdatePrompt = () => {
       /* ignore */
     }
 
-    // Tenta desregistrar SWs para garantir que o próximo load pegue tudo novo.
+    // Desregistra todos os SWs para que o próximo load pegue tudo da rede.
+    // Não usamos updateServiceWorker(true) porque, sem um SW em "waiting"
+    // (caso comum em bump só de DB), a promise nunca resolve e o botão
+    // gira para sempre.
     try {
       if ("serviceWorker" in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
@@ -248,20 +267,10 @@ const AppUpdatePrompt = () => {
       /* ignore */
     }
 
-    // updateServiceWorker(true) só resolve quando existe um SW em "waiting".
-    // Quando a versão é trocada apenas via DB (sem redeploy), isso nunca
-    // resolve e o botão fica girando para sempre. Garantimos um reload
-    // após um timeout curto como fallback.
-    const fallback = window.setTimeout(hardReload, 1500);
-    try {
-      await updateServiceWorker(true);
-    } catch {
-      /* ignore */
-    } finally {
-      clearTimeout(fallback);
-      hardReload();
-    }
+    clearTimeout(safetyReload);
+    hardReload();
   };
+
 
   const handleDismiss = () => {
     if (isCritical) return;
