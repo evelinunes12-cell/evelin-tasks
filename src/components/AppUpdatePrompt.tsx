@@ -147,10 +147,11 @@ const AppUpdatePrompt = () => {
       }
       if (lastSeenVersionRef.current !== data.version) {
         lastSeenVersionRef.current = data.version;
-        // New version supersedes any previously postponed one.
+        // New version supersedes any previously postponed/acknowledged one.
         try {
           localStorage.removeItem(POSTPONED_VERSION_KEY);
           localStorage.removeItem(POSTPONED_MESSAGE_KEY);
+          localStorage.removeItem(ACKED_VERSION_KEY);
         } catch {
           /* ignore */
         }
