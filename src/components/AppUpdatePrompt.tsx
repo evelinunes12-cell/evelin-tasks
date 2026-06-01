@@ -42,6 +42,13 @@ const AppUpdatePrompt = () => {
   // Track the last version we already showed a "new version" toast for on this
   // device, so we don't re-toast on every reload of the same version.
   const TOASTED_VERSION_KEY = "zenit:toasted-version";
+  // The version this device has already updated to. After the user clicks
+  // "Atualizar" we store the target version here BEFORE reloading. On the next
+  // load, if the DB version still equals the acknowledged version, we must NOT
+  // prompt again — otherwise (especially for critical/DB-only bumps with no new
+  // deploy to fetch) the modal would loop forever ("fica eternamente
+  // processando" / "a versão anterior está voltando").
+  const ACKED_VERSION_KEY = "zenit:acked-version";
 
   const showNewVersionToast = (version: string, message: string | null) => {
     toast.success(`Nova versão ${version} disponível`, {
@@ -63,7 +70,6 @@ const AppUpdatePrompt = () => {
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
   } = useRegisterSW({
     immediate: true,
     onRegisteredSW(_swUrl, registration) {
@@ -105,6 +111,18 @@ const AppUpdatePrompt = () => {
       if (lastSeenVersionRef.current === null) {
         lastSeenVersionRef.current = data.version;
 
+        // If this device already updated to this exact version, stay silent.
+        // This prevents the update modal/toast from reappearing in a loop after
+        // a successful update (critical or not), which was the main cause of the
+        // "stuck updating forever" behavior on installed apps.
+        try {
+          if (localStorage.getItem(ACKED_VERSION_KEY) === data.version) {
+            return;
+          }
+        } catch {
+          /* ignore */
+        }
+
         // Critical updates: show the blocking modal only (no toast).
         if (data.critical) {
           setIsCritical(true);
@@ -128,10 +146,11 @@ const AppUpdatePrompt = () => {
       }
       if (lastSeenVersionRef.current !== data.version) {
         lastSeenVersionRef.current = data.version;
-        // New version supersedes any previously postponed one.
+        // New version supersedes any previously postponed/acknowledged one.
         try {
           localStorage.removeItem(POSTPONED_VERSION_KEY);
           localStorage.removeItem(POSTPONED_MESSAGE_KEY);
+          localStorage.removeItem(ACKED_VERSION_KEY);
         } catch {
           /* ignore */
         }
@@ -198,7 +217,23 @@ const AppUpdatePrompt = () => {
   };
 
   const handleUpdate = async () => {
+    if (updating) return;
     setUpdating(true);
+
+    // SAFETY NET: no matter what happens below (cache APIs hanging, SW calls
+    // never resolving on installed/mobile apps), force a reload after 3s so the
+    // button can never spin forever ("fica eternamente processando").
+    const safetyReload = window.setTimeout(hardReload, 3000);
+
+    // Mark this version as acknowledged BEFORE reloading. On the next load the
+    // prompt will stay silent for this version, breaking the update loop when
+    // there is no new deploy to fetch (DB-only / critical bumps).
+    try {
+      const v = pendingVersionRef.current ?? lastSeenVersionRef.current;
+      if (v) localStorage.setItem(ACKED_VERSION_KEY, v);
+    } catch {
+      /* ignore */
+    }
 
     // Clear postponed reminder — user is updating now.
     try {
@@ -218,7 +253,10 @@ const AppUpdatePrompt = () => {
       /* ignore */
     }
 
-    // Tenta desregistrar SWs para garantir que o próximo load pegue tudo novo.
+    // Desregistra todos os SWs para que o próximo load pegue tudo da rede.
+    // Não usamos updateServiceWorker(true) porque, sem um SW em "waiting"
+    // (caso comum em bump só de DB), a promise nunca resolve e o botão
+    // gira para sempre.
     try {
       if ("serviceWorker" in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
@@ -228,20 +266,10 @@ const AppUpdatePrompt = () => {
       /* ignore */
     }
 
-    // updateServiceWorker(true) só resolve quando existe um SW em "waiting".
-    // Quando a versão é trocada apenas via DB (sem redeploy), isso nunca
-    // resolve e o botão fica girando para sempre. Garantimos um reload
-    // após um timeout curto como fallback.
-    const fallback = window.setTimeout(hardReload, 1500);
-    try {
-      await updateServiceWorker(true);
-    } catch {
-      /* ignore */
-    } finally {
-      clearTimeout(fallback);
-      hardReload();
-    }
+    clearTimeout(safetyReload);
+    hardReload();
   };
+
 
   const handleDismiss = () => {
     if (isCritical) return;
