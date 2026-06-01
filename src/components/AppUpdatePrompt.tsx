@@ -112,6 +112,18 @@ const AppUpdatePrompt = () => {
       if (lastSeenVersionRef.current === null) {
         lastSeenVersionRef.current = data.version;
 
+        // If this device already updated to this exact version, stay silent.
+        // This prevents the update modal/toast from reappearing in a loop after
+        // a successful update (critical or not), which was the main cause of the
+        // "stuck updating forever" behavior on installed apps.
+        try {
+          if (localStorage.getItem(ACKED_VERSION_KEY) === data.version) {
+            return;
+          }
+        } catch {
+          /* ignore */
+        }
+
         // Critical updates: show the blocking modal only (no toast).
         if (data.critical) {
           setIsCritical(true);
