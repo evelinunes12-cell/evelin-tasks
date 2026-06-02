@@ -539,6 +539,20 @@ const StudyCyclePlayer = () => {
             defaultBlockIndex={currentIndex}
             onLogged={setManualLogged}
           />
+
+          {user && (
+            <CycleNoteDialog
+              open={noteOpen}
+              onOpenChange={setNoteOpen}
+              userId={user.id}
+              cycles={[cycle]}
+              subjects={noteSubjects}
+              defaultCycleId={cycle.id}
+              defaultSubjectId={currentBlock?.subject_id ?? null}
+              lockCycle
+              onSaved={() => queryClient.invalidateQueries({ queryKey: ["cycle-notes", user.id] })}
+            />
+          )}
         </div>
       )}
     </>
