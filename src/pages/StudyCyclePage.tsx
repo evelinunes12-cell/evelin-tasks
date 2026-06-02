@@ -20,6 +20,8 @@ import {
   AdvancedCycleMetadata,
 } from "@/services/studyCycles";
 import StudyCycleDialog from "@/components/StudyCycleDialog";
+import CycleNotesSection from "@/components/study-cycle/CycleNotesSection";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useStudyCyclePlayer } from "@/contexts/StudyCyclePlayerContext";
 import { toast } from "sonner";
 import { logXP, XP } from "@/services/scoring";
