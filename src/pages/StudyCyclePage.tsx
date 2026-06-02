@@ -158,6 +158,13 @@ const StudyCyclePage = () => {
           </Button>
         </div>
 
+        <Tabs defaultValue="ciclos" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
+            <TabsTrigger value="ciclos">Ciclos</TabsTrigger>
+            <TabsTrigger value="anotacoes">Anotações</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="ciclos" className="mt-0 space-y-3 sm:space-y-4">
         {/* Loading */}
         {loading && (
           <div className="space-y-3 sm:space-y-4">
@@ -309,7 +316,16 @@ const StudyCyclePage = () => {
             })}
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="anotacoes" className="mt-0">
+            {user && (
+              <CycleNotesSection userId={user.id} cycles={cycles} subjects={subjects} />
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
+
 
       {/* Create/Edit Dialog */}
       <StudyCycleDialog
