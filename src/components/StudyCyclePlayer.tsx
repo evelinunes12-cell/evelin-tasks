@@ -117,6 +117,18 @@ const StudyCyclePlayer = () => {
 
   const currentBlock = blocks[currentIndex];
   const isBreak = mode === "break";
+
+  // Build a unique subject list from the cycle blocks for the note dialog
+  const noteSubjects = Array.from(
+    new Map(
+      blocks
+        .filter((b) => b.subject_id)
+        .map((b) => [
+          b.subject_id,
+          { id: b.subject_id, name: b.subject?.name || "—", color: b.subject?.color ?? null } as Subject,
+        ])
+    ).values()
+  );
   const targetSeconds = currentBlock ? currentBlock.allocated_minutes * 60 : 0;
   const isOvertime = !isBreak && elapsedSeconds > targetSeconds && targetSeconds > 0;
 
