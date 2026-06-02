@@ -4,12 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Play, Pause, SkipForward, RotateCcw, X, Coffee, CheckCircle2, ClipboardEdit, PictureInPicture2, ArrowLeft, ChevronUp, ChevronDown } from "lucide-react";
+import { Play, Pause, SkipForward, RotateCcw, X, Coffee, CheckCircle2, ClipboardEdit, PictureInPicture2, ArrowLeft, ChevronUp, ChevronDown, StickyNote } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DonutTimer } from "@/components/DonutTimer";
 import { toast } from "sonner";
 import ManualStudyLogDialog from "@/components/ManualStudyLogDialog";
+import CycleNoteDialog from "@/components/study-cycle/CycleNoteDialog";
 import { useStudyCyclePlayer } from "@/contexts/StudyCyclePlayerContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
+import { Subject } from "@/services/subjects";
 
 const BREAK_SECONDS = 300;
 
@@ -77,7 +81,10 @@ const StudyCyclePlayer = () => {
     openPiP,
   } = useStudyCyclePlayer();
 
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [manualLogOpen, setManualLogOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
   const [questionsTotal, setQuestionsTotal] = useState("");
   const [questionsCorrect, setQuestionsCorrect] = useState("");
   const [sheetExpanded, setSheetExpanded] = useState(false);
@@ -110,6 +117,18 @@ const StudyCyclePlayer = () => {
 
   const currentBlock = blocks[currentIndex];
   const isBreak = mode === "break";
+
+  // Build a unique subject list from the cycle blocks for the note dialog
+  const noteSubjects = Array.from(
+    new Map(
+      blocks
+        .filter((b) => b.subject_id)
+        .map((b) => [
+          b.subject_id,
+          { id: b.subject_id, name: b.subject?.name || "—", color: b.subject?.color ?? null } as Subject,
+        ])
+    ).values()
+  );
   const targetSeconds = currentBlock ? currentBlock.allocated_minutes * 60 : 0;
   const isOvertime = !isBreak && elapsedSeconds > targetSeconds && targetSeconds > 0;
 
@@ -221,6 +240,18 @@ const StudyCyclePlayer = () => {
               )}
             </div>
             <div className="flex items-center gap-2">
+              {!isBreak && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-2 px-3 rounded-lg border border-border/50 bg-card/40 text-muted-foreground hover:text-foreground hover:bg-card/70"
+                  onClick={() => setNoteOpen(true)}
+                  title="Adicionar anotação"
+                >
+                  <StickyNote className="h-4 w-4" />
+                  <span className="text-xs font-medium hidden sm:inline">Anotar</span>
+                </Button>
+              )}
               {pipSupported && !isBreak && elapsedSeconds > 0 && (
                 <Button
                   variant="ghost"
@@ -508,6 +539,20 @@ const StudyCyclePlayer = () => {
             defaultBlockIndex={currentIndex}
             onLogged={setManualLogged}
           />
+
+          {user && (
+            <CycleNoteDialog
+              open={noteOpen}
+              onOpenChange={setNoteOpen}
+              userId={user.id}
+              cycles={[cycle]}
+              subjects={noteSubjects}
+              defaultCycleId={cycle.id}
+              defaultSubjectId={currentBlock?.subject_id ?? null}
+              lockCycle
+              onSaved={() => queryClient.invalidateQueries({ queryKey: ["cycle-notes", user.id] })}
+            />
+          )}
         </div>
       )}
     </>

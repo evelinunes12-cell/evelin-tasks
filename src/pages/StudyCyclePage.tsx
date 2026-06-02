@@ -20,6 +20,8 @@ import {
   AdvancedCycleMetadata,
 } from "@/services/studyCycles";
 import StudyCycleDialog from "@/components/StudyCycleDialog";
+import CycleNotesSection from "@/components/study-cycle/CycleNotesSection";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useStudyCyclePlayer } from "@/contexts/StudyCyclePlayerContext";
 import { toast } from "sonner";
 import { logXP, XP } from "@/services/scoring";
@@ -156,6 +158,13 @@ const StudyCyclePage = () => {
           </Button>
         </div>
 
+        <Tabs defaultValue="ciclos" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
+            <TabsTrigger value="ciclos">Ciclos</TabsTrigger>
+            <TabsTrigger value="anotacoes">Anotações</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="ciclos" className="mt-0 space-y-3 sm:space-y-4">
         {/* Loading */}
         {loading && (
           <div className="space-y-3 sm:space-y-4">
@@ -307,7 +316,16 @@ const StudyCyclePage = () => {
             })}
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="anotacoes" className="mt-0">
+            {user && (
+              <CycleNotesSection userId={user.id} cycles={cycles} subjects={subjects} />
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
+
 
       {/* Create/Edit Dialog */}
       <StudyCycleDialog
