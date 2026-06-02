@@ -240,6 +240,18 @@ const StudyCyclePlayer = () => {
               )}
             </div>
             <div className="flex items-center gap-2">
+              {!isBreak && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-2 px-3 rounded-lg border border-border/50 bg-card/40 text-muted-foreground hover:text-foreground hover:bg-card/70"
+                  onClick={() => setNoteOpen(true)}
+                  title="Adicionar anotação"
+                >
+                  <StickyNote className="h-4 w-4" />
+                  <span className="text-xs font-medium hidden sm:inline">Anotar</span>
+                </Button>
+              )}
               {pipSupported && !isBreak && elapsedSeconds > 0 && (
                 <Button
                   variant="ghost"
