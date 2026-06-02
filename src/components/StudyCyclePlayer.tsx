@@ -81,7 +81,10 @@ const StudyCyclePlayer = () => {
     openPiP,
   } = useStudyCyclePlayer();
 
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [manualLogOpen, setManualLogOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
   const [questionsTotal, setQuestionsTotal] = useState("");
   const [questionsCorrect, setQuestionsCorrect] = useState("");
   const [sheetExpanded, setSheetExpanded] = useState(false);
