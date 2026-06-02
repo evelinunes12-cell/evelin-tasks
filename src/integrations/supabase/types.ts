@@ -876,6 +876,54 @@ export type Database = {
           },
         ]
       }
+      study_cycle_notes: {
+        Row: {
+          content: string
+          created_at: string
+          cycle_id: string
+          id: string
+          subject_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          cycle_id: string
+          id?: string
+          subject_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          cycle_id?: string
+          id?: string
+          subject_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_cycle_notes_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "study_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_cycle_notes_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       study_cycles: {
         Row: {
           created_at: string
