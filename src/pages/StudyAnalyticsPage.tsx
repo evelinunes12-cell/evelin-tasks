@@ -21,7 +21,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DateRangePicker } from "@/components/DateRangePicker";
-import { Clock, Repeat, Timer, CheckCircle, TrendingUp, BookOpen, Target, Pencil, ListChecks, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Clock, Repeat, Timer, CheckCircle, TrendingUp, BookOpen, Target, Pencil, ListChecks, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import ActiveCycleProgressCard from "@/components/ActiveCycleProgressCard";
@@ -30,7 +31,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { subDays, format } from "date-fns";
+import { startOfMonth, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 
@@ -49,7 +50,7 @@ const StudyAnalyticsPage = () => {
   const queryClient = useQueryClient();
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 6),
+    from: startOfMonth(new Date()),
     to: new Date(),
   });
   const [originFilter, setOriginFilter] = useState<OriginFilter>("all");
@@ -187,6 +188,16 @@ const StudyAnalyticsPage = () => {
   };
 
   const showCycleFilter = originFilter !== "pomodoro";
+  const originActive = originFilter !== "all";
+  const cycleActive = selectedCycleId !== "all";
+  const hasActiveFilters = originActive || cycleActive;
+  const selectedCycleName = cycles.find((c) => c.id === selectedCycleId)?.name;
+  const originLabel = originFilter === "cycle" ? "Apenas Ciclos" : originFilter === "pomodoro" ? "Apenas Pomodoro" : "";
+
+  const clearFilters = () => {
+    setOriginFilter("all");
+    setSelectedCycleId("all");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -200,37 +211,60 @@ const StudyAnalyticsPage = () => {
 
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         {/* Filters */}
-        <div className="flex flex-wrap items-end gap-3">
-          <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} defaultPreset="this-month" />
 
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Origem</label>
-            <Select value={originFilter} onValueChange={(v) => { setOriginFilter(v as OriginFilter); setSelectedCycleId("all"); }}>
-              <SelectTrigger className="w-[160px] h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tudo</SelectItem>
-                <SelectItem value="cycle">Apenas Ciclos</SelectItem>
-                <SelectItem value="pomodoro">Apenas Pomodoro</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {showCycleFilter && (
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Ciclo</label>
-              <Select value={selectedCycleId} onValueChange={setSelectedCycleId}>
-                <SelectTrigger className="w-[180px] h-9">
+              <label className="text-xs font-medium text-muted-foreground">Origem</label>
+              <Select value={originFilter} onValueChange={(v) => { setOriginFilter(v as OriginFilter); setSelectedCycleId("all"); }}>
+                <SelectTrigger className={`w-[160px] h-9 ${originActive ? "border-primary ring-1 ring-primary/30 text-primary font-medium" : ""}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os Ciclos</SelectItem>
-                  {cycles.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
+                  <SelectItem value="all">Tudo</SelectItem>
+                  <SelectItem value="cycle">Apenas Ciclos</SelectItem>
+                  <SelectItem value="pomodoro">Apenas Pomodoro</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {showCycleFilter && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Ciclo</label>
+                <Select value={selectedCycleId} onValueChange={setSelectedCycleId}>
+                  <SelectTrigger className={`w-[180px] h-9 ${cycleActive ? "border-primary ring-1 ring-primary/30 text-primary font-medium" : ""}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Ciclos</SelectItem>
+                    {cycles.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">Filtros ativos:</span>
+              {originActive && (
+                <Badge variant="secondary" className="gap-1">
+                  Origem: {originLabel}
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => { setOriginFilter("all"); setSelectedCycleId("all"); }} />
+                </Badge>
+              )}
+              {cycleActive && (
+                <Badge variant="secondary" className="gap-1">
+                  Ciclo: {selectedCycleName}
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedCycleId("all")} />
+                </Badge>
+              )}
+              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={clearFilters}>
+                Limpar filtros
+              </Button>
             </div>
           )}
         </div>
