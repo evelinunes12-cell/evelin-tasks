@@ -56,6 +56,16 @@ const CycleNoteDialog = ({
 
   const isEditing = !!noteToEdit;
 
+  // Disciplinas filtradas pelo ciclo selecionado
+  const filteredSubjects = (() => {
+    const cycle = cycles.find((c) => c.id === cycleId);
+    if (!cycle) return [];
+    const cycleSubjectIds = new Set(
+      (cycle.blocks || []).map((b) => b.subject_id)
+    );
+    return subjects.filter((s) => cycleSubjectIds.has(s.id));
+  })();
+
   useEffect(() => {
     if (!open) return;
     if (noteToEdit) {
@@ -70,6 +80,18 @@ const CycleNoteDialog = ({
       setSubjectId(defaultSubjectId || GENERAL_VALUE);
     }
   }, [open, noteToEdit, defaultCycleId, defaultSubjectId, cycles]);
+
+  // Ao trocar de ciclo, limpa a disciplina caso ela não pertença ao novo ciclo
+  const handleCycleChange = (newCycleId: string) => {
+    setCycleId(newCycleId);
+    const cycle = cycles.find((c) => c.id === newCycleId);
+    const cycleSubjectIds = new Set(
+      (cycle?.blocks || []).map((b) => b.subject_id)
+    );
+    if (subjectId !== GENERAL_VALUE && !cycleSubjectIds.has(subjectId)) {
+      setSubjectId(GENERAL_VALUE);
+    }
+  };
 
   const handleSave = async () => {
     if (!title.trim()) {
