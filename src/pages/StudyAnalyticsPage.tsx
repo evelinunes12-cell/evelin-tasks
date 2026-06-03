@@ -21,7 +21,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DateRangePicker } from "@/components/DateRangePicker";
-import { Clock, Repeat, Timer, CheckCircle, TrendingUp, BookOpen, Target, Pencil, ListChecks, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Clock, Repeat, Timer, CheckCircle, TrendingUp, BookOpen, Target, Pencil, ListChecks, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import ActiveCycleProgressCard from "@/components/ActiveCycleProgressCard";
