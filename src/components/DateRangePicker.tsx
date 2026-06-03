@@ -39,8 +39,9 @@ export function DateRangePicker({
   dateRange,
   onDateRangeChange,
   className,
+  defaultPreset = "30d",
 }: DateRangePickerProps) {
-  const [selectedPreset, setSelectedPreset] = React.useState("30d");
+  const [selectedPreset, setSelectedPreset] = React.useState(defaultPreset);
 
   const handlePresetChange = (value: string) => {
     setSelectedPreset(value);
