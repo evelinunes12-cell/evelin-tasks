@@ -23,6 +23,7 @@ interface DateRangePickerProps {
   dateRange: DateRange | undefined;
   onDateRangeChange: (range: DateRange | undefined) => void;
   className?: string;
+  defaultPreset?: string;
 }
 
 const PRESETS = [
