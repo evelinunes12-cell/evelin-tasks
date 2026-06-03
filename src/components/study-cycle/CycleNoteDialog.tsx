@@ -152,7 +152,7 @@ const CycleNoteDialog = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Ciclo</Label>
-              <Select value={cycleId} onValueChange={setCycleId} disabled={lockCycle}>
+              <Select value={cycleId} onValueChange={handleCycleChange} disabled={lockCycle}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o ciclo" />
                 </SelectTrigger>
@@ -168,13 +168,13 @@ const CycleNoteDialog = ({
 
             <div className="space-y-1.5">
               <Label>Disciplina</Label>
-              <Select value={subjectId} onValueChange={setSubjectId}>
+              <Select value={subjectId} onValueChange={setSubjectId} disabled={!cycleId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Geral do ciclo" />
+                  <SelectValue placeholder={cycleId ? "Geral do ciclo" : "Selecione um ciclo"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={GENERAL_VALUE}>Geral do ciclo</SelectItem>
-                  {subjects.map((s) => (
+                  {filteredSubjects.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name}
                     </SelectItem>
