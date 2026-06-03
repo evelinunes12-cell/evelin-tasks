@@ -56,6 +56,16 @@ const CycleNoteDialog = ({
 
   const isEditing = !!noteToEdit;
 
+  // Disciplinas filtradas pelo ciclo selecionado
+  const filteredSubjects = (() => {
+    const cycle = cycles.find((c) => c.id === cycleId);
+    if (!cycle) return [];
+    const cycleSubjectIds = new Set(
+      (cycle.blocks || []).map((b) => b.subject_id)
+    );
+    return subjects.filter((s) => cycleSubjectIds.has(s.id));
+  })();
+
   useEffect(() => {
     if (!open) return;
     if (noteToEdit) {
@@ -70,6 +80,18 @@ const CycleNoteDialog = ({
       setSubjectId(defaultSubjectId || GENERAL_VALUE);
     }
   }, [open, noteToEdit, defaultCycleId, defaultSubjectId, cycles]);
+
+  // Ao trocar de ciclo, limpa a disciplina caso ela não pertença ao novo ciclo
+  const handleCycleChange = (newCycleId: string) => {
+    setCycleId(newCycleId);
+    const cycle = cycles.find((c) => c.id === newCycleId);
+    const cycleSubjectIds = new Set(
+      (cycle?.blocks || []).map((b) => b.subject_id)
+    );
+    if (subjectId !== GENERAL_VALUE && !cycleSubjectIds.has(subjectId)) {
+      setSubjectId(GENERAL_VALUE);
+    }
+  };
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -130,7 +152,7 @@ const CycleNoteDialog = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Ciclo</Label>
-              <Select value={cycleId} onValueChange={setCycleId} disabled={lockCycle}>
+              <Select value={cycleId} onValueChange={handleCycleChange} disabled={lockCycle}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o ciclo" />
                 </SelectTrigger>
@@ -146,13 +168,13 @@ const CycleNoteDialog = ({
 
             <div className="space-y-1.5">
               <Label>Disciplina</Label>
-              <Select value={subjectId} onValueChange={setSubjectId}>
+              <Select value={subjectId} onValueChange={setSubjectId} disabled={!cycleId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Geral do ciclo" />
+                  <SelectValue placeholder={cycleId ? "Geral do ciclo" : "Selecione um ciclo"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={GENERAL_VALUE}>Geral do ciclo</SelectItem>
-                  {subjects.map((s) => (
+                  {filteredSubjects.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name}
                     </SelectItem>
