@@ -49,7 +49,7 @@ const StudyAnalyticsPage = () => {
   const queryClient = useQueryClient();
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 6),
+    from: startOfMonth(new Date()),
     to: new Date(),
   });
   const [originFilter, setOriginFilter] = useState<OriginFilter>("all");
