@@ -29,7 +29,7 @@ import { fetchTaskAssignees, setTaskAssignees as persistTaskAssignees } from "@/
 import HierarchicalStatusSelect, { HierarchicalStatus } from "@/components/HierarchicalStatusSelect";
 import { logError } from "@/lib/logger";
 import { taskFormSchema, linkSchema, checklistSchema } from "@/lib/validation";
-import AIChecklistGenerator from "@/components/AIChecklistGenerator";
+
 import { registerActivity } from "@/services/activity";
 import { logXP, logXPForTaskAssignees, XP } from "@/services/scoring";
 
