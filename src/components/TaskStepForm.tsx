@@ -35,8 +35,8 @@ interface TaskStepFormProps {
   taskDescription?: string;
 }
 
-const TaskStepForm = ({ steps, onStepsChange, taskTitle = "", taskDescription = "" }: TaskStepFormProps) => {
-  const [aiLoading, setAiLoading] = useState(false);
+const TaskStepForm = ({ steps, onStepsChange }: TaskStepFormProps) => {
+
 
   const addStep = () => {
     const newStep: TaskStep = {
