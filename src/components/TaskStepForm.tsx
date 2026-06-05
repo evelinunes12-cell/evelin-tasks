@@ -31,8 +31,6 @@ export interface TaskStep {
 interface TaskStepFormProps {
   steps: TaskStep[];
   onStepsChange: (steps: TaskStep[]) => void;
-  taskTitle?: string;
-  taskDescription?: string;
 }
 
 const TaskStepForm = ({ steps, onStepsChange }: TaskStepFormProps) => {
