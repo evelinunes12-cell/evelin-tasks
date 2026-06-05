@@ -29,7 +29,7 @@ import { fetchTaskAssignees, setTaskAssignees as persistTaskAssignees } from "@/
 import HierarchicalStatusSelect, { HierarchicalStatus } from "@/components/HierarchicalStatusSelect";
 import { logError } from "@/lib/logger";
 import { taskFormSchema, linkSchema, checklistSchema } from "@/lib/validation";
-import AIChecklistGenerator from "@/components/AIChecklistGenerator";
+
 import { registerActivity } from "@/services/activity";
 import { logXP, logXPForTaskAssignees, XP } from "@/services/scoring";
 
@@ -1090,14 +1090,8 @@ const TaskForm = () => {
 
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <Label>Checklist da Tarefa</Label>
-                <AIChecklistGenerator
-                  title={subjectName}
-                  description={description}
-                  hasExistingItems={checklist.length > 0}
-                  onGenerate={(items) => setChecklist((prev) => [...prev, ...items])}
-                  onClear={() => setChecklist([])}
-                />
               </div>
+
 
               <ChecklistManager
                 items={checklist}
@@ -1108,7 +1102,7 @@ const TaskForm = () => {
 
               <Separator className="my-6" />
 
-              <TaskStepForm steps={steps} onStepsChange={setSteps} taskTitle={subjectName} taskDescription={description} />
+              <TaskStepForm steps={steps} onStepsChange={setSteps} />
 
               <div className="flex gap-3 pt-4">
                 <Button
