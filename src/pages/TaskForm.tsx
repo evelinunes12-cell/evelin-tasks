@@ -1090,14 +1090,8 @@ const TaskForm = () => {
 
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <Label>Checklist da Tarefa</Label>
-                <AIChecklistGenerator
-                  title={subjectName}
-                  description={description}
-                  hasExistingItems={checklist.length > 0}
-                  onGenerate={(items) => setChecklist((prev) => [...prev, ...items])}
-                  onClear={() => setChecklist([])}
-                />
               </div>
+
 
               <ChecklistManager
                 items={checklist}
