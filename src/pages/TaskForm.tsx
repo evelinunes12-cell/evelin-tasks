@@ -1108,7 +1108,7 @@ const TaskForm = () => {
 
               <Separator className="my-6" />
 
-              <TaskStepForm steps={steps} onStepsChange={setSteps} taskTitle={subjectName} taskDescription={description} />
+              <TaskStepForm steps={steps} onStepsChange={setSteps} />
 
               <div className="flex gap-3 pt-4">
                 <Button
