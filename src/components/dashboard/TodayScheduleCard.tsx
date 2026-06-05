@@ -16,19 +16,27 @@ export function TodayScheduleCard() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const selectedDow = selectedDate.getDay();
+  const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
 
   const { data: schedules = [], isLoading } = useQuery({
-    queryKey: ["study-schedules-today", user?.id, selectedDow],
+    queryKey: ["study-schedules-today", user?.id, selectedDateStr],
     queryFn: async () => {
       if (!user) return [];
       const all = await fetchStudySchedules(user.id);
       return all
-        .filter(s => s.day_of_week === selectedDow)
+        .filter(s =>
+          s.type === "variable"
+            // Variable schedules are one-time events: only show on their exact date
+            ? s.specific_date === selectedDateStr
+            // Fixed schedules repeat weekly by weekday
+            : s.day_of_week === selectedDow
+        )
         .sort((a, b) => a.start_time.localeCompare(b.start_time));
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 10,
   });
+
 
   const formatTime = (t: string) => t.slice(0, 5);
 
