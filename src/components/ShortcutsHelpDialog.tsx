@@ -114,32 +114,43 @@ const ShortcutsHelpDialog = () => {
             </div>
           </div>
 
-          {/* Direct shortcuts */}
+          {/* Navigation shortcuts (G leader) */}
           <div>
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1">
-              Atalhos Diretos
+              Ir para (pressione G, depois a tecla)
             </h4>
             <div className="space-y-0.5">
               <ShortcutRow
-                keys={<><Kbd>{modKey}</Kbd><span className="text-muted-foreground text-xs">+</span><Kbd>D</Kbd></>}
-                description="Ir para Dashboard"
+                keys={<><Kbd>G</Kbd><span className="text-muted-foreground text-xs">depois</span><Kbd>D</Kbd></>}
+                description="Dashboard"
               />
               <ShortcutRow
-                keys={<><Kbd>{modKey}</Kbd><span className="text-muted-foreground text-xs">+</span><Kbd>N</Kbd></>}
-                description="Nova Tarefa"
+                keys={<><Kbd>G</Kbd><span className="text-muted-foreground text-xs">depois</span><Kbd>A</Kbd></>}
+                description="Ambientes"
               />
               <ShortcutRow
-                keys={<><Kbd>{modKey}</Kbd><span className="text-muted-foreground text-xs">+</span><Kbd>E</Kbd></>}
-                description="Ir para Ambientes"
+                keys={<><Kbd>G</Kbd><span className="text-muted-foreground text-xs">depois</span><Kbd>P</Kbd></>}
+                description="Planner"
               />
               <ShortcutRow
-                keys={<><Kbd>{modKey}</Kbd><span className="text-muted-foreground text-xs">+</span><Kbd>,</Kbd></>}
+                keys={<><Kbd>G</Kbd><span className="text-muted-foreground text-xs">depois</span><Kbd>C</Kbd></>}
+                description="Ciclo de Estudos"
+              />
+              <ShortcutRow
+                keys={<><Kbd>G</Kbd><span className="text-muted-foreground text-xs">depois</span><Kbd>S</Kbd></>}
                 description="Configurações"
               />
-              <ShortcutRow
-                keys={<><Kbd>{modKey}</Kbd><span className="text-muted-foreground text-xs">+</span><Kbd>T</Kbd></>}
-                description="Alternar Tema"
-              />
+            </div>
+          </div>
+
+          {/* Action shortcuts */}
+          <div>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1">
+              Ações Rápidas
+            </h4>
+            <div className="space-y-0.5">
+              <ShortcutRow keys={<Kbd>N</Kbd>} description="Nova Tarefa" />
+              <ShortcutRow keys={<Kbd>T</Kbd>} description="Alternar Tema" />
             </div>
           </div>
         </div>
