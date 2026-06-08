@@ -28,13 +28,16 @@ const motivationalTips = [
 
 const PomodoroPage = () => {
   const {
-    timeRemaining, isRunning, isPaused, isBreak, totalTime, isCompleted,
+    timeRemaining, isRunning, isPaused, isBreak, isLongBreak, completedBlocks, totalTime, isCompleted,
     start, pause, resume, reset,
     selectedSubjectId, selectedSubjectName, setSelectedSubject,
+    settings, updateSettings,
     pipSupported, pipOpen, pipContainer, openPiP,
   } = useFocusTimer();
   const { user } = useAuth();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [draftSettings, setDraftSettings] = useState<PomodoroSettings>(settings);
 
   const { data: subjects = [] } = useQuery({
     queryKey: ["subjects", user?.id],
@@ -47,6 +50,18 @@ const PomodoroPage = () => {
   const seconds = timeRemaining % 60;
   const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   const progress = ((totalTime - timeRemaining) / totalTime) * 100;
+  const breakLabel = isLongBreak ? "Descanso Longo" : "Pausa Curta";
+
+  const openSettings = () => {
+    setDraftSettings(settings);
+    setSettingsOpen(true);
+  };
+
+  const saveSettings = () => {
+    updateSettings(draftSettings);
+    setSettingsOpen(false);
+    if (!hasStarted) reset();
+  };
 
   useEffect(() => {
     if (!hasStarted && isFullscreen) setIsFullscreen(false);
