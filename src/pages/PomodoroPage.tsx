@@ -132,7 +132,7 @@ const PomodoroPage = () => {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-3">
             {isBreak ? <Coffee className="w-3.5 h-3.5 text-success" /> : <Timer className="w-3.5 h-3.5 text-primary" />}
             <span className="text-xs font-medium uppercase tracking-wider text-foreground">
-              {isBreak ? "Pausa Curta" : "Modo Foco · Pomodoro"}
+              {isBreak ? breakLabel : "Modo Foco · Pomodoro"}
             </span>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
@@ -140,9 +140,29 @@ const PomodoroPage = () => {
           </h2>
           <p className="text-muted-foreground max-w-md mx-auto">
             {selectedSubjectName
-              ? <>Estudando <span className="text-primary font-medium">{selectedSubjectName}</span> · 25 min de foco + 5 min de pausa</>
-              : "Inicie um ciclo de 25 minutos. Opcionalmente, escolha uma disciplina para registrar nos seus relatórios."}
+              ? <>Estudando <span className="text-primary font-medium">{selectedSubjectName}</span> · {settings.focusMinutes} min de foco + {settings.shortBreakMinutes} min de pausa</>
+              : `Inicie um ciclo de ${settings.focusMinutes} minutos. Opcionalmente, escolha uma disciplina para registrar nos seus relatórios.`}
           </p>
+          {completedBlocks > 0 && (
+            <div className="mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span>Blocos concluídos:</span>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: settings.blocksBeforeLongBreak }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      "h-2 w-2 rounded-full",
+                      (completedBlocks % settings.blocksBeforeLongBreak) > i ||
+                        (completedBlocks > 0 && completedBlocks % settings.blocksBeforeLongBreak === 0)
+                        ? "bg-primary"
+                        : "bg-muted"
+                    )}
+                  />
+                ))}
+              </div>
+              <span className="tabular-nums">({completedBlocks})</span>
+            </div>
+          )}
         </div>
 
         {/* Hero Player */}
