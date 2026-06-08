@@ -99,20 +99,33 @@ const PomodoroPage = () => {
           <SidebarTrigger className="md:hidden" />
           <h1 className="text-lg font-bold text-foreground">Modo Foco</h1>
         </div>
-        {pipSupported && hasStarted && (
+        <div className="flex items-center gap-2">
+          {pipSupported && hasStarted && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={openPiP}
+              disabled={pipOpen}
+              className="h-8 gap-2 px-3 rounded-lg border border-border/50 bg-card/40 text-muted-foreground hover:text-foreground hover:bg-card/70"
+              title={pipOpen ? "Miniplayer ativo" : "Abrir miniplayer flutuante"}
+            >
+              <PictureInPicture2 className="h-4 w-4" />
+              <span className="text-xs font-medium hidden sm:inline">Miniplayer</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
-            onClick={openPiP}
-            disabled={pipOpen}
+            onClick={openSettings}
             className="h-8 gap-2 px-3 rounded-lg border border-border/50 bg-card/40 text-muted-foreground hover:text-foreground hover:bg-card/70"
-            title={pipOpen ? "Miniplayer ativo" : "Abrir miniplayer flutuante"}
+            title="Personalizar Pomodoro"
           >
-            <PictureInPicture2 className="h-4 w-4" />
-            <span className="text-xs font-medium hidden sm:inline">Miniplayer</span>
+            <Settings2 className="h-4 w-4" />
+            <span className="text-xs font-medium hidden sm:inline">Personalizar</span>
           </Button>
-        )}
+        </div>
       </header>
+
 
       <div className="flex flex-col items-center px-4 py-8 md:py-12">
         <div className="text-center mb-8">
