@@ -406,6 +406,83 @@ const PomodoroPage = () => {
         </div>,
         pipContainer
       )}
+
+      {/* Settings dialog */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="w-4 h-4 text-primary" />
+              Personalizar Pomodoro
+            </DialogTitle>
+            <DialogDescription>
+              Defina a duração de cada etapa. As alterações são salvas neste dispositivo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="focus-min">Tempo de foco (min)</Label>
+              <Input
+                id="focus-min"
+                type="number"
+                min={1}
+                max={120}
+                value={draftSettings.focusMinutes}
+                onChange={(e) => setDraftSettings((s) => ({ ...s, focusMinutes: Number(e.target.value) }))}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="short-break">Descanso entre blocos (min)</Label>
+              <Input
+                id="short-break"
+                type="number"
+                min={1}
+                max={60}
+                value={draftSettings.shortBreakMinutes}
+                onChange={(e) => setDraftSettings((s) => ({ ...s, shortBreakMinutes: Number(e.target.value) }))}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="long-break">Descanso longo (min)</Label>
+              <Input
+                id="long-break"
+                type="number"
+                min={1}
+                max={60}
+                value={draftSettings.longBreakMinutes}
+                onChange={(e) => setDraftSettings((s) => ({ ...s, longBreakMinutes: Number(e.target.value) }))}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="blocks-count">Blocos até o descanso longo</Label>
+              <Input
+                id="blocks-count"
+                type="number"
+                min={2}
+                max={12}
+                value={draftSettings.blocksBeforeLongBreak}
+                onChange={(e) => setDraftSettings((s) => ({ ...s, blocksBeforeLongBreak: Number(e.target.value) }))}
+              />
+            </div>
+            {isRunning && (
+              <p className="text-xs text-warning">
+                As novas durações serão aplicadas a partir do próximo bloco.
+              </p>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setDraftSettings(DEFAULT_POMODORO_SETTINGS)}
+            >
+              Restaurar padrão
+            </Button>
+            <Button onClick={saveSettings}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
