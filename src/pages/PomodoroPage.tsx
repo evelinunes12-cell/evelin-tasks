@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useFocusTimer } from "@/contexts/FocusTimerContext";
+import { useFocusTimer, PomodoroSettings } from "@/contexts/FocusTimerContext";
 import { Button } from "@/components/ui/button";
 import {
   Flame, Target, Zap, Maximize2, Minimize2, Play, Pause, RotateCcw,
-  Coffee, Timer, BookOpen, X, PictureInPicture2,
+  Coffee, Timer, BookOpen, X, PictureInPicture2, Settings2,
 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,11 @@ import { fetchSubjects } from "@/services/subjects";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 
 const motivationalTips = [
