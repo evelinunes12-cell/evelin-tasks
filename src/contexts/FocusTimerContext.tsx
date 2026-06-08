@@ -52,18 +52,18 @@ export const DEFAULT_POMODORO_SETTINGS: PomodoroSettings = {
 };
 
 const clampSettings = (s: PomodoroSettings): PomodoroSettings => ({
-  focusMinutes: Math.min(120, Math.max(1, Math.round(s.focusMinutes) || DEFAULT_SETTINGS.focusMinutes)),
-  shortBreakMinutes: Math.min(60, Math.max(1, Math.round(s.shortBreakMinutes) || DEFAULT_SETTINGS.shortBreakMinutes)),
-  longBreakMinutes: Math.min(60, Math.max(1, Math.round(s.longBreakMinutes) || DEFAULT_SETTINGS.longBreakMinutes)),
-  blocksBeforeLongBreak: Math.min(12, Math.max(2, Math.round(s.blocksBeforeLongBreak) || DEFAULT_SETTINGS.blocksBeforeLongBreak)),
+  focusMinutes: Math.min(120, Math.max(1, Math.round(s.focusMinutes) || DEFAULT_POMODORO_SETTINGS.focusMinutes)),
+  shortBreakMinutes: Math.min(60, Math.max(1, Math.round(s.shortBreakMinutes) || DEFAULT_POMODORO_SETTINGS.shortBreakMinutes)),
+  longBreakMinutes: Math.min(60, Math.max(1, Math.round(s.longBreakMinutes) || DEFAULT_POMODORO_SETTINGS.longBreakMinutes)),
+  blocksBeforeLongBreak: Math.min(12, Math.max(2, Math.round(s.blocksBeforeLongBreak) || DEFAULT_POMODORO_SETTINGS.blocksBeforeLongBreak)),
 });
 
 const loadSettings = (): PomodoroSettings => {
   try {
     const stored = localStorage.getItem(SETTINGS_KEY);
-    if (stored) return clampSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(stored) });
+    if (stored) return clampSettings({ ...DEFAULT_POMODORO_SETTINGS, ...JSON.parse(stored) });
   } catch {}
-  return DEFAULT_SETTINGS;
+  return DEFAULT_POMODORO_SETTINGS;
 };
 
 interface StoredTimerState {
