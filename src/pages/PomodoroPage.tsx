@@ -309,7 +309,7 @@ const PomodoroPage = () => {
           <div className="flex items-center gap-2 mb-4 text-muted-foreground">
             {isBreak ? <Coffee className="w-5 h-5" /> : <Timer className="w-5 h-5" />}
             <span className="text-sm uppercase tracking-widest">
-              {isBreak ? "Pausa Curta" : "Modo Foco"}
+              {isBreak ? breakLabel : "Modo Foco"}
             </span>
           </div>
           {selectedSubjectName && (
