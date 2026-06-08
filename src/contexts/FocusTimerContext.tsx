@@ -44,7 +44,7 @@ const FocusTimerContext = createContext<FocusTimerContextType | undefined>(undef
 const STORAGE_KEY = "focus_timer_state";
 const SETTINGS_KEY = "focus_timer_settings";
 
-const DEFAULT_SETTINGS: PomodoroSettings = {
+export const DEFAULT_POMODORO_SETTINGS: PomodoroSettings = {
   focusMinutes: 25,
   shortBreakMinutes: 5,
   longBreakMinutes: 15,
