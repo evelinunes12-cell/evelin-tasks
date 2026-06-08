@@ -8,11 +8,20 @@ import { setCurrentStudyInfo, clearCurrentStudyInfo } from "@/lib/studyPresence"
 import { toast } from "sonner";
 import { useDocumentPiP } from "@/hooks/useDocumentPiP";
 
+export interface PomodoroSettings {
+  focusMinutes: number;
+  shortBreakMinutes: number;
+  longBreakMinutes: number;
+  blocksBeforeLongBreak: number;
+}
+
 interface FocusTimerContextType {
   timeRemaining: number;
   isRunning: boolean;
   isPaused: boolean;
   isBreak: boolean;
+  isLongBreak: boolean;
+  completedBlocks: number;
   start: () => void;
   pause: () => void;
   resume: () => void;
@@ -22,6 +31,8 @@ interface FocusTimerContextType {
   selectedSubjectId: string | null;
   selectedSubjectName: string | null;
   setSelectedSubject: (subject: { id: string; name: string } | null) => void;
+  settings: PomodoroSettings;
+  updateSettings: (settings: PomodoroSettings) => void;
   pipSupported: boolean;
   pipOpen: boolean;
   pipContainer: HTMLElement | null;
@@ -31,8 +42,29 @@ interface FocusTimerContextType {
 const FocusTimerContext = createContext<FocusTimerContextType | undefined>(undefined);
 
 const STORAGE_KEY = "focus_timer_state";
-const DEFAULT_TIME = 25 * 60; // 25 minutes in seconds
-const BREAK_TIME = 5 * 60; // 5 minutes break
+const SETTINGS_KEY = "focus_timer_settings";
+
+export const DEFAULT_POMODORO_SETTINGS: PomodoroSettings = {
+  focusMinutes: 25,
+  shortBreakMinutes: 5,
+  longBreakMinutes: 15,
+  blocksBeforeLongBreak: 4,
+};
+
+const clampSettings = (s: PomodoroSettings): PomodoroSettings => ({
+  focusMinutes: Math.min(120, Math.max(1, Math.round(s.focusMinutes) || DEFAULT_POMODORO_SETTINGS.focusMinutes)),
+  shortBreakMinutes: Math.min(60, Math.max(1, Math.round(s.shortBreakMinutes) || DEFAULT_POMODORO_SETTINGS.shortBreakMinutes)),
+  longBreakMinutes: Math.min(60, Math.max(1, Math.round(s.longBreakMinutes) || DEFAULT_POMODORO_SETTINGS.longBreakMinutes)),
+  blocksBeforeLongBreak: Math.min(12, Math.max(2, Math.round(s.blocksBeforeLongBreak) || DEFAULT_POMODORO_SETTINGS.blocksBeforeLongBreak)),
+});
+
+const loadSettings = (): PomodoroSettings => {
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    if (stored) return clampSettings({ ...DEFAULT_POMODORO_SETTINGS, ...JSON.parse(stored) });
+  } catch {}
+  return DEFAULT_POMODORO_SETTINGS;
+};
 
 interface StoredTimerState {
   endTime: number | null;
@@ -40,15 +72,25 @@ interface StoredTimerState {
   isRunning: boolean;
   isPaused: boolean;
   isBreak: boolean;
+  isLongBreak: boolean;
+  completedBlocks: number;
 }
 
 export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [timeRemaining, setTimeRemaining] = useState(DEFAULT_TIME);
+  const [settings, setSettings] = useState<PomodoroSettings>(loadSettings);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+
+  const focusSeconds = settings.focusMinutes * 60;
+
+  const [timeRemaining, setTimeRemaining] = useState(focusSeconds);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
+  const [isLongBreak, setIsLongBreak] = useState(false);
+  const [completedBlocks, setCompletedBlocks] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [endTime, setEndTime] = useState<number | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
@@ -92,7 +134,9 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       try {
         const state: StoredTimerState = JSON.parse(stored);
         setIsBreak(state.isBreak || false);
-        
+        setIsLongBreak(state.isLongBreak || false);
+        setCompletedBlocks(state.completedBlocks || 0);
+
         if (state.isRunning && state.endTime) {
           const now = Date.now();
           const remaining = Math.max(0, Math.floor((state.endTime - now) / 1000));
@@ -124,13 +168,31 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       isRunning,
       isPaused,
       isBreak,
+      isLongBreak,
+      completedBlocks,
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [isRunning, isPaused, endTime, timeRemaining, isBreak]);
+  }, [isRunning, isPaused, endTime, timeRemaining, isBreak, isLongBreak, completedBlocks]);
+
+  const updateSettings = useCallback((next: PomodoroSettings) => {
+    const clamped = clampSettings(next);
+    setSettings(clamped);
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(clamped)); } catch {}
+  }, []);
+
+  // When idle (not started), keep the displayed focus time in sync with settings
+  useEffect(() => {
+    if (!isRunning && !isPaused && !isBreak) {
+      setTimeRemaining(settings.focusMinutes * 60);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.focusMinutes]);
 
   const handleTimerComplete = useCallback(async (wasBreak: boolean) => {
     if (hasCompletedRef.current) return;
     hasCompletedRef.current = true;
+
+    const cfg = settingsRef.current;
 
     setIsRunning(false);
     setIsPaused(false);
@@ -142,13 +204,13 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       await registerActivity(user.id);
       // Incrementa contador de Pomodoros para onboarding
       await incrementPomodoroCount(user.id);
-      
+
       // Registra a sessão de foco no histórico
       if (sessionStartTime) {
-        await createFocusSession(user.id, sessionStartTime, DEFAULT_TIME / 60, selectedSubjectId);
+        await createFocusSession(user.id, sessionStartTime, cfg.focusMinutes, selectedSubjectId);
         setSessionStartTime(null);
       }
-      
+
       // Invalida os caches para atualizar a UI
       queryClient.invalidateQueries({ queryKey: ['user-streak', user.id] });
       queryClient.invalidateQueries({ queryKey: ['onboarding-status', user.id] });
@@ -159,17 +221,27 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     // Alterna para pausa ou foco
     if (!wasBreak) {
-      toast("☕ Hora do descanso! (5 min)");
-      setTimeRemaining(BREAK_TIME);
+      const newCount = completedBlocks + 1;
+      setCompletedBlocks(newCount);
+      const isLong = newCount % cfg.blocksBeforeLongBreak === 0;
+      setIsLongBreak(isLong);
       setIsBreak(true);
+      if (isLong) {
+        toast(`☕ Descanso longo! (${cfg.longBreakMinutes} min)`);
+        setTimeRemaining(cfg.longBreakMinutes * 60);
+      } else {
+        toast(`☕ Hora do descanso! (${cfg.shortBreakMinutes} min)`);
+        setTimeRemaining(cfg.shortBreakMinutes * 60);
+      }
     } else {
-      toast("🍅 Voltar ao trabalho! (25 min)");
-      setTimeRemaining(DEFAULT_TIME);
+      toast(`🍅 Voltar ao trabalho! (${cfg.focusMinutes} min)`);
+      setTimeRemaining(cfg.focusMinutes * 60);
       setIsBreak(false);
+      setIsLongBreak(false);
     }
 
     hasCompletedRef.current = false;
-  }, [user, queryClient, sessionStartTime, selectedSubjectId]);
+  }, [user, queryClient, sessionStartTime, selectedSubjectId, completedBlocks]);
 
   // Timer tick effect
   useEffect(() => {
@@ -195,16 +267,21 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, [isRunning, endTime, isBreak, handleTimerComplete]);
 
+  const currentDuration = useCallback(() => {
+    if (!isBreak) return settings.focusMinutes * 60;
+    return (isLongBreak ? settings.longBreakMinutes : settings.shortBreakMinutes) * 60;
+  }, [isBreak, isLongBreak, settings]);
+
   const start = useCallback(() => {
     const now = Date.now();
-    const duration = isBreak ? BREAK_TIME : DEFAULT_TIME;
+    const duration = currentDuration();
     const newEndTime = now + duration * 1000;
     setEndTime(newEndTime);
     setTimeRemaining(duration);
     setIsRunning(true);
     setIsPaused(false);
     setIsCompleted(false);
-    
+
     // Track session start time for focus sessions (not breaks)
     if (!isBreak) {
       setSessionStartTime(new Date());
@@ -213,7 +290,7 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     } else {
       clearCurrentStudyInfo();
     }
-  }, [isBreak, user]);
+  }, [isBreak, user, currentDuration]);
 
   const pause = useCallback(() => {
     setIsRunning(false);
@@ -235,10 +312,12 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [timeRemaining, isBreak, user]);
 
   const reset = useCallback(() => {
-    setTimeRemaining(DEFAULT_TIME);
+    setTimeRemaining(settings.focusMinutes * 60);
     setIsRunning(false);
     setIsPaused(false);
     setIsBreak(false);
+    setIsLongBreak(false);
+    setCompletedBlocks(0);
     setIsCompleted(false);
     setEndTime(null);
     setSessionStartTime(null);
@@ -246,9 +325,9 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-  }, []);
+  }, [settings.focusMinutes]);
 
-  const totalTime = isBreak ? BREAK_TIME : DEFAULT_TIME;
+  const totalTime = currentDuration();
 
   return (
     <FocusTimerContext.Provider
@@ -257,6 +336,8 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         isRunning,
         isPaused,
         isBreak,
+        isLongBreak,
+        completedBlocks,
         start,
         pause,
         resume,
@@ -266,6 +347,8 @@ export const FocusTimerProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         selectedSubjectId,
         selectedSubjectName,
         setSelectedSubject,
+        settings,
+        updateSettings,
         pipSupported,
         pipOpen,
         pipContainer,

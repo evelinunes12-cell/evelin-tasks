@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useFocusTimer } from "@/contexts/FocusTimerContext";
+import { useFocusTimer, PomodoroSettings, DEFAULT_POMODORO_SETTINGS } from "@/contexts/FocusTimerContext";
 import { Button } from "@/components/ui/button";
 import {
   Flame, Target, Zap, Maximize2, Minimize2, Play, Pause, RotateCcw,
-  Coffee, Timer, BookOpen, X, PictureInPicture2,
+  Coffee, Timer, BookOpen, X, PictureInPicture2, Settings2,
 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,11 @@ import { fetchSubjects } from "@/services/subjects";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 
 const motivationalTips = [
@@ -23,13 +28,16 @@ const motivationalTips = [
 
 const PomodoroPage = () => {
   const {
-    timeRemaining, isRunning, isPaused, isBreak, totalTime, isCompleted,
+    timeRemaining, isRunning, isPaused, isBreak, isLongBreak, completedBlocks, totalTime, isCompleted,
     start, pause, resume, reset,
     selectedSubjectId, selectedSubjectName, setSelectedSubject,
+    settings, updateSettings,
     pipSupported, pipOpen, pipContainer, openPiP,
   } = useFocusTimer();
   const { user } = useAuth();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [draftSettings, setDraftSettings] = useState<PomodoroSettings>(settings);
 
   const { data: subjects = [] } = useQuery({
     queryKey: ["subjects", user?.id],
@@ -42,6 +50,18 @@ const PomodoroPage = () => {
   const seconds = timeRemaining % 60;
   const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   const progress = ((totalTime - timeRemaining) / totalTime) * 100;
+  const breakLabel = isLongBreak ? "Descanso Longo" : "Pausa Curta";
+
+  const openSettings = () => {
+    setDraftSettings(settings);
+    setSettingsOpen(true);
+  };
+
+  const saveSettings = () => {
+    updateSettings(draftSettings);
+    setSettingsOpen(false);
+    if (!hasStarted) reset();
+  };
 
   useEffect(() => {
     if (!hasStarted && isFullscreen) setIsFullscreen(false);
@@ -79,27 +99,40 @@ const PomodoroPage = () => {
           <SidebarTrigger className="md:hidden" />
           <h1 className="text-lg font-bold text-foreground">Modo Foco</h1>
         </div>
-        {pipSupported && hasStarted && (
+        <div className="flex items-center gap-2">
+          {pipSupported && hasStarted && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={openPiP}
+              disabled={pipOpen}
+              className="h-8 gap-2 px-3 rounded-lg border border-border/50 bg-card/40 text-muted-foreground hover:text-foreground hover:bg-card/70"
+              title={pipOpen ? "Miniplayer ativo" : "Abrir miniplayer flutuante"}
+            >
+              <PictureInPicture2 className="h-4 w-4" />
+              <span className="text-xs font-medium hidden sm:inline">Miniplayer</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
-            onClick={openPiP}
-            disabled={pipOpen}
+            onClick={openSettings}
             className="h-8 gap-2 px-3 rounded-lg border border-border/50 bg-card/40 text-muted-foreground hover:text-foreground hover:bg-card/70"
-            title={pipOpen ? "Miniplayer ativo" : "Abrir miniplayer flutuante"}
+            title="Personalizar Pomodoro"
           >
-            <PictureInPicture2 className="h-4 w-4" />
-            <span className="text-xs font-medium hidden sm:inline">Miniplayer</span>
+            <Settings2 className="h-4 w-4" />
+            <span className="text-xs font-medium hidden sm:inline">Personalizar</span>
           </Button>
-        )}
+        </div>
       </header>
+
 
       <div className="flex flex-col items-center px-4 py-8 md:py-12">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-3">
             {isBreak ? <Coffee className="w-3.5 h-3.5 text-success" /> : <Timer className="w-3.5 h-3.5 text-primary" />}
             <span className="text-xs font-medium uppercase tracking-wider text-foreground">
-              {isBreak ? "Pausa Curta" : "Modo Foco · Pomodoro"}
+              {isBreak ? breakLabel : "Modo Foco · Pomodoro"}
             </span>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
@@ -107,9 +140,29 @@ const PomodoroPage = () => {
           </h2>
           <p className="text-muted-foreground max-w-md mx-auto">
             {selectedSubjectName
-              ? <>Estudando <span className="text-primary font-medium">{selectedSubjectName}</span> · 25 min de foco + 5 min de pausa</>
-              : "Inicie um ciclo de 25 minutos. Opcionalmente, escolha uma disciplina para registrar nos seus relatórios."}
+              ? <>Estudando <span className="text-primary font-medium">{selectedSubjectName}</span> · {settings.focusMinutes} min de foco + {settings.shortBreakMinutes} min de pausa</>
+              : `Inicie um ciclo de ${settings.focusMinutes} minutos. Opcionalmente, escolha uma disciplina para registrar nos seus relatórios.`}
           </p>
+          {completedBlocks > 0 && (
+            <div className="mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span>Blocos concluídos:</span>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: settings.blocksBeforeLongBreak }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      "h-2 w-2 rounded-full",
+                      (completedBlocks % settings.blocksBeforeLongBreak) > i ||
+                        (completedBlocks > 0 && completedBlocks % settings.blocksBeforeLongBreak === 0)
+                        ? "bg-primary"
+                        : "bg-muted"
+                    )}
+                  />
+                ))}
+              </div>
+              <span className="tabular-nums">({completedBlocks})</span>
+            </div>
+          )}
         </div>
 
         {/* Hero Player */}
@@ -256,7 +309,7 @@ const PomodoroPage = () => {
           <div className="flex items-center gap-2 mb-4 text-muted-foreground">
             {isBreak ? <Coffee className="w-5 h-5" /> : <Timer className="w-5 h-5" />}
             <span className="text-sm uppercase tracking-widest">
-              {isBreak ? "Pausa Curta" : "Modo Foco"}
+              {isBreak ? breakLabel : "Modo Foco"}
             </span>
           </div>
           {selectedSubjectName && (
@@ -353,6 +406,83 @@ const PomodoroPage = () => {
         </div>,
         pipContainer
       )}
+
+      {/* Settings dialog */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="w-4 h-4 text-primary" />
+              Personalizar Pomodoro
+            </DialogTitle>
+            <DialogDescription>
+              Defina a duração de cada etapa. As alterações são salvas neste dispositivo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="focus-min">Tempo de foco (min)</Label>
+              <Input
+                id="focus-min"
+                type="number"
+                min={1}
+                max={120}
+                value={draftSettings.focusMinutes}
+                onChange={(e) => setDraftSettings((s) => ({ ...s, focusMinutes: Number(e.target.value) }))}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="short-break">Descanso entre blocos (min)</Label>
+              <Input
+                id="short-break"
+                type="number"
+                min={1}
+                max={60}
+                value={draftSettings.shortBreakMinutes}
+                onChange={(e) => setDraftSettings((s) => ({ ...s, shortBreakMinutes: Number(e.target.value) }))}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="long-break">Descanso longo (min)</Label>
+              <Input
+                id="long-break"
+                type="number"
+                min={1}
+                max={60}
+                value={draftSettings.longBreakMinutes}
+                onChange={(e) => setDraftSettings((s) => ({ ...s, longBreakMinutes: Number(e.target.value) }))}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="blocks-count">Blocos até o descanso longo</Label>
+              <Input
+                id="blocks-count"
+                type="number"
+                min={2}
+                max={12}
+                value={draftSettings.blocksBeforeLongBreak}
+                onChange={(e) => setDraftSettings((s) => ({ ...s, blocksBeforeLongBreak: Number(e.target.value) }))}
+              />
+            </div>
+            {isRunning && (
+              <p className="text-xs text-warning">
+                As novas durações serão aplicadas a partir do próximo bloco.
+              </p>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setDraftSettings(DEFAULT_POMODORO_SETTINGS)}
+            >
+              Restaurar padrão
+            </Button>
+            <Button onClick={saveSettings}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
