@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, MessageCircle, Users, Trash2, LogOut, Radio } from "lucide-react";
+import { ArrowLeft, MessageCircle, Users, Trash2, LogOut, Radio, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -10,14 +11,18 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getStudyGroup, listGroupMembers, deleteGroup, leaveGroup } from "@/services/studyGroups";
+import { getStudyGroup, listGroupMembers, deleteGroup, leaveGroup, updateGroupName } from "@/services/studyGroups";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import MembersPanel from "@/components/study-groups/MembersPanel";
 import StudyGroupChat from "@/components/study-groups/StudyGroupChat";
 import StudyStatusPanel from "@/components/study-groups/StudyStatusPanel";
+
 
 export default function StudyGroupDetail() {
   const { id } = useParams<{ id: string }>();
