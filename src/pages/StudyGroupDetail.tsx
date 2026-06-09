@@ -131,6 +131,28 @@ export default function StudyGroupDetail() {
     }
   };
 
+  const openEditName = () => {
+    if (!group) return;
+    setNewName(group.name);
+    setEditOpen(true);
+  };
+
+  const handleSaveName = async () => {
+    if (!group) return;
+    try {
+      setSavingName(true);
+      const saved = await updateGroupName(group.id, newName);
+      qc.setQueryData(["study-group", id], (prev: any) => prev ? { ...prev, name: saved } : prev);
+      qc.invalidateQueries({ queryKey: ["study-group", id] });
+      toast.success("Nome atualizado");
+      setEditOpen(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao atualizar nome");
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   if (loadingGroup || loadingMembers) {
     return (
       <div className="container mx-auto p-4 space-y-4">
