@@ -218,6 +218,32 @@ export default function StudyGroupDetail() {
         </AlertDialog>
       </header>
 
+      {/* Edit name dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar nome do grupo</DialogTitle>
+            <DialogDescription>Defina um novo nome para este grupo de estudos.</DialogDescription>
+          </DialogHeader>
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Nome do grupo"
+            maxLength={80}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newName.trim() && !savingName) handleSaveName();
+            }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveName} disabled={!newName.trim() || savingName}>
+              {savingName ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       {/* Body */}
       <div className="flex-1 min-h-0">
         {isMobile ? (
