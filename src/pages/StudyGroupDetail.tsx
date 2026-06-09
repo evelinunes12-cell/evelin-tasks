@@ -186,6 +186,11 @@ export default function StudyGroupDetail() {
             <p className="text-xs text-muted-foreground truncate">{group.description}</p>
           )}
         </div>
+        {isAdmin && (
+          <Button size="icon" variant="ghost" title="Editar nome" onClick={openEditName}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button size="icon" variant="ghost" title={isAdmin ? "Apagar grupo" : "Sair do grupo"}>
