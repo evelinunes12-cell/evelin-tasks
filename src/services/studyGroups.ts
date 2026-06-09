@@ -290,6 +290,39 @@ export async function leaveGroup(memberId: string) {
   invalidateGroupPreviewCache(row?.group_id);
 }
 
+export async function updateGroupName(groupId: string, name: string) {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error("Não autenticado");
+
+  const trimmedName = normalizeStudyGroupName(name);
+  if (!trimmedName) throw new Error("Informe um nome para o grupo");
+  if (trimmedName.length > 80) throw new Error("Nome deve ter no máximo 80 caracteres");
+
+  // Pre-check: avoid duplicate name (case-insensitive) for the same creator
+  const { data: existing } = await supabase
+    .from("study_groups")
+    .select("id")
+    .eq("created_by", auth.user.id)
+    .ilike("name", trimmedName)
+    .neq("id", groupId)
+    .maybeSingle();
+  if (existing) {
+    throw new Error("Você já tem um grupo com esse nome");
+  }
+
+  const { error } = await supabase
+    .from("study_groups")
+    .update({ name: trimmedName })
+    .eq("id", groupId);
+  if (error) {
+    if (error.code === "23505") throw new Error("Você já tem um grupo com esse nome");
+    throw error;
+  }
+
+  invalidateGroupPreviewCache(groupId);
+  return trimmedName;
+}
+
 export async function deleteGroup(groupId: string) {
   const { error } = await supabase.from("study_groups").delete().eq("id", groupId);
   if (error) throw error;

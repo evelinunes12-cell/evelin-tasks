@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, MessageCircle, Users, Trash2, LogOut, Radio } from "lucide-react";
+import { ArrowLeft, MessageCircle, Users, Trash2, LogOut, Radio, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -10,14 +11,18 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getStudyGroup, listGroupMembers, deleteGroup, leaveGroup } from "@/services/studyGroups";
+import { getStudyGroup, listGroupMembers, deleteGroup, leaveGroup, updateGroupName } from "@/services/studyGroups";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import MembersPanel from "@/components/study-groups/MembersPanel";
 import StudyGroupChat from "@/components/study-groups/StudyGroupChat";
 import StudyStatusPanel from "@/components/study-groups/StudyStatusPanel";
+
 
 export default function StudyGroupDetail() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +30,9 @@ export default function StudyGroupDetail() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const qc = useQueryClient();
+  const [editOpen, setEditOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   const { data: group, isLoading: loadingGroup } = useQuery({
     queryKey: ["study-group", id],
@@ -123,6 +131,28 @@ export default function StudyGroupDetail() {
     }
   };
 
+  const openEditName = () => {
+    if (!group) return;
+    setNewName(group.name);
+    setEditOpen(true);
+  };
+
+  const handleSaveName = async () => {
+    if (!group) return;
+    try {
+      setSavingName(true);
+      const saved = await updateGroupName(group.id, newName);
+      qc.setQueryData(["study-group", id], (prev: any) => prev ? { ...prev, name: saved } : prev);
+      qc.invalidateQueries({ queryKey: ["study-group", id] });
+      toast.success("Nome atualizado");
+      setEditOpen(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao atualizar nome");
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   if (loadingGroup || loadingMembers) {
     return (
       <div className="container mx-auto p-4 space-y-4">
@@ -156,6 +186,11 @@ export default function StudyGroupDetail() {
             <p className="text-xs text-muted-foreground truncate">{group.description}</p>
           )}
         </div>
+        {isAdmin && (
+          <Button size="icon" variant="ghost" title="Editar nome" onClick={openEditName}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button size="icon" variant="ghost" title={isAdmin ? "Apagar grupo" : "Sair do grupo"}>
@@ -182,6 +217,32 @@ export default function StudyGroupDetail() {
           </AlertDialogContent>
         </AlertDialog>
       </header>
+
+      {/* Edit name dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar nome do grupo</DialogTitle>
+            <DialogDescription>Defina um novo nome para este grupo de estudos.</DialogDescription>
+          </DialogHeader>
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Nome do grupo"
+            maxLength={80}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newName.trim() && !savingName) handleSaveName();
+            }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveName} disabled={!newName.trim() || savingName}>
+              {savingName ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Body */}
       <div className="flex-1 min-h-0">
