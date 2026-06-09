@@ -30,6 +30,9 @@ export default function StudyGroupDetail() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const qc = useQueryClient();
+  const [editOpen, setEditOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   const { data: group, isLoading: loadingGroup } = useQuery({
     queryKey: ["study-group", id],
