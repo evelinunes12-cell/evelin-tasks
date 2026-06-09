@@ -197,16 +197,16 @@ export const NotificationBell = () => {
                     onClick={() => handleNotificationClick(notification)}
                     className="flex flex-col items-start gap-1 text-left flex-1 min-w-0"
                   >
-                    <div className="flex items-center gap-2 w-full">
-                      <span className="font-medium text-sm flex-1 truncate">
+                    <div className="flex items-start gap-2 w-full">
+                      <span className="font-medium text-sm flex-1 min-w-0 break-words">
                         {notification.title}
                       </span>
                       {!notification.read && (
-                        <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                        <div className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />
                       )}
                     </div>
                     {notification.message && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">
+                      <p className="text-xs text-muted-foreground break-words whitespace-pre-wrap">
                         {notification.message}
                       </p>
                     )}
