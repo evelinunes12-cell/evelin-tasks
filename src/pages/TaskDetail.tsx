@@ -105,6 +105,7 @@ const TaskDetail = () => {
   const [steps, setSteps] = useState<TaskStep[]>([]);
   const [stepAttachments, setStepAttachments] = useState<Record<string, Attachment[]>>({});
   const [linkedNotes, setLinkedNotes] = useState<{ id: string; title: string; planned_date: string | null }[]>([]);
+  const [assignees, setAssignees] = useState<TaskAssignee[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
