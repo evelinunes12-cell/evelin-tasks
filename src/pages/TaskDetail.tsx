@@ -218,6 +218,7 @@ const TaskDetail = () => {
       fetchAttachments();
       fetchSteps();
       fetchLinkedNotes();
+      fetchAssignees();
       fetchSubjects().then((subs) => {
         setSubjects(subs);
       }).catch(() => {});
