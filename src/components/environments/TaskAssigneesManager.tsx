@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Check, Lock, UserPlus, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import {
   fetchAssignableMembers,
   type AssignableMember,
@@ -127,7 +127,7 @@ export default function TaskAssigneesManager({
                 className="h-8"
               />
             </div>
-            <ScrollArea className="max-h-64">
+            <div className="max-h-64 overflow-y-auto overscroll-contain">
               {loading ? (
                 <p className="text-xs text-muted-foreground p-3">Carregando...</p>
               ) : filtered.length === 0 ? (
@@ -171,7 +171,7 @@ export default function TaskAssigneesManager({
                   })}
                 </ul>
               )}
-            </ScrollArea>
+            </div>
           </PopoverContent>
         </Popover>
       </div>
