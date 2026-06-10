@@ -9,6 +9,8 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { fetchTaskAssignees, type TaskAssignee } from "@/services/taskAssignees";
 import { useToast } from "@/hooks/use-toast";
 import { logError } from "@/lib/logger";
 import { registerActivity } from "@/services/activity";
@@ -103,6 +105,7 @@ const TaskDetail = () => {
   const [steps, setSteps] = useState<TaskStep[]>([]);
   const [stepAttachments, setStepAttachments] = useState<Record<string, Attachment[]>>({});
   const [linkedNotes, setLinkedNotes] = useState<{ id: string; title: string; planned_date: string | null }[]>([]);
+  const [assignees, setAssignees] = useState<TaskAssignee[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
@@ -215,6 +218,7 @@ const TaskDetail = () => {
       fetchAttachments();
       fetchSteps();
       fetchLinkedNotes();
+      fetchAssignees();
       fetchSubjects().then((subs) => {
         setSubjects(subs);
       }).catch(() => {});
@@ -234,6 +238,16 @@ const TaskDetail = () => {
       }
     } catch (error) {
       logError("Error fetching linked notes", error);
+    }
+  };
+
+  const fetchAssignees = async () => {
+    if (!id) return;
+    try {
+      const data = await fetchTaskAssignees(id);
+      setAssignees(data);
+    } catch (error) {
+      logError("Error fetching task assignees", error);
     }
   };
 
@@ -669,8 +683,44 @@ const TaskDetail = () => {
                   </div>
                 </div>
               )}
+              {assignees.length > 0 && (
+                <div className="flex items-start gap-2 pt-2 border-t">
+                  <Users className="w-4 h-4 text-muted-foreground mt-1 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium mb-2">Membros vinculados</p>
+                    <div className="flex flex-wrap gap-2">
+                      {assignees.map((a) => {
+                        const name = a.full_name || a.username || a.email || "Usuário";
+                        const initials = name
+                          .split(/\s+/)
+                          .map((p) => p[0])
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase();
+                        return (
+                          <Badge
+                            key={a.user_id}
+                            variant="secondary"
+                            className="gap-2 pl-1 pr-2 py-1"
+                          >
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={a.avatar_url || undefined} />
+                              <AvatarFallback className="text-[9px]">
+                                {initials}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="truncate max-w-[160px]">{name}</span>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+
 
           <Card>
             <CardHeader className="pb-3">
