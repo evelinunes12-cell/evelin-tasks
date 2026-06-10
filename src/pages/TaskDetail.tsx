@@ -241,6 +241,16 @@ const TaskDetail = () => {
     }
   };
 
+  const fetchAssignees = async () => {
+    if (!id) return;
+    try {
+      const data = await fetchTaskAssignees(id);
+      setAssignees(data);
+    } catch (error) {
+      logError("Error fetching task assignees", error);
+    }
+  };
+
   // Função para garantir que itens do checklist tenham IDs
   const ensureChecklistIds = (checklist: any[]): ChecklistItem[] => {
     if (!checklist || !Array.isArray(checklist)) return [];
