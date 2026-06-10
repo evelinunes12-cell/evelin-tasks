@@ -683,8 +683,44 @@ const TaskDetail = () => {
                   </div>
                 </div>
               )}
+              {assignees.length > 0 && (
+                <div className="flex items-start gap-2 pt-2 border-t">
+                  <Users className="w-4 h-4 text-muted-foreground mt-1 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium mb-2">Membros vinculados</p>
+                    <div className="flex flex-wrap gap-2">
+                      {assignees.map((a) => {
+                        const name = a.full_name || a.username || a.email || "Usuário";
+                        const initials = name
+                          .split(/\s+/)
+                          .map((p) => p[0])
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase();
+                        return (
+                          <Badge
+                            key={a.user_id}
+                            variant="secondary"
+                            className="gap-2 pl-1 pr-2 py-1"
+                          >
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={a.avatar_url || undefined} />
+                              <AvatarFallback className="text-[9px]">
+                                {initials}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="truncate max-w-[160px]">{name}</span>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+
 
           <Card>
             <CardHeader className="pb-3">
