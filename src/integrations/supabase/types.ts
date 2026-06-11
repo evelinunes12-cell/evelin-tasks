@@ -479,6 +479,7 @@ export type Database = {
           expires_at: string
           id: string
           max_uses: number | null
+          permissions: Database["public"]["Enums"]["environment_permission"][]
           revoked: boolean
           token: string
           type: string
@@ -491,6 +492,7 @@ export type Database = {
           expires_at?: string
           id?: string
           max_uses?: number | null
+          permissions?: Database["public"]["Enums"]["environment_permission"][]
           revoked?: boolean
           token?: string
           type: string
@@ -503,6 +505,7 @@ export type Database = {
           expires_at?: string
           id?: string
           max_uses?: number | null
+          permissions?: Database["public"]["Enums"]["environment_permission"][]
           revoked?: boolean
           token?: string
           type?: string
