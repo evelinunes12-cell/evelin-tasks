@@ -11,6 +11,7 @@ export interface Invite {
   uses_count: number;
   revoked: boolean;
   created_at: string;
+  permissions?: string[];
 }
 
 export interface InviteUse {
@@ -38,10 +39,14 @@ export interface InviteConsumption {
 export const createGroupInvite = async (
   environmentId: string,
   createdBy: string,
-  options?: { maxUses?: number; expiresInDays?: number }
+  options?: { maxUses?: number; expiresInDays?: number; permissions?: string[] }
 ): Promise<Invite> => {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + (options?.expiresInDays || 7));
+
+  const permissions = options?.permissions?.length
+    ? Array.from(new Set([...options.permissions, "view"]))
+    : ["view"];
 
   const { data, error } = await supabase
     .from("invites")
@@ -51,6 +56,7 @@ export const createGroupInvite = async (
       created_by: createdBy,
       max_uses: options?.maxUses ?? 0, // 0 = unlimited
       expires_at: expiresAt.toISOString(),
+      permissions: permissions as any,
     })
     .select()
     .single();
