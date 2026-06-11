@@ -61,6 +61,7 @@ const InviteManager = ({ environmentId, isOwner, onMemberAdded }: InviteManagerP
   const [isUnlimited, setIsUnlimited] = useState(true);
   const [maxUses, setMaxUses] = useState(1);
   const [expiresInDays, setExpiresInDays] = useState(7);
+  const [linkPermissions, setLinkPermissions] = useState<string[]>(["view"]);
 
   // Add member form state
   const [inviteTarget, setInviteTarget] = useState("");
@@ -77,6 +78,13 @@ const InviteManager = ({ environmentId, isOwner, onMemberAdded }: InviteManagerP
   const handleToggleNewMemberPermission = (perm: string) => {
     if (perm === "view") return;
     setNewMemberPermissions(prev =>
+      prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]
+    );
+  };
+
+  const handleToggleLinkPermission = (perm: string) => {
+    if (perm === "view") return;
+    setLinkPermissions(prev =>
       prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]
     );
   };
