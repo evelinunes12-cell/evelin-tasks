@@ -61,6 +61,7 @@ const InviteManager = ({ environmentId, isOwner, onMemberAdded }: InviteManagerP
   const [isUnlimited, setIsUnlimited] = useState(true);
   const [maxUses, setMaxUses] = useState(1);
   const [expiresInDays, setExpiresInDays] = useState(7);
+  const [linkPermissions, setLinkPermissions] = useState<string[]>(["view"]);
 
   // Add member form state
   const [inviteTarget, setInviteTarget] = useState("");
@@ -77,6 +78,13 @@ const InviteManager = ({ environmentId, isOwner, onMemberAdded }: InviteManagerP
   const handleToggleNewMemberPermission = (perm: string) => {
     if (perm === "view") return;
     setNewMemberPermissions(prev =>
+      prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]
+    );
+  };
+
+  const handleToggleLinkPermission = (perm: string) => {
+    if (perm === "view") return;
+    setLinkPermissions(prev =>
       prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]
     );
   };
@@ -181,10 +189,12 @@ const InviteManager = ({ environmentId, isOwner, onMemberAdded }: InviteManagerP
       const invite = await createGroupInvite(environmentId, user.id, {
         maxUses: isUnlimited ? 0 : maxUses,
         expiresInDays,
+        permissions: linkPermissions,
       });
 
       setInvites((prev) => [invite, ...prev]);
       setShowLinkDialog(false);
+      setLinkPermissions(["view"]);
       toast.success("Link de convite criado!");
 
       const link = buildInviteLink(invite.token);
@@ -349,6 +359,25 @@ const InviteManager = ({ environmentId, isOwner, onMemberAdded }: InviteManagerP
                   value={expiresInDays}
                   onChange={(e) => setExpiresInDays(Math.max(1, Math.min(90, parseInt(e.target.value) || 7)))}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Permissões dos novos membros</Label>
+                <div className="flex flex-wrap gap-4">
+                  {ALL_PERMISSIONS.map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={linkPermissions.includes(key)}
+                        disabled={key === "view"}
+                        onCheckedChange={() => handleToggleLinkPermission(key)}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Aplicadas a todos que entrarem por este link. "Ver" é sempre obrigatória.
+                </p>
               </div>
             </div>
             <DialogFooter>

@@ -266,6 +266,33 @@ const EnvironmentDetail = () => {
     }
   };
 
+  // Flattened list of selectable status names (leaf statuses)
+  const availableStatusNames = hierarchicalStatuses.flatMap((parent) => {
+    const childNames = parent.children?.map((c) => c.name) || [];
+    return childNames.length > 0 ? childNames : [parent.name];
+  });
+
+  const handleStatusChange = async (taskId: string, newStatus: string) => {
+    const previous = tasks.find((t) => t.id === taskId)?.status;
+    // Optimistic update
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: newStatus })
+        .eq("id", taskId);
+      if (error) throw error;
+      toast.success("Status atualizado!");
+    } catch (error) {
+      logError("Error updating task status", error);
+      toast.error("Erro ao atualizar status");
+      // Revert on failure
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId && previous !== undefined ? { ...t, status: previous } : t))
+      );
+    }
+  };
+
   const handleDeleteTask = async (taskId: string) => {
     try {
       const { error } = await supabase.from("tasks").delete().eq("id", taskId);
@@ -556,6 +583,8 @@ const EnvironmentDetail = () => {
                                             status={task.status}
                                             checklist={task.checklist}
                                             assignees={assigneesByTask[task.id] || []}
+                                            availableStatuses={availableStatusNames}
+                                            onStatusChange={handleStatusChange}
                                             onDelete={handleDeleteTask}
                                           />
                                         ))}
@@ -578,6 +607,8 @@ const EnvironmentDetail = () => {
                                     status={task.status}
                                     checklist={task.checklist}
                                             assignees={assigneesByTask[task.id] || []}
+                                    availableStatuses={availableStatusNames}
+                                    onStatusChange={handleStatusChange}
                                     onDelete={handleDeleteTask}
                                   />
                                 ))}
@@ -616,6 +647,8 @@ const EnvironmentDetail = () => {
                               status={task.status}
                               checklist={task.checklist}
                                             assignees={assigneesByTask[task.id] || []}
+                              availableStatuses={availableStatusNames}
+                              onStatusChange={handleStatusChange}
                               onDelete={handleDeleteTask}
                             />
                           ))}
@@ -638,6 +671,8 @@ const EnvironmentDetail = () => {
                     status={task.status}
                     checklist={task.checklist}
                                             assignees={assigneesByTask[task.id] || []}
+                    availableStatuses={availableStatusNames}
+                    onStatusChange={handleStatusChange}
                     onDelete={handleDeleteTask}
                   />
                 ))}
