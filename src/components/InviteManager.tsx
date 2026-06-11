@@ -189,10 +189,12 @@ const InviteManager = ({ environmentId, isOwner, onMemberAdded }: InviteManagerP
       const invite = await createGroupInvite(environmentId, user.id, {
         maxUses: isUnlimited ? 0 : maxUses,
         expiresInDays,
+        permissions: linkPermissions,
       });
 
       setInvites((prev) => [invite, ...prev]);
       setShowLinkDialog(false);
+      setLinkPermissions(["view"]);
       toast.success("Link de convite criado!");
 
       const link = buildInviteLink(invite.token);
