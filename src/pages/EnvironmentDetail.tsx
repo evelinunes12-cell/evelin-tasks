@@ -583,6 +583,8 @@ const EnvironmentDetail = () => {
                                             status={task.status}
                                             checklist={task.checklist}
                                             assignees={assigneesByTask[task.id] || []}
+                                            availableStatuses={availableStatusNames}
+                                            onStatusChange={handleStatusChange}
                                             onDelete={handleDeleteTask}
                                           />
                                         ))}
@@ -605,6 +607,8 @@ const EnvironmentDetail = () => {
                                     status={task.status}
                                     checklist={task.checklist}
                                             assignees={assigneesByTask[task.id] || []}
+                                    availableStatuses={availableStatusNames}
+                                    onStatusChange={handleStatusChange}
                                     onDelete={handleDeleteTask}
                                   />
                                 ))}
@@ -643,6 +647,8 @@ const EnvironmentDetail = () => {
                               status={task.status}
                               checklist={task.checklist}
                                             assignees={assigneesByTask[task.id] || []}
+                              availableStatuses={availableStatusNames}
+                              onStatusChange={handleStatusChange}
                               onDelete={handleDeleteTask}
                             />
                           ))}
@@ -665,6 +671,8 @@ const EnvironmentDetail = () => {
                     status={task.status}
                     checklist={task.checklist}
                                             assignees={assigneesByTask[task.id] || []}
+                    availableStatuses={availableStatusNames}
+                    onStatusChange={handleStatusChange}
                     onDelete={handleDeleteTask}
                   />
                 ))}
