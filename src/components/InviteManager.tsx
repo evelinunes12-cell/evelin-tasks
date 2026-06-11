@@ -360,6 +360,25 @@ const InviteManager = ({ environmentId, isOwner, onMemberAdded }: InviteManagerP
                   onChange={(e) => setExpiresInDays(Math.max(1, Math.min(90, parseInt(e.target.value) || 7)))}
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label>Permissões dos novos membros</Label>
+                <div className="flex flex-wrap gap-4">
+                  {ALL_PERMISSIONS.map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={linkPermissions.includes(key)}
+                        disabled={key === "view"}
+                        onCheckedChange={() => handleToggleLinkPermission(key)}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Aplicadas a todos que entrarem por este link. "Ver" é sempre obrigatória.
+                </p>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowLinkDialog(false)}>
