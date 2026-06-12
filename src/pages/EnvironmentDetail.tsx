@@ -303,11 +303,56 @@ const EnvironmentDetail = () => {
 
       if (error) throw error;
 
-      setTasks(tasks.filter((t) => t.id !== taskId));
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setArchivedTasks((prev) => prev.filter((t) => t.id !== taskId));
       toast.success("Tarefa excluída com sucesso!");
     } catch (error) {
       logError("Error deleting task", error);
       toast.error("Erro ao excluir tarefa");
+    }
+  };
+
+  const handleArchiveTask = async (taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    // Optimistic update
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    setArchivedTasks((prev) => [{ ...task, is_archived: true }, ...prev]);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ is_archived: true })
+        .eq("id", taskId);
+      if (error) throw error;
+      toast.success("Tarefa arquivada!");
+    } catch (error) {
+      logError("Error archiving task", error);
+      toast.error("Erro ao arquivar tarefa");
+      // Revert
+      setArchivedTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setTasks((prev) => [task, ...prev]);
+    }
+  };
+
+  const handleUnarchiveTask = async (taskId: string) => {
+    const task = archivedTasks.find((t) => t.id === taskId);
+    if (!task) return;
+    // Optimistic update
+    setArchivedTasks((prev) => prev.filter((t) => t.id !== taskId));
+    setTasks((prev) => [{ ...task, is_archived: false }, ...prev]);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ is_archived: false })
+        .eq("id", taskId);
+      if (error) throw error;
+      toast.success("Tarefa restaurada!");
+    } catch (error) {
+      logError("Error unarchiving task", error);
+      toast.error("Erro ao restaurar tarefa");
+      // Revert
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setArchivedTasks((prev) => [task, ...prev]);
     }
   };
 
