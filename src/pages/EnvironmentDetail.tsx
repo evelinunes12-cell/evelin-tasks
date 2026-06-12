@@ -52,6 +52,7 @@ interface Task {
   is_group_work: boolean;
   status: string;
   checklist: any;
+  is_archived?: boolean;
 }
 
 interface Member {
