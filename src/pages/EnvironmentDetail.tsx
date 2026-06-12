@@ -487,6 +487,15 @@ const EnvironmentDetail = () => {
               Chat
             </TabsTrigger>
             <TabsTrigger value="members">Membros</TabsTrigger>
+            <TabsTrigger value="archived">
+              <Archive className="w-4 h-4 mr-1" />
+              Arquivadas
+              {archivedTasks.length > 0 && (
+                <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-xs">
+                  {archivedTasks.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="history">
               <History className="w-4 h-4 mr-1" />
               Histórico
