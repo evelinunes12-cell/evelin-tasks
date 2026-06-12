@@ -34,6 +34,7 @@ const ArchivedTasks = lazy(() => import("./pages/ArchivedTasks"));
 const Planner = lazy(() => import("./pages/Planner"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Support = lazy(() => import("./pages/Support"));
 const InvitePage = lazy(() => import("./pages/InvitePage"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminBanners = lazy(() => import("./pages/AdminBanners"));
