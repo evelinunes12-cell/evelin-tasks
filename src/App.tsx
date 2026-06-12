@@ -145,6 +145,7 @@ const App = () => {
                         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
                         <Route path="/onboarding" element={<ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>} />
                         <Route path="/invite/:token" element={<PageTransition><InvitePage /></PageTransition>} />
+                        <Route path="/apoie" element={<PageTransition><Support /></PageTransition>} />
                         <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
                         <Route path="/subjects" element={<ProtectedRoute><PageTransition><Subjects /></PageTransition></ProtectedRoute>} />
                         <Route path="/task-statuses" element={<ProtectedRoute><PageTransition><TaskStatuses /></PageTransition></ProtectedRoute>} />
