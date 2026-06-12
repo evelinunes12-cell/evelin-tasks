@@ -237,7 +237,9 @@ const EnvironmentDetail = () => {
         .order("created_at", { ascending: false });
 
       if (tasksError) throw tasksError;
-      setTasks(tasksData || []);
+      const allTasks = tasksData || [];
+      setTasks(allTasks.filter((t) => !t.is_archived));
+      setArchivedTasks(allTasks.filter((t) => t.is_archived));
 
       // Fetch assignees for all tasks (only meaningful for environment tasks)
       try {
