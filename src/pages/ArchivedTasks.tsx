@@ -66,6 +66,7 @@ const ArchivedTasks = () => {
         .from("tasks")
         .select("*")
         .eq("is_archived", true)
+        .is("environment_id", null)
         .order("updated_at", { ascending: false });
       
       if (error) throw error;
