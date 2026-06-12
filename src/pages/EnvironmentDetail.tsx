@@ -723,6 +723,7 @@ const EnvironmentDetail = () => {
                     availableStatuses={availableStatusNames}
                     onStatusChange={handleStatusChange}
                     onDelete={handleDeleteTask}
+                    onArchive={handleArchiveTask}
                   />
                 ))}
               </div>
