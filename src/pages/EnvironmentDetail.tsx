@@ -777,7 +777,12 @@ const EnvironmentDetail = () => {
                       {task.due_date && (
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Calendar className="w-4 h-4" />
-                          <span>{task.due_date}</span>
+                          <span>
+                            {(() => {
+                              const [y, m, d] = task.due_date.split("-").map(Number);
+                              return format(new Date(y, m - 1, d), "dd 'de' MMMM", { locale: ptBR });
+                            })()}
+                          </span>
                         </div>
                       )}
                     </CardContent>
