@@ -9,13 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History, Clock, Pencil, X, Save, MessageCircle, Lock } from "lucide-react";
+import { Settings, Plus, Users, Trash2, ChevronDown, ChevronRight, History, Clock, Pencil, X, Save, MessageCircle, Lock, Archive, ArchiveRestore, Eye, Calendar } from "lucide-react";
 import EnvironmentChat from "@/components/environments/EnvironmentChat";
 import { LogOut } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import EnvironmentActivityTimeline from "@/components/EnvironmentActivityTimeline";
 import InviteManager from "@/components/InviteManager";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { logError } from "@/lib/logger";
 import { fetchEnvironmentStatusesHierarchical, type EnvironmentStatus } from "@/services/environmentData";
 import { fetchAssigneesForTasks, type TaskAssignee } from "@/services/taskAssignees";
@@ -52,6 +54,7 @@ interface Task {
   is_group_work: boolean;
   status: string;
   checklist: any;
+  is_archived?: boolean;
 }
 
 interface Member {
@@ -72,6 +75,7 @@ const EnvironmentDetail = () => {
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [ownerProfile, setOwnerProfile] = useState<{ username?: string | null; full_name?: string | null; avatar_url?: string | null; email?: string } | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [archivedTasks, setArchivedTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [assigneesByTask, setAssigneesByTask] = useState<Record<string, TaskAssignee[]>>({});
   const [hierarchicalStatuses, setHierarchicalStatuses] = useState<EnvironmentStatus[]>([]);
@@ -235,7 +239,9 @@ const EnvironmentDetail = () => {
         .order("created_at", { ascending: false });
 
       if (tasksError) throw tasksError;
-      setTasks(tasksData || []);
+      const allTasks = tasksData || [];
+      setTasks(allTasks.filter((t) => !t.is_archived));
+      setArchivedTasks(allTasks.filter((t) => t.is_archived));
 
       // Fetch assignees for all tasks (only meaningful for environment tasks)
       try {
@@ -299,11 +305,56 @@ const EnvironmentDetail = () => {
 
       if (error) throw error;
 
-      setTasks(tasks.filter((t) => t.id !== taskId));
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setArchivedTasks((prev) => prev.filter((t) => t.id !== taskId));
       toast.success("Tarefa excluída com sucesso!");
     } catch (error) {
       logError("Error deleting task", error);
       toast.error("Erro ao excluir tarefa");
+    }
+  };
+
+  const handleArchiveTask = async (taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    // Optimistic update
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    setArchivedTasks((prev) => [{ ...task, is_archived: true }, ...prev]);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ is_archived: true })
+        .eq("id", taskId);
+      if (error) throw error;
+      toast.success("Tarefa arquivada!");
+    } catch (error) {
+      logError("Error archiving task", error);
+      toast.error("Erro ao arquivar tarefa");
+      // Revert
+      setArchivedTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setTasks((prev) => [task, ...prev]);
+    }
+  };
+
+  const handleUnarchiveTask = async (taskId: string) => {
+    const task = archivedTasks.find((t) => t.id === taskId);
+    if (!task) return;
+    // Optimistic update
+    setArchivedTasks((prev) => prev.filter((t) => t.id !== taskId));
+    setTasks((prev) => [{ ...task, is_archived: false }, ...prev]);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ is_archived: false })
+        .eq("id", taskId);
+      if (error) throw error;
+      toast.success("Tarefa restaurada!");
+    } catch (error) {
+      logError("Error unarchiving task", error);
+      toast.error("Erro ao restaurar tarefa");
+      // Revert
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setArchivedTasks((prev) => [task, ...prev]);
     }
   };
 
@@ -438,6 +489,15 @@ const EnvironmentDetail = () => {
               Chat
             </TabsTrigger>
             <TabsTrigger value="members">Membros</TabsTrigger>
+            <TabsTrigger value="archived">
+              <Archive className="w-4 h-4 mr-1" />
+              Arquivadas
+              {archivedTasks.length > 0 && (
+                <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-xs">
+                  {archivedTasks.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="history">
               <History className="w-4 h-4 mr-1" />
               Histórico
@@ -586,6 +646,7 @@ const EnvironmentDetail = () => {
                                             availableStatuses={availableStatusNames}
                                             onStatusChange={handleStatusChange}
                                             onDelete={handleDeleteTask}
+                                            onArchive={handleArchiveTask}
                                           />
                                         ))}
                                       </div>
@@ -610,6 +671,7 @@ const EnvironmentDetail = () => {
                                     availableStatuses={availableStatusNames}
                                     onStatusChange={handleStatusChange}
                                     onDelete={handleDeleteTask}
+                                    onArchive={handleArchiveTask}
                                   />
                                 ))}
                               </div>
@@ -650,6 +712,7 @@ const EnvironmentDetail = () => {
                               availableStatuses={availableStatusNames}
                               onStatusChange={handleStatusChange}
                               onDelete={handleDeleteTask}
+                              onArchive={handleArchiveTask}
                             />
                           ))}
                         </div>
@@ -674,11 +737,110 @@ const EnvironmentDetail = () => {
                     availableStatuses={availableStatusNames}
                     onStatusChange={handleStatusChange}
                     onDelete={handleDeleteTask}
+                    onArchive={handleArchiveTask}
                   />
                 ))}
               </div>
             )}
           </TabsContent>
+
+          <TabsContent value="archived" className="space-y-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Archive className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-xl font-semibold">Tarefas Arquivadas do Grupo</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Tarefas concluídas são arquivadas automaticamente após 10 dias. Elas ficam guardadas aqui, separadas do arquivo pessoal de cada membro.
+            </p>
+
+            {archivedTasks.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Archive className="w-12 h-12 text-muted-foreground/50 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Nenhuma tarefa arquivada</h3>
+                  <p className="text-muted-foreground text-center">
+                    Quando uma tarefa for arquivada manualmente ou automaticamente, aparecerá aqui.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {archivedTasks.map((task) => (
+                  <Card key={task.id} className="flex flex-col">
+                    <CardContent className="pt-6 flex-1">
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <h3 className="font-semibold text-lg text-foreground break-words min-w-0">
+                          {task.subject_name}
+                        </h3>
+                        <Badge variant="secondary" className="shrink-0">{task.status}</Badge>
+                      </div>
+                      {task.due_date && (
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          <span>
+                            {(() => {
+                              const [y, m, d] = task.due_date.split("-").map(Number);
+                              return format(new Date(y, m - 1, d), "dd 'de' MMMM", { locale: ptBR });
+                            })()}
+                          </span>
+                        </div>
+                      )}
+                    </CardContent>
+                    <CardContent className="flex gap-2 pt-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/task/${task.id}`)}
+                        className="flex-1 gap-2"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Ver
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleUnarchiveTask(task.id)}
+                        className="flex-1 gap-2"
+                      >
+                        <ArchiveRestore className="w-4 h-4" />
+                        Restaurar
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir permanentemente?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação não pode ser desfeita. A tarefa "{task.subject_name}" será excluída permanentemente do grupo.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+
 
           <TabsContent value="members" className="space-y-6">
             <div className="flex justify-between items-center">
