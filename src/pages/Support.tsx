@@ -16,6 +16,10 @@ const Support = () => {
     "00020126500014br.gov.bcb.pix0111031539872890213Ajude o Zenit52040000530398654045.005802BR5925EVELIN CRISTINE DE OLIVEI6006MACAPA62580520SAN2026010812431328150300017br.gov.bcb.brcode01051.0.063045C5E";
   const beneficiaryName = "Evelin Cristine de Oliveira Nunes";
 
+  useEffect(() => {
+    document.title = "Apoie o Zenit | Doações via Pix";
+  }, []);
+
   const handleCopyPix = () => {
     navigator.clipboard.writeText(pixKey);
     setCopied(true);
@@ -25,15 +29,6 @@ const Support = () => {
 
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6">
-      <Helmet>
-        <title>Apoie o Zenit | Doações via Pix</title>
-        <meta
-          name="description"
-          content="Apoie o Zenit com uma doação via Pix e ajude a manter um app de produtividade gratuito para estudantes."
-        />
-        <link rel="canonical" href="https://zenit-io.lovable.app/apoie" />
-      </Helmet>
-
       <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
         <div className="flex items-center justify-between gap-3">
           <Button variant="ghost" size="sm" className="gap-2" onClick={() => navigate(-1)}>
