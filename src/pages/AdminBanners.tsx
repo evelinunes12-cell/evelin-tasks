@@ -61,19 +61,33 @@ const AdminBanners = () => {
     fetchBanners();
   }, [fetchBanners]);
 
-  const handleUpload = async (file: File) => {
+  const selectFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Apenas imagens são aceitas");
       return;
     }
+    setSelectedFile(file);
+  };
+
+  const handleSave = async () => {
+    if (!selectedFile) {
+      toast.error("Selecione uma imagem para o banner");
+      return;
+    }
+
+    const normalizedLink = linkUrl.trim();
+    if (normalizedLink && !/^https?:\/\//i.test(normalizedLink)) {
+      toast.error("O link deve começar com http:// ou https://");
+      return;
+    }
 
     setUploading(true);
-    const fileExt = file.name.split(".").pop();
+    const fileExt = selectedFile.name.split(".").pop();
     const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from("banners")
-      .upload(filePath, file);
+      .upload(filePath, selectedFile);
 
     if (uploadError) {
       toast.error("Erro ao fazer upload da imagem");
@@ -91,17 +105,20 @@ const AdminBanners = () => {
       .from("system_banners")
       .insert({
         image_url: publicUrlData.publicUrl,
-        title: title || null,
-        link_url: linkUrl || null,
+        title: title.trim() || null,
+        link_url: normalizedLink || null,
         display_order: maxOrder,
       });
 
     if (insertError) {
       toast.error("Erro ao salvar banner");
+      // Remove orphan file from storage
+      await supabase.storage.from("banners").remove([filePath]);
     } else {
       toast.success("Banner adicionado!");
       setTitle("");
       setLinkUrl("");
+      setSelectedFile(null);
       fetchBanners();
     }
     setUploading(false);
@@ -109,15 +126,17 @@ const AdminBanners = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) handleUpload(file);
+    if (file) selectFile(file);
+    e.target.value = "";
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) handleUpload(file);
+    if (file) selectFile(file);
   };
+
 
   const toggleActive = async (banner: Banner) => {
     const { error } = await supabase
