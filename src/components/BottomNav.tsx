@@ -13,7 +13,6 @@ const navItems = [
 export function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const studyGroupsUnread = useStudyGroupsUnreadTotal();
 
   const hiddenRoutes = ["/auth", "/onboarding", "/invite"];
   if (hiddenRoutes.some((r) => location.pathname.startsWith(r))) return null;
@@ -25,10 +24,9 @@ export function BottomNav() {
           const isActive =
             location.pathname === item.path ||
             (item.path === "/estudos/ciclo" && location.pathname.startsWith("/estudos")) ||
-            (item.path === "/grupos-de-estudo" && location.pathname.startsWith("/grupos-de-estudo")) ||
-            (item.path !== "/dashboard" && item.path !== "/estudos/ciclo" && item.path !== "/grupos-de-estudo" && location.pathname.startsWith(item.path));
+            (item.path !== "/dashboard" && item.path !== "/estudos/ciclo" && location.pathname.startsWith(item.path));
 
-          const unread = item.path === "/grupos-de-estudo" ? studyGroupsUnread : 0;
+          const unread = 0;
 
           return (
             <button
