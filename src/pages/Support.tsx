@@ -31,7 +31,7 @@ const Support = () => {
     <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6">
       <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
         <div className="flex items-center justify-between gap-3">
-          <Button variant="ghost" size="sm" className="gap-2" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="sm" className="gap-2" onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="w-4 h-4" />
             Voltar
           </Button>
