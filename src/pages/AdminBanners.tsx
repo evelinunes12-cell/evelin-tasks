@@ -30,6 +30,18 @@ const AdminBanners = () => {
   const [title, setTitle] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedFile) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(selectedFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [selectedFile]);
 
   const fetchBanners = useCallback(async () => {
     setLoading(true);
