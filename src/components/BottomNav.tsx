@@ -8,7 +8,6 @@ const navItems = [
   { label: "Início", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Planner", icon: Calendar, path: "/planner" },
   { label: "Estudos", icon: BookOpen, path: "/estudos/ciclo" },
-  { label: "Grupos", icon: GraduationCap, path: "/grupos-de-estudo" },
   { label: "Config", icon: Settings, path: "/settings" },
 ];
 
