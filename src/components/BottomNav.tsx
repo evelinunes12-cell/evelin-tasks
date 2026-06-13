@@ -1,8 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Calendar, BookOpen, GraduationCap, Settings } from "lucide-react";
+import { LayoutDashboard, Calendar, BookOpen, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { prefetchRoute } from "@/lib/routePrefetch";
-import { useStudyGroupsUnreadTotal } from "@/hooks/useStudyGroupsUnreadTotal";
 
 const navItems = [
   { label: "Início", icon: LayoutDashboard, path: "/dashboard" },
