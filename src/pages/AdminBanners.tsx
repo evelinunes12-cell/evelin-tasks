@@ -219,10 +219,20 @@ const AdminBanners = () => {
             dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
           }`}
         >
-          <ImagePlus className="h-10 w-10 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            {uploading ? "Enviando..." : "Arraste uma imagem ou clique para selecionar"}
-          </p>
+          {previewUrl ? (
+            <img
+              src={previewUrl}
+              alt="Pré-visualização do banner"
+              className="max-h-40 w-full rounded-md object-contain"
+            />
+          ) : (
+            <>
+              <ImagePlus className="h-10 w-10 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Arraste uma imagem ou clique para selecionar
+              </p>
+            </>
+          )}
           <input
             type="file"
             accept="image/*"
@@ -231,7 +241,30 @@ const AdminBanners = () => {
             className="absolute inset-0 opacity-0 cursor-pointer"
           />
         </div>
+
+        {selectedFile && (
+          <p className="text-xs text-muted-foreground truncate">
+            Selecionada: {selectedFile.name}
+          </p>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={handleSave} disabled={uploading || !selectedFile}>
+            {uploading ? "Salvando..." : "Adicionar banner"}
+          </Button>
+          {selectedFile && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setSelectedFile(null)}
+              disabled={uploading}
+            >
+              Remover imagem
+            </Button>
+          )}
+        </div>
       </div>
+
 
       {/* Banner list */}
       <div className="space-y-3">
