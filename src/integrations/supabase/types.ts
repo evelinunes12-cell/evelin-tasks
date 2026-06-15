@@ -1182,6 +1182,8 @@ export type Database = {
           display_order: number
           id: string
           image_url: string
+          image_url_mobile: string | null
+          image_url_tablet: string | null
           is_active: boolean
           link_url: string | null
           title: string | null
@@ -1191,6 +1193,8 @@ export type Database = {
           display_order?: number
           id?: string
           image_url: string
+          image_url_mobile?: string | null
+          image_url_tablet?: string | null
           is_active?: boolean
           link_url?: string | null
           title?: string | null
@@ -1200,6 +1204,8 @@ export type Database = {
           display_order?: number
           id?: string
           image_url?: string
+          image_url_mobile?: string | null
+          image_url_tablet?: string | null
           is_active?: boolean
           link_url?: string | null
           title?: string | null

@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 interface Banner {
   id: string;
   image_url: string;
+  image_url_tablet: string | null;
+  image_url_mobile: string | null;
   title: string | null;
   link_url: string | null;
 }
@@ -28,7 +30,7 @@ const DashboardBannerCarousel = () => {
     const fetchBanners = async () => {
       const { data } = await supabase
         .from("system_banners")
-        .select("id, image_url, title, link_url")
+        .select("id, image_url, image_url_tablet, image_url_mobile, title, link_url")
         .eq("is_active", true)
         .order("display_order", { ascending: true });
       setBanners((data as Banner[]) || []);
@@ -95,13 +97,26 @@ const DashboardBannerCarousel = () => {
           {banners.map(banner => (
             <CarouselItem key={banner.id}>
               <Wrapper banner={banner}>
-                <div className="relative w-full overflow-hidden rounded-xl aspect-[2.5/1] md:aspect-[5/1]">
-                  <img
-                    src={banner.image_url}
-                    alt={banner.title || "Banner"}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    loading="lazy"
-                  />
+                <div className="relative w-full overflow-hidden rounded-xl aspect-[2/1] md:aspect-[3/1] lg:aspect-[5/1]">
+                  <picture>
+                    {/* Mobile: < 768px */}
+                    <source
+                      media="(max-width: 767px)"
+                      srcSet={banner.image_url_mobile || banner.image_url}
+                    />
+                    {/* Tablet: 768px - 1023px */}
+                    <source
+                      media="(max-width: 1023px)"
+                      srcSet={banner.image_url_tablet || banner.image_url}
+                    />
+                    {/* Desktop: >= 1024px */}
+                    <img
+                      src={banner.image_url}
+                      alt={banner.title || "Banner"}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </picture>
                 </div>
               </Wrapper>
             </CarouselItem>
