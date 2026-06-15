@@ -343,6 +343,24 @@ const AdminBanners = () => {
                   checked={banner.is_active}
                   onCheckedChange={() => toggleActive(banner)}
                 />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setEditingBanner({
+                      id: banner.id,
+                      image_url: banner.image_url,
+                      image_url_tablet: banner.image_url_tablet,
+                      image_url_mobile: banner.image_url_mobile,
+                      title: banner.title,
+                      link_url: banner.link_url,
+                    });
+                    setEditOpen(true);
+                  }}
+                  aria-label="Editar banner"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
