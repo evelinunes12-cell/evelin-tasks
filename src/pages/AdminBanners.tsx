@@ -10,8 +10,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ImagePlus, Trash2, GripVertical, ShieldCheck, Link as LinkIcon, X, Monitor, Tablet, Smartphone } from "lucide-react";
+import { ImagePlus, Trash2, GripVertical, ShieldCheck, Link as LinkIcon, X, Monitor, Tablet, Smartphone, Pencil } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import BannerEditDialog, { type EditableBanner } from "@/components/admin/BannerEditDialog";
 
 interface Banner {
   id: string;
