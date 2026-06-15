@@ -30,7 +30,7 @@ const DashboardBannerCarousel = () => {
     const fetchBanners = async () => {
       const { data } = await supabase
         .from("system_banners")
-        .select("id, image_url, title, link_url")
+        .select("id, image_url, image_url_tablet, image_url_mobile, title, link_url")
         .eq("is_active", true)
         .order("display_order", { ascending: true });
       setBanners((data as Banner[]) || []);
