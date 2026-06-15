@@ -387,6 +387,13 @@ const AdminBanners = () => {
           ))
         )}
       </div>
+
+      <BannerEditDialog
+        banner={editingBanner}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSaved={fetchBanners}
+      />
     </div>
   );
 };
