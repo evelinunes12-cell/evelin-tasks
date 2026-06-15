@@ -10,18 +10,30 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ImagePlus, Trash2, GripVertical, ShieldCheck, Link as LinkIcon } from "lucide-react";
+import { ImagePlus, Trash2, GripVertical, ShieldCheck, Link as LinkIcon, X, Monitor, Tablet, Smartphone } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface Banner {
   id: string;
   created_at: string;
   image_url: string;
+  image_url_tablet: string | null;
+  image_url_mobile: string | null;
   title: string | null;
   link_url: string | null;
   display_order: number;
   is_active: boolean;
 }
+
+type DeviceKey = "desktop" | "tablet" | "mobile";
+
+const DEVICE_META: Record<DeviceKey, { label: string; hint: string; icon: typeof Monitor; required: boolean }> = {
+  desktop: { label: "Desktop", hint: "Recomendado: 1920 × 384 px (proporção 5:1)", icon: Monitor, required: true },
+  tablet: { label: "Tablet", hint: "Recomendado: 1280 × 400 px (proporção ~3:1)", icon: Tablet, required: false },
+  mobile: { label: "Celular", hint: "Recomendado: 800 × 400 px (proporção 2:1)", icon: Smartphone, required: false },
+};
+
+const DEVICE_ORDER: DeviceKey[] = ["desktop", "tablet", "mobile"];
 
 const AdminBanners = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -29,19 +41,31 @@ const AdminBanners = () => {
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
-  const [dragOver, setDragOver] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [files, setFiles] = useState<Record<DeviceKey, File | null>>({
+    desktop: null,
+    tablet: null,
+    mobile: null,
+  });
+  const [previews, setPreviews] = useState<Record<DeviceKey, string | null>>({
+    desktop: null,
+    tablet: null,
+    mobile: null,
+  });
 
   useEffect(() => {
-    if (!selectedFile) {
-      setPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(selectedFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [selectedFile]);
+    const urls: string[] = [];
+    const next: Record<DeviceKey, string | null> = { desktop: null, tablet: null, mobile: null };
+    (Object.keys(files) as DeviceKey[]).forEach(key => {
+      const file = files[key];
+      if (file) {
+        const url = URL.createObjectURL(file);
+        urls.push(url);
+        next[key] = url;
+      }
+    });
+    setPreviews(next);
+    return () => urls.forEach(u => URL.revokeObjectURL(u));
+  }, [files]);
 
   const fetchBanners = useCallback(async () => {
     setLoading(true);
@@ -61,17 +85,30 @@ const AdminBanners = () => {
     fetchBanners();
   }, [fetchBanners]);
 
-  const selectFile = (file: File) => {
+  const selectFile = (device: DeviceKey, file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Apenas imagens são aceitas");
       return;
     }
-    setSelectedFile(file);
+    setFiles(prev => ({ ...prev, [device]: file }));
+  };
+
+  const clearFile = (device: DeviceKey) => {
+    setFiles(prev => ({ ...prev, [device]: null }));
+  };
+
+  const uploadFile = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split(".").pop();
+    const filePath = `${crypto.randomUUID()}.${fileExt}`;
+    const { error } = await supabase.storage.from("banners").upload(filePath, file);
+    if (error) return null;
+    const { data } = supabase.storage.from("banners").getPublicUrl(filePath);
+    return data.publicUrl;
   };
 
   const handleSave = async () => {
-    if (!selectedFile) {
-      toast.error("Selecione uma imagem para o banner");
+    if (!files.desktop) {
+      toast.error("Selecione a imagem de desktop (obrigatória)");
       return;
     }
 
@@ -82,29 +119,25 @@ const AdminBanners = () => {
     }
 
     setUploading(true);
-    const fileExt = selectedFile.name.split(".").pop();
-    const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("banners")
-      .upload(filePath, selectedFile);
-
-    if (uploadError) {
-      toast.error("Erro ao fazer upload da imagem");
+    const desktopUrl = await uploadFile(files.desktop);
+    if (!desktopUrl) {
+      toast.error("Erro ao fazer upload da imagem de desktop");
       setUploading(false);
       return;
     }
 
-    const { data: publicUrlData } = supabase.storage
-      .from("banners")
-      .getPublicUrl(filePath);
+    const tabletUrl = files.tablet ? await uploadFile(files.tablet) : null;
+    const mobileUrl = files.mobile ? await uploadFile(files.mobile) : null;
 
     const maxOrder = banners.length > 0 ? Math.max(...banners.map(b => b.display_order)) + 1 : 0;
 
     const { error: insertError } = await supabase
       .from("system_banners")
       .insert({
-        image_url: publicUrlData.publicUrl,
+        image_url: desktopUrl,
+        image_url_tablet: tabletUrl,
+        image_url_mobile: mobileUrl,
         title: title.trim() || null,
         link_url: normalizedLink || null,
         display_order: maxOrder,
@@ -112,31 +145,15 @@ const AdminBanners = () => {
 
     if (insertError) {
       toast.error("Erro ao salvar banner");
-      // Remove orphan file from storage
-      await supabase.storage.from("banners").remove([filePath]);
     } else {
       toast.success("Banner adicionado!");
       setTitle("");
       setLinkUrl("");
-      setSelectedFile(null);
+      setFiles({ desktop: null, tablet: null, mobile: null });
       fetchBanners();
     }
     setUploading(false);
   };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) selectFile(file);
-    e.target.value = "";
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) selectFile(file);
-  };
-
 
   const toggleActive = async (banner: Banner) => {
     const { error } = await supabase
@@ -154,12 +171,16 @@ const AdminBanners = () => {
   };
 
   const deleteBanner = async (banner: Banner) => {
-    // Extract file path from URL
-    const urlParts = banner.image_url.split("/banners/");
-    const filePath = urlParts[urlParts.length - 1];
+    const paths: string[] = [];
+    [banner.image_url, banner.image_url_tablet, banner.image_url_mobile].forEach(url => {
+      if (!url) return;
+      const parts = url.split("/banners/");
+      const filePath = parts[parts.length - 1];
+      if (filePath) paths.push(filePath);
+    });
 
-    if (filePath) {
-      await supabase.storage.from("banners").remove([filePath]);
+    if (paths.length > 0) {
+      await supabase.storage.from("banners").remove(paths);
     }
 
     const { error } = await supabase
@@ -211,60 +232,75 @@ const AdminBanners = () => {
           </div>
         </div>
 
-        <div
-          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
-          className={`relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer ${
-            dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
-          }`}
-        >
-          {previewUrl ? (
-            <img
-              src={previewUrl}
-              alt="Pré-visualização do banner"
-              className="max-h-40 w-full rounded-md object-contain"
-            />
-          ) : (
-            <>
-              <ImagePlus className="h-10 w-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                Arraste uma imagem ou clique para selecionar
-              </p>
-            </>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            disabled={uploading}
-            className="absolute inset-0 opacity-0 cursor-pointer"
-          />
-        </div>
-
-        {selectedFile && (
-          <p className="text-xs text-muted-foreground truncate">
-            Selecionada: {selectedFile.name}
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Envie uma imagem para cada dispositivo. Tablet e celular são opcionais — se não enviar,
+            a imagem de desktop é usada como alternativa.
           </p>
-        )}
+          <div className="grid gap-4 md:grid-cols-3">
+            {DEVICE_ORDER.map(device => {
+              const meta = DEVICE_META[device];
+              const Icon = meta.icon;
+              const preview = previews[device];
+              const file = files[device];
+              return (
+                <div key={device} className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Icon className="h-4 w-4 text-primary" />
+                    {meta.label}
+                    {meta.required && <span className="text-destructive">*</span>}
+                  </div>
+                  <div className="relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 p-4 transition-colors hover:border-primary/50 min-h-[120px]">
+                    {preview ? (
+                      <>
+                        <img
+                          src={preview}
+                          alt={`Pré-visualização ${meta.label}`}
+                          className="max-h-24 w-full rounded-md object-contain"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => clearFile(device)}
+                          className="absolute right-1 top-1 rounded-full bg-background/80 p-1 text-muted-foreground hover:text-destructive"
+                          aria-label={`Remover imagem ${meta.label}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <ImagePlus className="h-7 w-7 text-muted-foreground" />
+                        <p className="text-center text-xs text-muted-foreground">Selecionar imagem</p>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploading}
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) selectFile(device, f);
+                        e.target.value = "";
+                      }}
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                    />
+                  </div>
+                  <p className="text-[11px] leading-tight text-muted-foreground">{meta.hint}</p>
+                  {file && (
+                    <p className="truncate text-[11px] text-muted-foreground">{file.name}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button onClick={handleSave} disabled={uploading || !selectedFile}>
+          <Button onClick={handleSave} disabled={uploading || !files.desktop}>
             {uploading ? "Salvando..." : "Adicionar banner"}
           </Button>
-          {selectedFile && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setSelectedFile(null)}
-              disabled={uploading}
-            >
-              Remover imagem
-            </Button>
-          )}
         </div>
       </div>
-
 
       {/* Banner list */}
       <div className="space-y-3">
@@ -292,6 +328,11 @@ const AdminBanners = () => {
                 {banner.link_url && (
                   <p className="text-xs text-muted-foreground truncate">{banner.link_url}</p>
                 )}
+                <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <span className="inline-flex items-center gap-1"><Monitor className="h-3 w-3" /> Desktop</span>
+                  {banner.image_url_tablet && <span className="inline-flex items-center gap-1"><Tablet className="h-3 w-3" /> Tablet</span>}
+                  {banner.image_url_mobile && <span className="inline-flex items-center gap-1"><Smartphone className="h-3 w-3" /> Celular</span>}
+                </div>
                 <p className="text-xs text-muted-foreground">Ordem: {banner.display_order}</p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
