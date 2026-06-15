@@ -10,8 +10,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ImagePlus, Trash2, GripVertical, ShieldCheck, Link as LinkIcon, X, Monitor, Tablet, Smartphone } from "lucide-react";
+import { ImagePlus, Trash2, GripVertical, ShieldCheck, Link as LinkIcon, X, Monitor, Tablet, Smartphone, Pencil } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import BannerEditDialog, { type EditableBanner } from "@/components/admin/BannerEditDialog";
 
 interface Banner {
   id: string;
@@ -39,6 +40,8 @@ const AdminBanners = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<EditableBanner | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [files, setFiles] = useState<Record<DeviceKey, File | null>>({
@@ -340,6 +343,24 @@ const AdminBanners = () => {
                   checked={banner.is_active}
                   onCheckedChange={() => toggleActive(banner)}
                 />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setEditingBanner({
+                      id: banner.id,
+                      image_url: banner.image_url,
+                      image_url_tablet: banner.image_url_tablet,
+                      image_url_mobile: banner.image_url_mobile,
+                      title: banner.title,
+                      link_url: banner.link_url,
+                    });
+                    setEditOpen(true);
+                  }}
+                  aria-label="Editar banner"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
@@ -366,6 +387,13 @@ const AdminBanners = () => {
           ))
         )}
       </div>
+
+      <BannerEditDialog
+        banner={editingBanner}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSaved={fetchBanners}
+      />
     </div>
   );
 };
