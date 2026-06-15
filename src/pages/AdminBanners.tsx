@@ -40,6 +40,8 @@ const AdminBanners = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<EditableBanner | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [files, setFiles] = useState<Record<DeviceKey, File | null>>({
