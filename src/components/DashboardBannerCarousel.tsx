@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 interface Banner {
   id: string;
   image_url: string;
+  image_url_tablet: string | null;
+  image_url_mobile: string | null;
   title: string | null;
   link_url: string | null;
 }
