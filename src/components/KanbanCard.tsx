@@ -136,7 +136,19 @@ export function KanbanCard({
                 )}
               </div>
               {plainDescription && (
-                <p className="text-sm text-muted-foreground break-words line-clamp-3">{plainDescription}</p>
+                <div className="text-sm text-muted-foreground break-words">
+                  <p className="line-clamp-3 break-words [overflow-wrap:anywhere]">{plainDescription}</p>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTaskClick ? onTaskClick(task.id) : navigate(`/task/${task.id}`);
+                    }}
+                    className="text-primary hover:underline text-xs font-medium mt-1"
+                  >
+                    Exibir mais
+                  </button>
+                </div>
               )}
             </div>
           </div>
