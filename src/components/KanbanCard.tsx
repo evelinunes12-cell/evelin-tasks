@@ -127,7 +127,7 @@ export function KanbanCard({
 
             <div className="flex-1 min-w-0">
               <div className="flex items-start gap-2 mb-1 flex-wrap">
-                <h3 className="font-semibold text-lg text-foreground break-words">{task.subject_name}</h3>
+                <h3 className="font-semibold text-lg text-foreground break-words [overflow-wrap:anywhere] min-w-0">{task.subject_name}</h3>
                 {isOverdue && (
                   <Badge variant="destructive" className="text-xs flex items-center gap-1 shrink-0">
                     <AlertTriangle className="w-3 h-3" />
@@ -136,7 +136,19 @@ export function KanbanCard({
                 )}
               </div>
               {plainDescription && (
-                <p className="text-sm text-muted-foreground break-words line-clamp-3">{plainDescription}</p>
+                <div className="text-sm text-muted-foreground break-words">
+                  <p className="line-clamp-3 break-words [overflow-wrap:anywhere]">{plainDescription}</p>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTaskClick ? onTaskClick(task.id) : navigate(`/task/${task.id}`);
+                    }}
+                    className="text-primary hover:underline text-xs font-medium mt-1"
+                  >
+                    Exibir mais
+                  </button>
+                </div>
               )}
             </div>
           </div>
