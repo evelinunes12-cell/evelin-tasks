@@ -11,7 +11,14 @@ export const logXP = (userId: string, actionType: string, _points?: number) => {
 
   // Call the SECURITY DEFINER function that validates action type and assigns correct points
   supabase.rpc("log_user_xp", { p_action_type: actionType }).then(({ error }) => {
-    if (error) logError("Erro ao registrar XP", error);
+    if (error) {
+      logError("Erro ao registrar XP", error);
+      return;
+    }
+    // Notifica a UI que o usuário ganhou XP (sinalização rápida)
+    try {
+      window.dispatchEvent(new CustomEvent("xp-gained"));
+    } catch {}
   });
 };
 
