@@ -23,6 +23,7 @@ import {
   deleteCycleNote,
 } from "@/services/studyCycleNotes";
 import CycleNoteDialog from "@/components/study-cycle/CycleNoteDialog";
+import { sanitizeHtml } from "@/utils/sanitize";
 import { toast } from "sonner";
 
 interface CycleNotesSectionProps {
