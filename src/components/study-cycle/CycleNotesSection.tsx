@@ -160,7 +160,7 @@ const CycleNotesSection = ({ userId, cycles, subjects }: CycleNotesSectionProps)
                     {note.content && (
                       <div
                         className="prose prose-sm dark:prose-invert max-w-none mt-2 text-sm text-muted-foreground line-clamp-3 break-words [&_*]:!my-0.5"
-                        dangerouslySetInnerHTML={{ __html: note.content }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.content) }}
                       />
                     )}
                   </div>
