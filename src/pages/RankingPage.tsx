@@ -8,7 +8,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Crown, Sparkles, History } from "lucide-react";
+import { Trophy, Medal, Crown, Sparkles, History, Heart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { resolveUsername } from "@/lib/username";
@@ -19,6 +19,7 @@ interface LeaderboardEntry {
   username: string | null;
   avatar_url: string | null;
   total_xp: number;
+  is_supporter?: boolean | null;
 }
 
 const fetchLeaderboard = async (period: string): Promise<LeaderboardEntry[]> => {
