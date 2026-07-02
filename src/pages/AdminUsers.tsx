@@ -26,6 +26,7 @@ interface Profile {
   email: string;
   created_at: string | null;
   is_active: boolean | null;
+  is_supporter: boolean | null;
   current_streak: number | null;
   education_level: string | null;
 }
