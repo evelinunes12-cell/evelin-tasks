@@ -83,6 +83,7 @@ function PodiumCard({
 }: {entry: LeaderboardEntry;rank: number;isCurrentUser: boolean;}) {
   const style = podiumStyles[rank];
   const Icon = style.icon;
+  const isSupporter = !!entry.is_supporter;
 
   return (
     <Card
@@ -92,6 +93,7 @@ function PodiumCard({
         style.bg,
         style.shadow,
         isCurrentUser && "ring-2 ring-primary",
+        isSupporter && "ring-2 ring-supporter/60 shadow-supporter/20",
         rank === 0 ? "order-2 scale-105 sm:scale-110" : rank === 1 ? "order-1" : "order-3"
       )}>
       
