@@ -12,7 +12,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Search, KeyRound, ShieldCheck } from "lucide-react";
+import { Search, KeyRound, ShieldCheck, Heart } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import { format } from "date-fns";
