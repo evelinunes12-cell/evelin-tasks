@@ -154,6 +154,7 @@ const AdminUsers = () => {
               <TableHead>E-mail</TableHead>
               <TableHead>Cadastro</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Apoiador</TableHead>
               <TableHead>Streak</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
