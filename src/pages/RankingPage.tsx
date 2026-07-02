@@ -8,7 +8,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Crown, Sparkles, History } from "lucide-react";
+import { Trophy, Medal, Crown, Sparkles, History, Heart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { resolveUsername } from "@/lib/username";
@@ -19,6 +19,7 @@ interface LeaderboardEntry {
   username: string | null;
   avatar_url: string | null;
   total_xp: number;
+  is_supporter?: boolean | null;
 }
 
 const fetchLeaderboard = async (period: string): Promise<LeaderboardEntry[]> => {
@@ -82,6 +83,7 @@ function PodiumCard({
 }: {entry: LeaderboardEntry;rank: number;isCurrentUser: boolean;}) {
   const style = podiumStyles[rank];
   const Icon = style.icon;
+  const isSupporter = !!entry.is_supporter;
 
   return (
     <Card
@@ -91,6 +93,7 @@ function PodiumCard({
         style.bg,
         style.shadow,
         isCurrentUser && "ring-2 ring-primary",
+        isSupporter && "ring-2 ring-supporter/60 shadow-supporter/20",
         rank === 0 ? "order-2 scale-105 sm:scale-110" : rank === 1 ? "order-1" : "order-3"
       )}>
       
@@ -114,11 +117,19 @@ function PodiumCard({
       <p className="font-semibold text-sm text-center line-clamp-1">
         {getDisplayUsername(entry)}
       </p>
-      {isCurrentUser &&
-      <Badge variant="secondary" className="text-[10px] mt-1">
-          Você
-        </Badge>
-      }
+      <div className="flex flex-wrap items-center justify-center gap-1 mt-1">
+        {isSupporter &&
+        <Badge className="gap-1 text-[10px] bg-supporter/15 text-supporter hover:bg-supporter/20 border-supporter/30">
+            <Heart className="h-2.5 w-2.5 fill-current" />
+            Apoiador
+          </Badge>
+        }
+        {isCurrentUser &&
+        <Badge variant="secondary" className="text-[10px]">
+            Você
+          </Badge>
+        }
+      </div>
 
       <div className="mt-2 flex items-center gap-1">
         <Sparkles className="h-4 w-4 text-primary" />
@@ -140,29 +151,38 @@ function ListItem({
 
 
 }: {entry: LeaderboardEntry;rank: number;isCurrentUser: boolean;}) {
+  const isSupporter = !!entry.is_supporter;
   return (
     <div
       className={cn(
         "flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 rounded-lg transition-colors",
         isCurrentUser ?
         "bg-primary/10 border border-primary/30" :
+        isSupporter ?
+        "bg-supporter/5 border border-supporter/30" :
         "hover:bg-muted/50"
       )}>
       
       <span className="w-8 text-center font-bold text-muted-foreground">
         {rank}º
       </span>
-      <Avatar className="h-9 w-9">
+      <Avatar className={cn("h-9 w-9", isSupporter && "ring-2 ring-supporter/60")}>
         <AvatarImage src={entry.avatar_url || undefined} />
         <AvatarFallback className="text-xs">
           {getInitials(entry.username)}
         </AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm truncate">
-          {getDisplayUsername(entry)}
+        <p className="font-medium text-sm truncate flex items-center gap-1.5">
+          <span className="truncate">{getDisplayUsername(entry)}</span>
+          {isSupporter &&
+          <Badge className="gap-1 text-[10px] shrink-0 bg-supporter/15 text-supporter hover:bg-supporter/20 border-supporter/30">
+              <Heart className="h-2.5 w-2.5 fill-current" />
+              Apoiador
+            </Badge>
+          }
           {isCurrentUser &&
-          <Badge variant="secondary" className="text-[10px] ml-2">
+          <Badge variant="secondary" className="text-[10px] shrink-0">
               Você
             </Badge>
           }

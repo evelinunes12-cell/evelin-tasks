@@ -722,6 +722,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_active: boolean | null
+          is_supporter: boolean
           last_activity_date: string | null
           last_username_update: string | null
           onboarding_completed: boolean
@@ -743,6 +744,7 @@ export type Database = {
           full_name?: string | null
           id: string
           is_active?: boolean | null
+          is_supporter?: boolean
           last_activity_date?: string | null
           last_username_update?: string | null
           onboarding_completed?: boolean
@@ -764,6 +766,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean | null
+          is_supporter?: boolean
           last_activity_date?: string | null
           last_username_update?: string | null
           onboarding_completed?: boolean
@@ -1660,6 +1663,7 @@ export type Database = {
         Returns: {
           avatar_url: string
           full_name: string
+          is_supporter: boolean
           total_xp: number
           user_id: string
           username: string

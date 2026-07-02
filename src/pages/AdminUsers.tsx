@@ -12,7 +12,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Search, KeyRound, ShieldCheck } from "lucide-react";
+import { Search, KeyRound, ShieldCheck, Heart } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -26,6 +26,7 @@ interface Profile {
   email: string;
   created_at: string | null;
   is_active: boolean | null;
+  is_supporter: boolean | null;
   current_streak: number | null;
   education_level: string | null;
 }
@@ -42,7 +43,7 @@ const AdminUsers = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, username, email, created_at, is_active, current_streak, education_level")
+      .select("id, full_name, username, email, created_at, is_active, is_supporter, current_streak, education_level")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -70,6 +71,23 @@ const AdminUsers = () => {
       toast.success(newStatus ? "Usuário ativado" : "Usuário banido");
       setProfiles((prev) =>
         prev.map((p) => (p.id === profile.id ? { ...p, is_active: newStatus } : p))
+      );
+    }
+  };
+
+  const toggleSupporter = async (profile: Profile) => {
+    const newStatus = !profile.is_supporter;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_supporter: newStatus })
+      .eq("id", profile.id);
+
+    if (error) {
+      toast.error("Erro ao atualizar badge de apoiador");
+    } else {
+      toast.success(newStatus ? "Badge de apoiador ativada" : "Badge de apoiador removida");
+      setProfiles((prev) =>
+        prev.map((p) => (p.id === profile.id ? { ...p, is_supporter: newStatus } : p))
       );
     }
   };
@@ -136,6 +154,7 @@ const AdminUsers = () => {
               <TableHead>E-mail</TableHead>
               <TableHead>Cadastro</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Apoiador</TableHead>
               <TableHead>Streak</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -143,13 +162,13 @@ const AdminUsers = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   Nenhum usuário encontrado
                 </TableCell>
               </TableRow>
@@ -184,6 +203,20 @@ const AdminUsers = () => {
                       <Badge variant={profile.is_active !== false ? "default" : "destructive"}>
                         {profile.is_active !== false ? "Ativo" : "Banido"}
                       </Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={profile.is_supporter ?? false}
+                        onCheckedChange={() => toggleSupporter(profile)}
+                      />
+                      {profile.is_supporter && (
+                        <Badge className="gap-1 bg-supporter/15 text-supporter hover:bg-supporter/20 border-supporter/30">
+                          <Heart className="h-3 w-3 fill-current" />
+                          Apoiador
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
