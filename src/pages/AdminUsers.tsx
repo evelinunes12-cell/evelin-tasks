@@ -75,6 +75,23 @@ const AdminUsers = () => {
     }
   };
 
+  const toggleSupporter = async (profile: Profile) => {
+    const newStatus = !profile.is_supporter;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_supporter: newStatus })
+      .eq("id", profile.id);
+
+    if (error) {
+      toast.error("Erro ao atualizar badge de apoiador");
+    } else {
+      toast.success(newStatus ? "Badge de apoiador ativada" : "Badge de apoiador removida");
+      setProfiles((prev) =>
+        prev.map((p) => (p.id === profile.id ? { ...p, is_supporter: newStatus } : p))
+      );
+    }
+  };
+
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth?mode=reset`,
