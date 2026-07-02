@@ -206,6 +206,20 @@ const AdminUsers = () => {
                     </div>
                   </TableCell>
                   <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={profile.is_supporter ?? false}
+                        onCheckedChange={() => toggleSupporter(profile)}
+                      />
+                      {profile.is_supporter && (
+                        <Badge className="gap-1 bg-pink-500/15 text-pink-600 hover:bg-pink-500/20 border-pink-500/30">
+                          <Heart className="h-3 w-3 fill-current" />
+                          Apoiador
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <span className="text-sm">🔥 {profile.current_streak ?? 0}</span>
                   </TableCell>
                   <TableCell className="text-right">
