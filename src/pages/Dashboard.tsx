@@ -94,7 +94,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background flex-1">
       <StreakKeeper />
       <Navbar />
-      <main className="container mx-auto px-4 py-8 max-w-[1600px]">
+      <main className="w-full px-4 py-8">
         {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
