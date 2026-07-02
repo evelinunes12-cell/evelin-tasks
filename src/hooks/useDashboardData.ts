@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Task } from "@/services/tasks";
+import { type StudySchedule } from "@/services/studySchedules";
 import { toast } from "sonner";
 
 export const useDashboardData = () => {
@@ -71,6 +72,21 @@ export const useDashboardData = () => {
     }));
   }, [statusesData]);
 
+  const { data: studySchedules = [] } = useQuery({
+    queryKey: ['study-schedules', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("study_schedules" as any)
+        .select("id, user_id, day_of_week, start_time, end_time, title, type, color, specific_date, created_at")
+        .order("day_of_week")
+        .order("start_time");
+      if (error) throw error;
+      return (data || []) as unknown as StudySchedule[];
+    },
+    staleTime: 1000 * 60 * 5,
+    enabled: !!user,
+  });
+
   const { data: environments = [] } = useQuery({
     queryKey: ['environments', user?.id],
     queryFn: async () => {
@@ -91,5 +107,6 @@ export const useDashboardData = () => {
     kanbanStatuses,
     dashboardStatuses,
     environments,
+    studySchedules,
   };
 };

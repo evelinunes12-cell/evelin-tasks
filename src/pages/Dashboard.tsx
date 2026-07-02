@@ -18,6 +18,7 @@ import DashboardBannerCarousel from "@/components/DashboardBannerCarousel";
 import { supabase } from "@/integrations/supabase/client";
 import { formatUsername } from "@/lib/username";
 
+import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { TodaySummary } from "@/components/dashboard/TodaySummary";
 import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
 import { DashboardKanban } from "@/components/dashboard/DashboardKanban";
@@ -43,7 +44,7 @@ const Dashboard = () => {
   const {
     tasks, tasksLoading,
     availableSubjects, availableStatuses,
-    kanbanStatuses, dashboardStatuses, environments,
+    kanbanStatuses, dashboardStatuses, environments, studySchedules,
   } = useDashboardData();
 
   const { handleDeleteTask, handleStatusChange, handleArchiveTask } = useDashboardMutations();
@@ -95,20 +96,22 @@ const Dashboard = () => {
       <StreakKeeper />
       <Navbar />
       <main className="w-full px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">Olá, {displayUsername}!</h2>
-            <p className="text-muted-foreground">Gerencie seus trabalhos e projetos de forma organizada</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <StreakCard streak={currentStreak} completedToday={completedToday} />
-          </div>
+        <div className="mb-4 flex justify-end">
+          <StreakCard streak={currentStreak} completedToday={completedToday} />
         </div>
+
+        <DashboardOverview
+          username={displayUsername}
+          tasks={tasks}
+          studySchedules={studySchedules}
+          completedStatusName={completedStatusName}
+        />
 
         <DashboardBannerCarousel />
         <OnboardingProgress />
         <IncompleteProfileAlert />
+
+        <StatsCards tasks={tasks} statuses={dashboardStatuses} />
 
         {/* Today's Summary */}
         <TodaySummary
@@ -116,8 +119,6 @@ const Dashboard = () => {
           onStatusChange={handleStatusChange}
           completedStatusName={completedStatusName}
         />
-
-        <StatsCards tasks={tasks} statuses={dashboardStatuses} />
 
         {/* Filters */}
         <DashboardFilters
