@@ -212,7 +212,7 @@ const AdminUsers = () => {
                         onCheckedChange={() => toggleSupporter(profile)}
                       />
                       {profile.is_supporter && (
-                        <Badge className="gap-1 bg-pink-500/15 text-pink-600 hover:bg-pink-500/20 border-pink-500/30">
+                        <Badge className="gap-1 bg-supporter/15 text-supporter hover:bg-supporter/20 border-supporter/30">
                           <Heart className="h-3 w-3 fill-current" />
                           Apoiador
                         </Badge>
