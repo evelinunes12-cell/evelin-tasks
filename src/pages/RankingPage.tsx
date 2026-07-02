@@ -117,11 +117,19 @@ function PodiumCard({
       <p className="font-semibold text-sm text-center line-clamp-1">
         {getDisplayUsername(entry)}
       </p>
-      {isCurrentUser &&
-      <Badge variant="secondary" className="text-[10px] mt-1">
-          Você
-        </Badge>
-      }
+      <div className="flex flex-wrap items-center justify-center gap-1 mt-1">
+        {isSupporter &&
+        <Badge className="gap-1 text-[10px] bg-supporter/15 text-supporter hover:bg-supporter/20 border-supporter/30">
+            <Heart className="h-2.5 w-2.5 fill-current" />
+            Apoiador
+          </Badge>
+        }
+        {isCurrentUser &&
+        <Badge variant="secondary" className="text-[10px]">
+            Você
+          </Badge>
+        }
+      </div>
 
       <div className="mt-2 flex items-center gap-1">
         <Sparkles className="h-4 w-4 text-primary" />
