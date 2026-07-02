@@ -43,7 +43,7 @@ const AdminUsers = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, username, email, created_at, is_active, current_streak, education_level")
+      .select("id, full_name, username, email, created_at, is_active, is_supporter, current_streak, education_level")
       .order("created_at", { ascending: false });
 
     if (error) {
