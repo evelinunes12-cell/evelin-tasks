@@ -151,29 +151,38 @@ function ListItem({
 
 
 }: {entry: LeaderboardEntry;rank: number;isCurrentUser: boolean;}) {
+  const isSupporter = !!entry.is_supporter;
   return (
     <div
       className={cn(
         "flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 rounded-lg transition-colors",
         isCurrentUser ?
         "bg-primary/10 border border-primary/30" :
+        isSupporter ?
+        "bg-supporter/5 border border-supporter/30" :
         "hover:bg-muted/50"
       )}>
       
       <span className="w-8 text-center font-bold text-muted-foreground">
         {rank}º
       </span>
-      <Avatar className="h-9 w-9">
+      <Avatar className={cn("h-9 w-9", isSupporter && "ring-2 ring-supporter/60")}>
         <AvatarImage src={entry.avatar_url || undefined} />
         <AvatarFallback className="text-xs">
           {getInitials(entry.username)}
         </AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm truncate">
-          {getDisplayUsername(entry)}
+        <p className="font-medium text-sm truncate flex items-center gap-1.5">
+          <span className="truncate">{getDisplayUsername(entry)}</span>
+          {isSupporter &&
+          <Badge className="gap-1 text-[10px] shrink-0 bg-supporter/15 text-supporter hover:bg-supporter/20 border-supporter/30">
+              <Heart className="h-2.5 w-2.5 fill-current" />
+              Apoiador
+            </Badge>
+          }
           {isCurrentUser &&
-          <Badge variant="secondary" className="text-[10px] ml-2">
+          <Badge variant="secondary" className="text-[10px] shrink-0">
               Você
             </Badge>
           }
