@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://vxsahhwkgnynxwpjsxaj.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "zenit-mcp",
+      "version": "0.1.0",
+      "title": "Zenit MCP"
+    },
+    "tools": [
+      {
+        "name": "list_tasks",
+        "title": "List tasks",
+        "description": "List the signed-in user's tasks (studies/assignments), optionally filtered by status and whether archived.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "Optional status filter, e.g. the exact status name of a task."
+            },
+            "include_archived": {
+              "type": "boolean",
+              "description": "Include archived tasks. Defaults to false."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Max number of tasks to return. Defaults to 25."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_task",
+        "title": "Create task",
+        "description": "Create a new task (study/assignment) for the signed-in user via the app's database.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "subject_name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Subject or title of the task."
+            },
+            "description": {
+              "type": "string",
+              "description": "Optional details about the task."
+            },
+            "due_date": {
+              "type": "string",
+              "description": "Optional due date in YYYY-MM-DD format."
+            },
+            "status": {
+              "type": "string",
+              "description": "Optional status name. Defaults to the app's default status."
+            }
+          },
+          "required": [
+            "subject_name"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_study_cycles",
+        "title": "List study cycles",
+        "description": "List the signed-in user's study cycles with their blocks (subjects and allocated minutes).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_leaderboard",
+        "title": "Get ranking",
+        "description": "Get the XP leaderboard (ranking) of users for a given period. Returns top users ordered by total XP.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "period": {
+              "type": "string",
+              "enum": [
+                "daily",
+                "weekly",
+                "monthly",
+                "all_time"
+              ],
+              "description": "Ranking period. Defaults to 'weekly'."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Max number of entries to return. Defaults to 20."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
