@@ -20,6 +20,7 @@ import { BottomNav } from "./components/BottomNav";
 import SplashScreen from "./components/SplashScreen";
 
 const Auth = lazy(() => import("./pages/Auth"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const TaskForm = lazy(() => import("./pages/TaskForm"));
 const TaskDetail = lazy(() => import("./pages/TaskDetail"));
