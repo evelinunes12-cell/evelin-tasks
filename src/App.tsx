@@ -20,6 +20,7 @@ import { BottomNav } from "./components/BottomNav";
 import SplashScreen from "./components/SplashScreen";
 
 const Auth = lazy(() => import("./pages/Auth"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const TaskForm = lazy(() => import("./pages/TaskForm"));
 const TaskDetail = lazy(() => import("./pages/TaskDetail"));
@@ -145,6 +146,7 @@ const App = () => {
                       <Routes>
                         <Route path="/" element={<Navigate to="/auth" replace />} />
                         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+                        <Route path="/.lovable/oauth/consent" element={<PageTransition><OAuthConsent /></PageTransition>} />
                         <Route path="/onboarding" element={<ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>} />
                         <Route path="/invite/:token" element={<PageTransition><InvitePage /></PageTransition>} />
                         <Route path="/apoie" element={<PageTransition><Support /></PageTransition>} />

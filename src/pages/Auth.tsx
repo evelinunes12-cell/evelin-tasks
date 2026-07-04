@@ -359,8 +359,13 @@ const Auth = () => {
                       // Clear any stale session before starting OAuth to avoid refresh token conflicts
                       await supabase.auth.signOut({ scope: 'local' });
 
+                      const gRedirect = searchParams.get("redirect");
+                      const gTarget =
+                        gRedirect && gRedirect.startsWith("/")
+                          ? gRedirect
+                          : "/dashboard";
                       const result = await lovable.auth.signInWithOAuth("google", {
-                        redirect_uri: `${window.location.origin}/dashboard`,
+                        redirect_uri: `${window.location.origin}${gTarget}`,
                         extraParams: {
                           access_type: "offline",
                           scope: "https://www.googleapis.com/auth/calendar.events",
