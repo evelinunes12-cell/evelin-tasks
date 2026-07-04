@@ -146,6 +146,7 @@ const App = () => {
                       <Routes>
                         <Route path="/" element={<Navigate to="/auth" replace />} />
                         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+                        <Route path="/.lovable/oauth/consent" element={<PageTransition><OAuthConsent /></PageTransition>} />
                         <Route path="/onboarding" element={<ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>} />
                         <Route path="/invite/:token" element={<PageTransition><InvitePage /></PageTransition>} />
                         <Route path="/apoie" element={<PageTransition><Support /></PageTransition>} />
