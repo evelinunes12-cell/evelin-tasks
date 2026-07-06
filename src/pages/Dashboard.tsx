@@ -119,8 +119,7 @@ const Dashboard = () => {
           completedStatusName={completedStatusName}
         />
 
-        {/* Situação geral por status */}
-        <StatsCards tasks={tasks} statuses={dashboardStatuses} />
+
 
 
         {/* Filters */}
