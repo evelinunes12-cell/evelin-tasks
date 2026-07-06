@@ -138,9 +138,10 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
               </p>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:min-w-[480px]">
-              <Metric icon={CircleDashed} label="A fazer" value={todoTasks.length} tone="todo" />
-              <Metric icon={Timer} label="Em andamento" value={inProgressTasks.length} tone="progress" />
-              <Metric icon={CalendarClock} label="Concluídas hoje" value={completedToday.length} tone="done" />
+              <Metric icon={CalendarClock} label="Para hoje" value={todayTasks.length} tone="today" />
+              <Metric icon={AlertTriangle} label="Atrasadas" value={overdueTasks.length} tone="overdue" />
+              <Metric icon={CheckCircle2} label="Concluídas hoje" value={completedToday.length} tone="done" />
+
             </div>
           </div>
         </CardContent>
