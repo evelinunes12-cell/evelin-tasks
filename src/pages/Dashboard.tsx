@@ -8,7 +8,7 @@ import { useDashboardMutations } from "@/hooks/useDashboardMutations";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useDashboardNotifications } from "@/hooks/useDashboardNotifications";
 import Navbar from "@/components/Navbar";
-import StatsCards from "@/components/StatsCards";
+
 import StreakCard from "@/components/StreakCard";
 import { StreakKeeper } from "@/components/StreakKeeper";
 
