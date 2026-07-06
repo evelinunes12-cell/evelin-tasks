@@ -21,10 +21,6 @@ const isCompletedTask = (task: Task, completedStatusName: string) => {
   return normalizedStatus === completedStatusName.toLowerCase() || normalizedStatus.includes("conclu");
 };
 
-const isInProgressTask = (task: Task) => {
-  const s = task.status.toLowerCase();
-  return s.includes("andamento") || s.includes("progresso") || s.includes("progress");
-};
 
 const getTaskDescription = (task: Task, fallback: string) => stripHtml(task.description).trim() || fallback;
 
