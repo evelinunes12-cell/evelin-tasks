@@ -1,11 +1,14 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { addDays, format, isSameDay, startOfToday } from "date-fns";
-import { AlertTriangle, CalendarClock, CheckCircle2, Eye, PlayCircle, Sparkles, Target } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { addDays, format, isSameDay, parseISO, startOfToday } from "date-fns";
+import { AlertTriangle, CalendarClock, CheckCircle2, Eye, PlayCircle, Sparkles, StickyNote, Target, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { type Task, parseDueDate } from "@/services/tasks";
 import { isTaskDueToday, isTaskOverdue } from "@/hooks/useDashboardFilters";
 import { stripHtml } from "@/utils/sanitize";
@@ -16,11 +19,27 @@ interface DashboardOverviewProps {
   completedStatusName: string;
 }
 
+interface PlannerNote {
+  id: string;
+  title: string;
+  planned_date: string | null;
+}
+
+interface PlannerGoal {
+  id: string;
+  title: string;
+  target_date: string | null;
+}
+
 const isCompletedTask = (task: Task, completedStatusName: string) => {
   const normalizedStatus = task.status.toLowerCase();
   return normalizedStatus === completedStatusName.toLowerCase() || normalizedStatus.includes("conclu");
 };
 
+const isInProgressTask = (task: Task) => {
+  const s = task.status.toLowerCase();
+  return s.includes("andamento") || s.includes("progresso") || s.includes("progress");
+};
 
 const getTaskDescription = (task: Task, fallback: string) => stripHtml(task.description).trim() || fallback;
 
@@ -38,12 +57,20 @@ interface FocusRecommendation {
   meta: string;
   tone: "default" | "destructive" | "success";
   taskId?: string;
+  plannerLink?: boolean;
 }
 
-const getFocusRecommendation = (tasks: Task[], completedStatusName: string): FocusRecommendation => {
+const getFocusRecommendation = (
+  tasks: Task[],
+  notes: PlannerNote[],
+  goals: PlannerGoal[],
+  completedStatusName: string,
+): FocusRecommendation => {
   const openTasks = tasks.filter((task) => !isCompletedTask(task, completedStatusName));
   const now = new Date();
   const nearLimit = addDays(now, 3);
+
+  // 1. Tarefas com data de hoje ou próxima da entrega
   const nextDue = openTasks
     .filter((task) => {
       if (!task.due_date || isTaskOverdue(task)) return false;
@@ -62,6 +89,7 @@ const getFocusRecommendation = (tasks: Task[], completedStatusName: string): Foc
     };
   }
 
+  // 2. Tarefas atrasadas
   const overdue = openTasks
     .filter((task) => task.due_date && isTaskOverdue(task))
     .sort((a, b) => parseDueDate(a.due_date).getTime() - parseDueDate(b.due_date).getTime());
@@ -76,23 +104,37 @@ const getFocusRecommendation = (tasks: Task[], completedStatusName: string): Foc
     };
   }
 
-  const subjects = openTasks.reduce<Record<string, number>>((acc, task) => {
-    acc[task.subject_name] = (acc[task.subject_name] || 0) + 1;
-    return acc;
-  }, {});
-  const busiestSubject = Object.entries(subjects).sort((a, b) => b[1] - a[1])[0];
-  if (busiestSubject) {
-    const firstTask = openTasks.find((task) => task.subject_name === busiestSubject[0]);
+  // 3. Anotações (sem tarefa com data próxima)
+  const nextNote = notes
+    .filter((n) => n.planned_date)
+    .sort((a, b) => parseISO(a.planned_date!).getTime() - parseISO(b.planned_date!).getTime())[0];
+  if (nextNote) {
     return {
-      icon: Target,
-      title: `Organizar ${busiestSubject[0]}`,
-      description: "Essa disciplina concentra mais pendências abertas. Comece quebrando uma tarefa em passos menores.",
-      meta: `${busiestSubject[1]} pendência${busiestSubject[1] > 1 ? "s" : ""}`,
+      icon: StickyNote,
+      title: nextNote.title,
+      description: "Você tem uma anotação planejada. Revise e conclua para manter o dia em dia.",
+      meta: `Anotação · ${format(parseISO(nextNote.planned_date!), "dd/MM")}`,
       tone: "default",
-      taskId: firstTask?.id,
+      plannerLink: true,
     };
   }
 
+  // 4. Metas
+  const nextGoal = goals
+    .filter((g) => g.target_date)
+    .sort((a, b) => parseISO(a.target_date!).getTime() - parseISO(b.target_date!).getTime())[0];
+  if (nextGoal) {
+    return {
+      icon: Target,
+      title: nextGoal.title,
+      description: "Avance nesta meta. Pequenos passos hoje aproximam você do objetivo.",
+      meta: `Meta · ${format(parseISO(nextGoal.target_date!), "dd/MM")}`,
+      tone: "default",
+      plannerLink: true,
+    };
+  }
+
+  // 5. Sugestão amigável
   return {
     icon: PlayCircle,
     title: "Iniciar uma sessão de estudos",
@@ -103,7 +145,39 @@ const getFocusRecommendation = (tasks: Task[], completedStatusName: string): Foc
 };
 
 export function DashboardOverview({ username, tasks, completedStatusName }: DashboardOverviewProps) {
+  const { user } = useAuth();
   const today = useMemo(() => new Date(), []);
+
+  const { data: notes = [] } = useQuery({
+    queryKey: ["planner-notes-overview", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("planner_notes")
+        .select("id, title, planned_date")
+        .eq("completed", false)
+        .not("planned_date", "is", null);
+      if (error) throw error;
+      return (data || []) as PlannerNote[];
+    },
+    staleTime: 1000 * 60 * 5,
+    enabled: !!user,
+  });
+
+  const { data: goals = [] } = useQuery({
+    queryKey: ["planner-goals-overview", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("planner_goals")
+        .select("id, title, target_date")
+        .eq("completed", false)
+        .not("target_date", "is", null);
+      if (error) throw error;
+      return (data || []) as PlannerGoal[];
+    },
+    staleTime: 1000 * 60 * 5,
+    enabled: !!user,
+  });
+
   const todayTasks = useMemo(() => tasks.filter((task) => isTaskDueToday(task)), [tasks]);
   const overdueTasks = useMemo(() => tasks.filter(isTaskOverdue), [tasks]);
   const completedToday = useMemo(
@@ -111,11 +185,24 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
     [completedStatusName, tasks, today],
   );
   const openTasks = useMemo(() => tasks.filter((task) => !isCompletedTask(task, completedStatusName)), [completedStatusName, tasks]);
+  const inProgressTasks = useMemo(() => openTasks.filter(isInProgressTask), [openTasks]);
 
+  const notesToday = useMemo(
+    () => notes.filter((n) => n.planned_date && isSameDay(parseISO(n.planned_date), today)),
+    [notes, today],
+  );
+  const goalsToday = useMemo(
+    () => goals.filter((g) => g.target_date && isSameDay(parseISO(g.target_date), today)),
+    [goals, today],
+  );
+  const forTodayCount = todayTasks.length + notesToday.length + goalsToday.length;
 
-  const focus = useMemo(() => getFocusRecommendation(tasks, completedStatusName), [completedStatusName, tasks]);
+  const focus = useMemo(
+    () => getFocusRecommendation(tasks, notes, goals, completedStatusName),
+    [completedStatusName, tasks, notes, goals],
+  );
   const FocusIcon = focus.icon;
-  const allDoneToday = todayTasks.length === 0 && overdueTasks.length === 0;
+  const allDoneToday = forTodayCount === 0 && overdueTasks.length === 0;
 
   return (
     <section className="mb-6 space-y-4" aria-labelledby="dashboard-greeting">
@@ -133,11 +220,11 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
                   : "Veja o que merece sua atenção agora e organize seu estudo com tranquilidade."}
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:min-w-[480px]">
-              <Metric icon={CalendarClock} label="Para hoje" value={todayTasks.length} tone="today" />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[560px]">
+              <Metric icon={CalendarClock} label="Para hoje" value={forTodayCount} tone="today" />
+              <Metric icon={Timer} label="Em progresso" value={inProgressTasks.length} tone="progress" />
               <Metric icon={AlertTriangle} label="Atrasadas" value={overdueTasks.length} tone="overdue" />
               <Metric icon={CheckCircle2} label="Concluídas hoje" value={completedToday.length} tone="done" />
-
             </div>
           </div>
         </CardContent>
@@ -162,6 +249,11 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
                 <Link to={`/task/${focus.taskId}`}><Eye className="h-4 w-4" /> Ver tarefa</Link>
               </Button>
             )}
+            {focus.plannerLink && (
+              <Button asChild variant="outline" className="w-full sm:w-auto">
+                <Link to="/planner"><Eye className="h-4 w-4" /> Ver no planner</Link>
+              </Button>
+            )}
             <Button asChild className="w-full sm:w-auto">
               <Link to="/estudos/pomodoro"><PlayCircle className="h-4 w-4" /> Iniciar foco</Link>
             </Button>
@@ -172,16 +264,16 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
   );
 }
 
-type MetricTone = "today" | "overdue" | "done";
+type MetricTone = "today" | "progress" | "overdue" | "done";
 
 const TONE_STYLES: Record<MetricTone, { icon: string; value: string }> = {
   today: { icon: "text-primary", value: "text-foreground" },
+  progress: { icon: "text-warning", value: "text-warning" },
   overdue: { icon: "text-destructive", value: "text-destructive" },
   done: { icon: "text-success", value: "text-success" },
 };
 
 function Metric({ icon: Icon, label, value, tone }: { icon: typeof Target; label: string; value: number; tone: MetricTone }) {
-
   const styles = TONE_STYLES[tone];
   return (
     <div className="rounded-xl border bg-background/70 p-3">
