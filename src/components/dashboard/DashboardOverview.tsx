@@ -176,13 +176,16 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
   );
 }
 
-const TONE_STYLES: Record<"todo" | "progress" | "done", { icon: string; value: string }> = {
-  todo: { icon: "text-muted-foreground", value: "text-foreground" },
-  progress: { icon: "text-warning", value: "text-warning" },
+type MetricTone = "today" | "overdue" | "done";
+
+const TONE_STYLES: Record<MetricTone, { icon: string; value: string }> = {
+  today: { icon: "text-primary", value: "text-foreground" },
+  overdue: { icon: "text-destructive", value: "text-destructive" },
   done: { icon: "text-success", value: "text-success" },
 };
 
-function Metric({ icon: Icon, label, value, tone }: { icon: typeof Target; label: string; value: number; tone: "todo" | "progress" | "done" }) {
+function Metric({ icon: Icon, label, value, tone }: { icon: typeof Target; label: string; value: number; tone: MetricTone }) {
+
   const styles = TONE_STYLES[tone];
   return (
     <div className="rounded-xl border bg-background/70 p-3">
