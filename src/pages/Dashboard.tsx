@@ -44,7 +44,7 @@ const Dashboard = () => {
   const {
     tasks, tasksLoading,
     availableSubjects, availableStatuses,
-    kanbanStatuses, dashboardStatuses, environments,
+    kanbanStatuses, environments,
   } = useDashboardData();
 
   const { handleDeleteTask, handleStatusChange, handleArchiveTask } = useDashboardMutations();
