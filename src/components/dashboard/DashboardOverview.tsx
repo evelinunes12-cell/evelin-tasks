@@ -1,20 +1,18 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { addDays, format, isSameDay, startOfToday } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { AlertTriangle, CalendarClock, CheckCircle2, Clock, type LucideIcon, PlayCircle, Sparkles, Target } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Eye, PlayCircle, Sparkles, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { type Task, parseDueDate } from "@/services/tasks";
-import { type StudySchedule } from "@/services/studySchedules";
 import { isTaskDueToday, isTaskOverdue } from "@/hooks/useDashboardFilters";
 import { stripHtml } from "@/utils/sanitize";
 
 interface DashboardOverviewProps {
   username: string;
   tasks: Task[];
-  studySchedules: StudySchedule[];
   completedStatusName: string;
 }
 
@@ -22,6 +20,7 @@ const isCompletedTask = (task: Task, completedStatusName: string) => {
   const normalizedStatus = task.status.toLowerCase();
   return normalizedStatus === completedStatusName.toLowerCase() || normalizedStatus.includes("conclu");
 };
+
 
 const getTaskDescription = (task: Task, fallback: string) => stripHtml(task.description).trim() || fallback;
 
@@ -32,38 +31,16 @@ const getGreeting = () => {
   return "Boa noite";
 };
 
-const getUpcomingTasks = (tasks: Task[], completedStatusName: string) => {
-  const today = startOfToday();
-  const limitDate = addDays(today, 7);
-  return tasks.filter((task) => {
-    if (!task.due_date || isCompletedTask(task, completedStatusName)) return false;
-    const dueDate = parseDueDate(task.due_date);
-    return dueDate > today && dueDate <= limitDate;
-  });
-};
+interface FocusRecommendation {
+  icon: typeof Target;
+  title: string;
+  description: string;
+  meta: string;
+  tone: "default" | "destructive" | "success";
+  taskId?: string;
+}
 
-const getNextStudySchedule = (studySchedules: StudySchedule[]) => {
-  const now = new Date();
-  const candidates = studySchedules
-    .map((schedule) => {
-      const [hours, minutes] = schedule.start_time.split(":").map(Number);
-      const date = schedule.specific_date ? new Date(`${schedule.specific_date}T${schedule.start_time}`) : new Date(now);
-      if (!schedule.specific_date) {
-        const currentDay = date.getDay();
-        const daysUntil = (schedule.day_of_week - currentDay + 7) % 7;
-        date.setDate(date.getDate() + daysUntil);
-        date.setHours(hours, minutes, 0, 0);
-        if (date < now) date.setDate(date.getDate() + 7);
-      }
-      return { schedule, date };
-    })
-    .filter(({ date }) => date >= now)
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
-
-  return candidates[0] || null;
-};
-
-const getFocusRecommendation = (tasks: Task[], completedStatusName: string) => {
+const getFocusRecommendation = (tasks: Task[], completedStatusName: string): FocusRecommendation => {
   const openTasks = tasks.filter((task) => !isCompletedTask(task, completedStatusName));
   const now = new Date();
   const nearLimit = addDays(now, 3);
@@ -80,7 +57,8 @@ const getFocusRecommendation = (tasks: Task[], completedStatusName: string) => {
       title: "Preparar próxima entrega",
       description: getTaskDescription(nextDue, `Avance na tarefa de ${nextDue.subject_name} antes do prazo.`),
       meta: `${nextDue.subject_name} · vence em ${format(parseDueDate(nextDue.due_date), "dd/MM")}`,
-      tone: "default" as const,
+      tone: "default",
+      taskId: nextDue.id,
     };
   }
 
@@ -93,7 +71,8 @@ const getFocusRecommendation = (tasks: Task[], completedStatusName: string) => {
       title: "Resolver tarefa atrasada",
       description: getTaskDescription(overdue[0], `Finalize a pendência de ${overdue[0].subject_name}.`),
       meta: `${overdue[0].subject_name} · venceu em ${format(parseDueDate(overdue[0].due_date), "dd/MM")}`,
-      tone: "destructive" as const,
+      tone: "destructive",
+      taskId: overdue[0].id,
     };
   }
 
@@ -103,12 +82,14 @@ const getFocusRecommendation = (tasks: Task[], completedStatusName: string) => {
   }, {});
   const busiestSubject = Object.entries(subjects).sort((a, b) => b[1] - a[1])[0];
   if (busiestSubject) {
+    const firstTask = openTasks.find((task) => task.subject_name === busiestSubject[0]);
     return {
       icon: Target,
       title: `Organizar ${busiestSubject[0]}`,
       description: "Essa disciplina concentra mais pendências abertas. Comece quebrando uma tarefa em passos menores.",
       meta: `${busiestSubject[1]} pendência${busiestSubject[1] > 1 ? "s" : ""}`,
-      tone: "default" as const,
+      tone: "default",
+      taskId: firstTask?.id,
     };
   }
 
@@ -117,11 +98,11 @@ const getFocusRecommendation = (tasks: Task[], completedStatusName: string) => {
     title: "Iniciar uma sessão de estudos",
     description: "Sua fila está leve. Use alguns minutos para revisar conteúdos ou planejar o próximo ciclo.",
     meta: "Sugestão amigável",
-    tone: "success" as const,
+    tone: "success",
   };
 };
 
-export function DashboardOverview({ username, tasks, studySchedules, completedStatusName }: DashboardOverviewProps) {
+export function DashboardOverview({ username, tasks, completedStatusName }: DashboardOverviewProps) {
   const today = useMemo(() => new Date(), []);
   const todayTasks = useMemo(() => tasks.filter((task) => isTaskDueToday(task)), [tasks]);
   const overdueTasks = useMemo(() => tasks.filter(isTaskOverdue), [tasks]);
@@ -129,16 +110,9 @@ export function DashboardOverview({ username, tasks, studySchedules, completedSt
     () => tasks.filter((task) => isCompletedTask(task, completedStatusName) && isSameDay(new Date(task.updated_at), today)),
     [completedStatusName, tasks, today],
   );
-  const upcomingTasks = useMemo(() => getUpcomingTasks(tasks, completedStatusName), [completedStatusName, tasks]);
-  const nextSchedule = useMemo(() => getNextStudySchedule(studySchedules), [studySchedules]);
-  const todaysSchedules = useMemo(
-    () => studySchedules.filter((schedule) => {
-      if (schedule.specific_date) return isSameDay(new Date(`${schedule.specific_date}T00:00:00`), today);
-      return schedule.day_of_week === today.getDay();
-    }),
-    [studySchedules, today],
-  );
   const openTasks = useMemo(() => tasks.filter((task) => !isCompletedTask(task, completedStatusName)), [completedStatusName, tasks]);
+
+
   const focus = useMemo(() => getFocusRecommendation(tasks, completedStatusName), [completedStatusName, tasks]);
   const FocusIcon = focus.icon;
   const allDoneToday = todayTasks.length === 0 && overdueTasks.length === 0;
@@ -160,55 +134,60 @@ export function DashboardOverview({ username, tasks, studySchedules, completedSt
               </p>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:min-w-[480px]">
-              <Metric label="tarefas pendentes" value={openTasks.length} />
-              <Metric label="entregas próximas" value={upcomingTasks.length} />
-              <Metric label="sessões planejadas" value={todaysSchedules.length} />
+              <Metric icon={CalendarClock} label="Para hoje" value={todayTasks.length} tone="today" />
+              <Metric icon={AlertTriangle} label="Atrasadas" value={overdueTasks.length} tone="overdue" />
+              <Metric icon={CheckCircle2} label="Concluídas hoje" value={completedToday.length} tone="done" />
+
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_1.4fr]">
-        <Card className="border-primary/30 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-xl"><Target className="h-5 w-5 text-primary" /> Seu foco de hoje</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><FocusIcon className="h-5 w-5" /></div>
-              <div className="space-y-1">
-                <Badge variant={focus.tone === "destructive" ? "destructive" : "secondary"}>{focus.meta}</Badge>
-                <h2 className="text-lg font-semibold text-foreground">{focus.title}</h2>
-                <p className="text-sm text-muted-foreground line-clamp-3">{focus.description}</p>
-              </div>
+      <Card className="border-primary/30 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-xl"><Target className="h-5 w-5 text-primary" /> Seu foco de hoje</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><FocusIcon className="h-5 w-5" /></div>
+            <div className="space-y-1">
+              <Badge variant={focus.tone === "destructive" ? "destructive" : "secondary"}>{focus.meta}</Badge>
+              <h2 className="text-lg font-semibold text-foreground">{focus.title}</h2>
+              <p className="text-sm text-muted-foreground line-clamp-3">{focus.description}</p>
             </div>
-            <Button asChild className="w-full sm:w-auto"><Link to="/pomodoro">Iniciar foco</Link></Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-xl"><Clock className="h-5 w-5 text-primary" /> Resumo do dia</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <SummaryItem icon={CalendarClock} label="Para hoje" value={todayTasks.length} />
-              <SummaryItem icon={AlertTriangle} label="Atrasadas" value={overdueTasks.length} />
-              <SummaryItem icon={CheckCircle2} label="Concluídas hoje" value={completedToday.length} />
-              <SummaryItem icon={Target} label="Próximos trabalhos" value={upcomingTasks.length} />
-              <SummaryItem icon={PlayCircle} label="Próxima sessão" value={nextSchedule ? format(nextSchedule.date, "EEE HH:mm", { locale: ptBR }) : "Sem agenda"} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {focus.taskId && (
+              <Button asChild variant="outline" className="w-full sm:w-auto">
+                <Link to={`/task/${focus.taskId}`}><Eye className="h-4 w-4" /> Ver tarefa</Link>
+              </Button>
+            )}
+            <Button asChild className="w-full sm:w-auto">
+              <Link to="/estudos/pomodoro"><PlayCircle className="h-4 w-4" /> Iniciar foco</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </section>
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
-  return <div className="rounded-xl border bg-background/70 p-3"><p className="text-2xl font-bold text-foreground">{value}</p><p className="text-xs text-muted-foreground">{label}</p></div>;
-}
+type MetricTone = "today" | "overdue" | "done";
 
-function SummaryItem({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: number | string }) {
-  return <div className="rounded-xl border bg-muted/30 p-3"><Icon className="mb-2 h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">{label}</p><p className="text-lg font-semibold text-foreground">{value}</p></div>;
+const TONE_STYLES: Record<MetricTone, { icon: string; value: string }> = {
+  today: { icon: "text-primary", value: "text-foreground" },
+  overdue: { icon: "text-destructive", value: "text-destructive" },
+  done: { icon: "text-success", value: "text-success" },
+};
+
+function Metric({ icon: Icon, label, value, tone }: { icon: typeof Target; label: string; value: number; tone: MetricTone }) {
+
+  const styles = TONE_STYLES[tone];
+  return (
+    <div className="rounded-xl border bg-background/70 p-3">
+      <Icon className={cn("mb-1 h-4 w-4", styles.icon)} />
+      <p className={cn("text-2xl font-bold", styles.value)}>{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
+    </div>
+  );
 }

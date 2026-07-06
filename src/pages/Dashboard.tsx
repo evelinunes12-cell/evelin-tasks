@@ -44,7 +44,7 @@ const Dashboard = () => {
   const {
     tasks, tasksLoading,
     availableSubjects, availableStatuses,
-    kanbanStatuses, dashboardStatuses, environments, studySchedules,
+    kanbanStatuses, dashboardStatuses, environments,
   } = useDashboardData();
 
   const { handleDeleteTask, handleStatusChange, handleArchiveTask } = useDashboardMutations();
@@ -100,25 +100,28 @@ const Dashboard = () => {
           <StreakCard streak={currentStreak} completedToday={completedToday} />
         </div>
 
-        <DashboardOverview
-          username={displayUsername}
-          tasks={tasks}
-          studySchedules={studySchedules}
-          completedStatusName={completedStatusName}
-        />
-
+        {/* Banner institucional (quando existir) */}
         <DashboardBannerCarousel />
         <OnboardingProgress />
         <IncompleteProfileAlert />
 
-        <StatsCards tasks={tasks} statuses={dashboardStatuses} />
+        {/* Painel do Dia + Seu foco de hoje */}
+        <DashboardOverview
+          username={displayUsername}
+          tasks={tasks}
+          completedStatusName={completedStatusName}
+        />
 
-        {/* Today's Summary */}
+        {/* O que merece sua atenção hoje + Planejamento do dia */}
         <TodaySummary
           tasks={tasks}
           onStatusChange={handleStatusChange}
           completedStatusName={completedStatusName}
         />
+
+        {/* Situação geral por status */}
+        <StatsCards tasks={tasks} statuses={dashboardStatuses} />
+
 
         {/* Filters */}
         <DashboardFilters

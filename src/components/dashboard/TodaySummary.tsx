@@ -10,16 +10,17 @@ interface TodaySummaryProps {
 
 export function TodaySummary({ tasks, onStatusChange, completedStatusName }: TodaySummaryProps) {
   return (
-    <section className="mb-8">
-      <h3 className="text-xl font-semibold text-foreground mb-4">Planejamento do Dia</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <TodayScheduleCard />
+    <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
+      <section aria-label="O que merece sua atenção hoje">
         <TodayTasksCard
           tasks={tasks}
           onStatusChange={onStatusChange}
-          completedStatusName={completedStatusName} />
-        
-      </div>
-    </section>);
-
+          completedStatusName={completedStatusName}
+        />
+      </section>
+      <section aria-label="Planejamento do dia">
+        <TodayScheduleCard />
+      </section>
+    </div>
+  );
 }
