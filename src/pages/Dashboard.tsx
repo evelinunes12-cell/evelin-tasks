@@ -8,7 +8,7 @@ import { useDashboardMutations } from "@/hooks/useDashboardMutations";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useDashboardNotifications } from "@/hooks/useDashboardNotifications";
 import Navbar from "@/components/Navbar";
-import StatsCards from "@/components/StatsCards";
+
 import StreakCard from "@/components/StreakCard";
 import { StreakKeeper } from "@/components/StreakKeeper";
 
@@ -44,7 +44,7 @@ const Dashboard = () => {
   const {
     tasks, tasksLoading,
     availableSubjects, availableStatuses,
-    kanbanStatuses, dashboardStatuses, environments,
+    kanbanStatuses, environments,
   } = useDashboardData();
 
   const { handleDeleteTask, handleStatusChange, handleArchiveTask } = useDashboardMutations();
@@ -119,8 +119,7 @@ const Dashboard = () => {
           completedStatusName={completedStatusName}
         />
 
-        {/* Situação geral por status */}
-        <StatsCards tasks={tasks} statuses={dashboardStatuses} />
+
 
 
         {/* Filters */}
