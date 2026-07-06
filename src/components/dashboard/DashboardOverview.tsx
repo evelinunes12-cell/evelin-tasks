@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { addDays, format, isSameDay, startOfToday } from "date-fns";
-import { AlertTriangle, CalendarClock, CircleDashed, Eye, PlayCircle, Sparkles, Target, Timer } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Eye, PlayCircle, Sparkles, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
