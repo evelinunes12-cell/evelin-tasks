@@ -115,8 +115,8 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
     [completedStatusName, tasks, today],
   );
   const openTasks = useMemo(() => tasks.filter((task) => !isCompletedTask(task, completedStatusName)), [completedStatusName, tasks]);
-  const inProgressTasks = useMemo(() => openTasks.filter(isInProgressTask), [openTasks]);
-  const todoTasks = useMemo(() => openTasks.filter((task) => !isInProgressTask(task)), [openTasks]);
+
+
   const focus = useMemo(() => getFocusRecommendation(tasks, completedStatusName), [completedStatusName, tasks]);
   const FocusIcon = focus.icon;
   const allDoneToday = todayTasks.length === 0 && overdueTasks.length === 0;
