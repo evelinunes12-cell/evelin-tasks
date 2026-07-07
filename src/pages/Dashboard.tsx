@@ -92,10 +92,10 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex-1">
+    <div className="min-h-screen min-w-0 flex-1 overflow-x-hidden bg-background">
       <StreakKeeper />
       <Navbar />
-      <main className="w-full px-4 py-8">
+      <main className="w-full min-w-0 px-4 py-8">
         <div className="mb-4 flex justify-end">
           <StreakCard streak={currentStreak} completedToday={completedToday} />
         </div>

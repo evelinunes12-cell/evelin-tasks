@@ -104,7 +104,7 @@ const SidebarShell = ({ children }: { children: React.ReactNode }) => {
       <div className="flex min-h-screen w-full">
         {showSidebar ? <AppSidebar /> : null}
         <SwipeToOpenSidebar />
-        <main className="flex-1 pb-16 md:pb-0">
+        <main className="min-w-0 flex-1 overflow-x-hidden pb-16 md:pb-0">
           <PullToRefresh>{children}</PullToRefresh>
         </main>
         <BottomNav />
