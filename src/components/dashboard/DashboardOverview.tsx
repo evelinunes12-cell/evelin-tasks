@@ -205,22 +205,22 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
   const allDoneToday = forTodayCount === 0 && overdueTasks.length === 0;
 
   return (
-    <section className="mb-6 space-y-4" aria-labelledby="dashboard-greeting">
+    <section className="mb-6 min-w-0 space-y-4" aria-labelledby="dashboard-greeting">
       <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background">
         <CardContent className="p-5 sm:p-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-2">
+          <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0 space-y-2">
               <Badge variant="secondary" className="w-fit gap-1"><Sparkles className="h-3.5 w-3.5" /> Painel do dia</Badge>
-              <h1 id="dashboard-greeting" className="text-3xl font-bold tracking-tight text-foreground">
+              <h1 id="dashboard-greeting" className="break-words text-3xl font-bold tracking-tight text-foreground">
                 {getGreeting()}, {username} 👋
               </h1>
-              <p className="max-w-2xl text-muted-foreground">
+              <p className="max-w-2xl break-words text-muted-foreground">
                 {allDoneToday
                   ? "Parabéns! Você concluiu todas as tarefas previstas para hoje."
                   : "Veja o que merece sua atenção agora e organize seu estudo com tranquilidade."}
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[560px]">
+            <div className="grid w-full min-w-0 grid-cols-2 gap-3 sm:grid-cols-4 lg:w-auto lg:basis-[560px]">
               <Metric icon={CalendarClock} label="Para hoje" value={forTodayCount} tone="today" />
               <Metric icon={Timer} label="Em progresso" value={inProgressTasks.length} tone="progress" />
               <Metric icon={AlertTriangle} label="Atrasadas" value={overdueTasks.length} tone="overdue" />
@@ -234,7 +234,7 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-xl"><Target className="h-5 w-5 text-primary" /> Seu foco de hoje</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="min-w-0 space-y-4 overflow-hidden">
           <div className="flex gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><FocusIcon className="h-5 w-5" /></div>
             <div className="min-w-0 flex-1 space-y-1">
@@ -243,7 +243,7 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
               <p className="text-sm text-muted-foreground line-clamp-2 break-words">{focus.description}</p>
             </div>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap">
             {focus.taskId && (
               <Button asChild variant="outline" className="w-full sm:w-auto">
                 <Link to={`/task/${focus.taskId}`}><Eye className="h-4 w-4" /> Ver tarefa</Link>
@@ -276,10 +276,10 @@ const TONE_STYLES: Record<MetricTone, { icon: string; value: string }> = {
 function Metric({ icon: Icon, label, value, tone }: { icon: typeof Target; label: string; value: number; tone: MetricTone }) {
   const styles = TONE_STYLES[tone];
   return (
-    <div className="rounded-xl border bg-background/70 p-3">
+    <div className="min-w-0 rounded-xl border bg-background/70 p-3">
       <Icon className={cn("mb-1 h-4 w-4", styles.icon)} />
       <p className={cn("text-2xl font-bold", styles.value)}>{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="break-words text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }
