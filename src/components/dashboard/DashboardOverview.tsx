@@ -237,10 +237,10 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
         <CardContent className="space-y-4">
           <div className="flex gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><FocusIcon className="h-5 w-5" /></div>
-            <div className="space-y-1">
-              <Badge variant={focus.tone === "destructive" ? "destructive" : "secondary"}>{focus.meta}</Badge>
-              <h2 className="text-lg font-semibold text-foreground">{focus.title}</h2>
-              <p className="text-sm text-muted-foreground line-clamp-3">{focus.description}</p>
+            <div className="min-w-0 flex-1 space-y-1">
+              <Badge variant={focus.tone === "destructive" ? "destructive" : "secondary"} className="max-w-full truncate">{focus.meta}</Badge>
+              <h2 className="text-lg font-semibold text-foreground line-clamp-2 break-words">{focus.title}</h2>
+              <p className="text-sm text-muted-foreground line-clamp-2 break-words">{focus.description}</p>
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
