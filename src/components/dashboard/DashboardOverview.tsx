@@ -14,11 +14,13 @@ import { fetchStudyCycles } from "@/services/studyCycles";
 import { fetchStudySchedules } from "@/services/studySchedules";
 import { isTaskDueToday, isTaskOverdue } from "@/hooks/useDashboardFilters";
 import {
-  buildAssistantRecommendation,
+  buildAssistantDigest,
   type AssistantCycle,
   type AssistantEvent,
   type AssistantGoal,
   type AssistantNote,
+  type AssistantRecommendation,
+  type AssistantStateLevel,
 } from "@/lib/assistant/recommendations";
 
 interface DashboardOverviewProps {
