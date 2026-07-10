@@ -92,7 +92,7 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
     enabled: !!user,
   });
 
-  // Última atividade (sessão de foco) por ciclo, para detectar inatividade.
+  // Última atividade (sessão de foco) e contagem por ciclo, para detectar inatividade.
   const { data: cycleActivity = {} } = useQuery({
     queryKey: ["cycle-activity-overview", user?.id],
     queryFn: async () => {
@@ -104,10 +104,12 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
         .order("started_at", { ascending: false })
         .limit(300);
       if (error) throw error;
-      const map: Record<string, number> = {};
+      const map: Record<string, { lastActivityAt: number; sessionCount: number }> = {};
       for (const row of data || []) {
         const id = (row as { study_cycle_id: string | null }).study_cycle_id;
-        if (id && !(id in map)) map[id] = new Date((row as { started_at: string }).started_at).getTime();
+        if (!id) continue;
+        if (!map[id]) map[id] = { lastActivityAt: new Date((row as { started_at: string }).started_at).getTime(), sessionCount: 0 };
+        map[id].sessionCount += 1;
       }
       return map;
     },
