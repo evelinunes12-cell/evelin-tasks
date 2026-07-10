@@ -14,11 +14,13 @@ import { fetchStudyCycles } from "@/services/studyCycles";
 import { fetchStudySchedules } from "@/services/studySchedules";
 import { isTaskDueToday, isTaskOverdue } from "@/hooks/useDashboardFilters";
 import {
-  buildAssistantRecommendation,
+  buildAssistantDigest,
   type AssistantCycle,
   type AssistantEvent,
   type AssistantGoal,
   type AssistantNote,
+  type AssistantRecommendation,
+  type AssistantStateLevel,
 } from "@/lib/assistant/recommendations";
 
 interface DashboardOverviewProps {
@@ -90,7 +92,7 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
     enabled: !!user,
   });
 
-  // Última atividade (sessão de foco) por ciclo, para detectar inatividade.
+  // Última atividade (sessão de foco) e contagem por ciclo, para detectar inatividade.
   const { data: cycleActivity = {} } = useQuery({
     queryKey: ["cycle-activity-overview", user?.id],
     queryFn: async () => {
@@ -102,10 +104,12 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
         .order("started_at", { ascending: false })
         .limit(300);
       if (error) throw error;
-      const map: Record<string, number> = {};
+      const map: Record<string, { lastActivityAt: number; sessionCount: number }> = {};
       for (const row of data || []) {
         const id = (row as { study_cycle_id: string | null }).study_cycle_id;
-        if (id && !(id in map)) map[id] = new Date((row as { started_at: string }).started_at).getTime();
+        if (!id) continue;
+        if (!map[id]) map[id] = { lastActivityAt: new Date((row as { started_at: string }).started_at).getTime(), sessionCount: 0 };
+        map[id].sessionCount += 1;
       }
       return map;
     },
@@ -147,16 +151,20 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
   );
   const forTodayCount = todayTasks.length + notesToday.length + goalsToday.length;
 
-  const recommendation = useMemo(() => {
-    const cyclesWithActivity: AssistantCycle[] = cycles.map((c) => ({
-      id: c.id,
-      name: c.name,
-      is_active: c.is_active,
-      created_at: c.created_at,
-      end_date: c.end_date,
-      lastActivityAt: cycleActivity[c.id] ?? null,
-    }));
-    return buildAssistantRecommendation({
+  const digest = useMemo(() => {
+    const cyclesWithActivity: AssistantCycle[] = cycles.map((c) => {
+      const activity = cycleActivity[c.id];
+      return {
+        id: c.id,
+        name: c.name,
+        is_active: c.is_active,
+        created_at: c.created_at,
+        end_date: c.end_date,
+        lastActivityAt: activity?.lastActivityAt ?? null,
+        sessionCount: activity?.sessionCount ?? 0,
+      };
+    });
+    return buildAssistantDigest({
       tasks,
       cycles: cyclesWithActivity,
       events: todayEvents as AssistantEvent[],
@@ -167,6 +175,7 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
     });
   }, [tasks, cycles, cycleActivity, todayEvents, goals, notes, completedStatusName, today]);
 
+  const recommendation = digest.primary;
   const RecIcon = recommendation.icon;
   const allDoneToday = forTodayCount === 0 && overdueTasks.length === 0;
 
@@ -198,8 +207,11 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
 
       <Card className="border-primary/30 shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Sparkles className="h-5 w-5 text-primary" /> Assistente Zenit
+          <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-xl">
+            <span className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" /> Assistente Zenit
+            </span>
+            <StateIndicator level={digest.state.level} label={digest.state.label} />
           </CardTitle>
         </CardHeader>
         <CardContent className="min-w-0 space-y-4 overflow-hidden">
@@ -229,6 +241,21 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
               <p className="line-clamp-2 break-words text-sm text-muted-foreground">{recommendation.message}</p>
             </div>
           </div>
+
+          {recommendation.details.length > 0 && (
+            <dl className="flex min-w-0 flex-wrap gap-2" aria-label="Detalhes da recomendação">
+              {recommendation.details.map((detail) => (
+                <div
+                  key={detail.label}
+                  className="flex min-w-0 items-center gap-1.5 rounded-lg border bg-muted/40 px-2.5 py-1 text-xs"
+                >
+                  <dt className="shrink-0 text-muted-foreground">{detail.label}:</dt>
+                  <dd className="min-w-0 truncate font-medium text-foreground">{detail.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+
           <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button asChild className="w-full sm:w-auto">
               <Link to={recommendation.primaryAction.to}>
@@ -241,9 +268,55 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
               </Button>
             )}
           </div>
+
+          {digest.secondary.length > 0 && (
+            <div className="min-w-0 space-y-2 border-t pt-4">
+              <p className="text-sm font-semibold text-foreground">Também merece atenção</p>
+              <ul className="min-w-0 space-y-1.5">
+                {digest.secondary.map((item) => (
+                  <SecondaryItem key={item.id} item={item} />
+                ))}
+              </ul>
+            </div>
+          )}
         </CardContent>
       </Card>
     </section>
+  );
+}
+
+const STATE_STYLES: Record<AssistantStateLevel, { dot: string; text: string; border: string }> = {
+  clear: { dot: "bg-success", text: "text-success", border: "border-success/30" },
+  attention: { dot: "bg-warning", text: "text-warning", border: "border-warning/30" },
+  critical: { dot: "bg-destructive", text: "text-destructive", border: "border-destructive/30" },
+};
+
+function StateIndicator({ level, label }: { level: AssistantStateLevel; label: string }) {
+  const styles = STATE_STYLES[level];
+  return (
+    <span
+      className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium", styles.border, styles.text)}
+      role="status"
+      aria-label={`Estado do assistente: ${label}`}
+    >
+      <span className={cn("h-2 w-2 rounded-full", styles.dot)} aria-hidden="true" />
+      {label}
+    </span>
+  );
+}
+
+function SecondaryItem({ item }: { item: AssistantRecommendation }) {
+  const Icon = item.icon;
+  return (
+    <li className="min-w-0">
+      <Link
+        to={item.primaryAction.to}
+        className="flex min-w-0 items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-muted/60"
+      >
+        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate text-foreground">{item.summary}</span>
+      </Link>
+    </li>
   );
 }
 
