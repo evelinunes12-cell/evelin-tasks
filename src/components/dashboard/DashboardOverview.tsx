@@ -151,16 +151,20 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
   );
   const forTodayCount = todayTasks.length + notesToday.length + goalsToday.length;
 
-  const recommendation = useMemo(() => {
-    const cyclesWithActivity: AssistantCycle[] = cycles.map((c) => ({
-      id: c.id,
-      name: c.name,
-      is_active: c.is_active,
-      created_at: c.created_at,
-      end_date: c.end_date,
-      lastActivityAt: cycleActivity[c.id] ?? null,
-    }));
-    return buildAssistantRecommendation({
+  const digest = useMemo(() => {
+    const cyclesWithActivity: AssistantCycle[] = cycles.map((c) => {
+      const activity = cycleActivity[c.id];
+      return {
+        id: c.id,
+        name: c.name,
+        is_active: c.is_active,
+        created_at: c.created_at,
+        end_date: c.end_date,
+        lastActivityAt: activity?.lastActivityAt ?? null,
+        sessionCount: activity?.sessionCount ?? 0,
+      };
+    });
+    return buildAssistantDigest({
       tasks,
       cycles: cyclesWithActivity,
       events: todayEvents as AssistantEvent[],
@@ -171,6 +175,7 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
     });
   }, [tasks, cycles, cycleActivity, todayEvents, goals, notes, completedStatusName, today]);
 
+  const recommendation = digest.primary;
   const RecIcon = recommendation.icon;
   const allDoneToday = forTodayCount === 0 && overdueTasks.length === 0;
 
