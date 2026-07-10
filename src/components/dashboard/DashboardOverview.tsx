@@ -207,8 +207,11 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
 
       <Card className="border-primary/30 shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Sparkles className="h-5 w-5 text-primary" /> Assistente Zenit
+          <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-xl">
+            <span className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" /> Assistente Zenit
+            </span>
+            <StateIndicator level={digest.state.level} label={digest.state.label} />
           </CardTitle>
         </CardHeader>
         <CardContent className="min-w-0 space-y-4 overflow-hidden">
@@ -238,6 +241,21 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
               <p className="line-clamp-2 break-words text-sm text-muted-foreground">{recommendation.message}</p>
             </div>
           </div>
+
+          {recommendation.details.length > 0 && (
+            <dl className="flex min-w-0 flex-wrap gap-2" aria-label="Detalhes da recomendação">
+              {recommendation.details.map((detail) => (
+                <div
+                  key={detail.label}
+                  className="flex min-w-0 items-center gap-1.5 rounded-lg border bg-muted/40 px-2.5 py-1 text-xs"
+                >
+                  <dt className="shrink-0 text-muted-foreground">{detail.label}:</dt>
+                  <dd className="min-w-0 truncate font-medium text-foreground">{detail.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+
           <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button asChild className="w-full sm:w-auto">
               <Link to={recommendation.primaryAction.to}>
@@ -250,9 +268,55 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
               </Button>
             )}
           </div>
+
+          {digest.secondary.length > 0 && (
+            <div className="min-w-0 space-y-2 border-t pt-4">
+              <p className="text-sm font-semibold text-foreground">Também merece atenção</p>
+              <ul className="min-w-0 space-y-1.5">
+                {digest.secondary.map((item) => (
+                  <SecondaryItem key={item.id} item={item} />
+                ))}
+              </ul>
+            </div>
+          )}
         </CardContent>
       </Card>
     </section>
+  );
+}
+
+const STATE_STYLES: Record<AssistantStateLevel, { dot: string; text: string; border: string }> = {
+  clear: { dot: "bg-success", text: "text-success", border: "border-success/30" },
+  attention: { dot: "bg-warning", text: "text-warning", border: "border-warning/30" },
+  critical: { dot: "bg-destructive", text: "text-destructive", border: "border-destructive/30" },
+};
+
+function StateIndicator({ level, label }: { level: AssistantStateLevel; label: string }) {
+  const styles = STATE_STYLES[level];
+  return (
+    <span
+      className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium", styles.border, styles.text)}
+      role="status"
+      aria-label={`Estado do assistente: ${label}`}
+    >
+      <span className={cn("h-2 w-2 rounded-full", styles.dot)} aria-hidden="true" />
+      {label}
+    </span>
+  );
+}
+
+function SecondaryItem({ item }: { item: AssistantRecommendation }) {
+  const Icon = item.icon;
+  return (
+    <li className="min-w-0">
+      <Link
+        to={item.primaryAction.to}
+        className="flex min-w-0 items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-muted/60"
+      >
+        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate text-foreground">{item.summary}</span>
+      </Link>
+    </li>
   );
 }
 
