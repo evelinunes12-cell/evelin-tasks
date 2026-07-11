@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { type Task } from "@/services/tasks";
 import { fetchStudyCycles } from "@/services/studyCycles";
 import { fetchStudySchedules } from "@/services/studySchedules";
+import { fetchInactiveSubjectNames } from "@/services/subjects";
 import { isTaskDueToday, isTaskOverdue } from "@/hooks/useDashboardFilters";
 import {
   buildAssistantDigest,
