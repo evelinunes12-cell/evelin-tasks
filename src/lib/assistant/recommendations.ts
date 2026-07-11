@@ -10,7 +10,6 @@ import {
   RefreshCw,
   Sparkles,
   StickyNote,
-  Target,
 } from "lucide-react";
 import { differenceInCalendarDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
