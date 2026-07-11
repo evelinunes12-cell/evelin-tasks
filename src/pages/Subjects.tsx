@@ -142,6 +142,35 @@ export default function Subjects() {
     }
   };
 
+  const handleToggleActive = async (subject: Subject, isActive: boolean) => {
+    // Optimistic update for snappy UI.
+    setSubjects((prev) => prev.map((s) => (s.id === subject.id ? { ...s, is_active: isActive } : s)));
+    try {
+      const { error } = await supabase
+        .from("subjects")
+        .update({ is_active: isActive })
+        .eq("id", subject.id);
+
+      if (error) throw error;
+      toast({
+        title: isActive ? "Disciplina reativada" : "Disciplina desativada",
+        description: isActive
+          ? `"${subject.name}" voltará a aparecer nas recomendações.`
+          : `"${subject.name}" não participará mais das recomendações.`,
+      });
+    } catch (error: any) {
+      // Revert on failure.
+      setSubjects((prev) => prev.map((s) => (s.id === subject.id ? { ...s, is_active: !isActive } : s)));
+      toast({
+        title: "Erro ao atualizar disciplina",
+        description: error.message || "Não foi possível atualizar o status da disciplina.",
+        variant: "destructive",
+      });
+    }
+  };
+
+
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
