@@ -132,7 +132,14 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
     enabled: !!user,
   });
 
-  // Métricas do painel do dia
+  // Disciplinas desativadas: excluídas das recomendações do assistente.
+  const { data: disabledSubjects = [] } = useQuery({
+    queryKey: ["inactive-subjects-overview", user?.id],
+    queryFn: fetchInactiveSubjectNames,
+    staleTime: 1000 * 60 * 5,
+    enabled: !!user,
+  });
+
   const todayTasks = useMemo(() => tasks.filter((task) => isTaskDueToday(task)), [tasks]);
   const overdueTasks = useMemo(() => tasks.filter(isTaskOverdue), [tasks]);
   const completedToday = useMemo(
