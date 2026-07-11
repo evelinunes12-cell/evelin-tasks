@@ -5,6 +5,7 @@ export interface Subject {
   id: string;
   name: string;
   color: string | null;
+  is_active: boolean;
   user_id: string;
   created_at: string;
   updated_at: string;
