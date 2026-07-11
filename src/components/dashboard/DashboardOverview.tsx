@@ -179,9 +179,10 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
       goals,
       notes,
       completedStatusName,
+      disabledSubjects,
       now: today,
     });
-  }, [tasks, cycles, cycleActivity, todayEvents, goals, notes, completedStatusName, today]);
+  }, [tasks, cycles, cycleActivity, todayEvents, goals, notes, completedStatusName, disabledSubjects, today]);
 
   const recommendation = digest.primary;
   const RecIcon = recommendation.icon;
