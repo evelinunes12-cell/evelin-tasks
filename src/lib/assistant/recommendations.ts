@@ -19,7 +19,7 @@ import { isTaskOverdue } from "@/hooks/useDashboardFilters";
 import { stripHtml } from "@/utils/sanitize";
 
 /**
- * Academic Assistant — recommendation engine (Sprint 2 + 2.1).
+ * Academic Assistant — recommendation engine (Sprint 2 + 2.1 + 2.2).
  *
  * Pure, data-driven logic that inspects the data the system already has
  * (tasks, study cycles, variable events, goals and notes) and returns:
@@ -30,10 +30,19 @@ import { stripHtml } from "@/utils/sanitize";
  * No new business rules, no generative AI: only interpretation of existing
  * data. The tone is always welcoming and never blaming.
  *
- * Sprint 2.1 note: the priority order and detection rules from Sprint 2 are
- * preserved. Instead of returning early on the first match, each rule now
- * contributes a candidate to a prioritized list, so we can reuse the exact
- * same logic to power both the primary recommendation and the secondary list.
+ * Sprint 2.2 notes (this iteration):
+ *   1. Priority: every candidate carries an explicit numeric `priority`
+ *      (lower = more relevant). Instead of relying on the order the rules run,
+ *      candidates are sorted by priority, so an overdue task is never hidden by
+ *      a task that only expires tomorrow. The detection rules themselves are
+ *      unchanged.
+ *   2. Diversity: candidates are de-duplicated by their underlying entity, and
+ *      the "Também merece atenção" list favours different categories so the
+ *      same task / kind of item is not repeated.
+ *   3. Temporal context: past events are ignored, notes are limited to the near
+ *      future, and very old overdue goals are dropped.
+ *   4. Reason: each candidate exposes a short, objective `reason` explaining why
+ *      it was picked, built only from existing data.
  */
 
 export type AssistantCategory = "task" | "cycle" | "event" | "goal" | "note" | "clear";
@@ -59,6 +68,12 @@ export interface AssistantRecommendation {
   title: string;
   message: string;
   tone: AssistantTone;
+  /** Lower = more relevant. Drives primary selection and ordering. */
+  priority: number;
+  /** Stable key of the underlying entity, used to avoid repeating an item. */
+  entityKey: string;
+  /** Objective, short justification of why this was recommended. */
+  reason: string;
   /** Objective context chips (discipline, deadline, status, etc.). */
   details: AssistantDetail[];
   /** One-line description used in the "Também merece atenção" list. */
@@ -121,6 +136,8 @@ export interface AssistantInput {
   goals: AssistantGoal[];
   notes: AssistantNote[];
   completedStatusName: string;
+  /** Names of deactivated subjects — excluded from every recommendation. */
+  disabledSubjects?: string[];
   now?: Date;
 }
 
@@ -132,6 +149,26 @@ const CREATED_STALE_DAYS = 14; // criada há muito tempo sem atualização
 const CYCLE_IDLE_DAYS = 4; // ciclo sem novos registros
 const CYCLE_NEAR_END_DAYS = 3; // ciclo perto da data final
 const GOAL_NEAR_DAYS = 3; // meta próxima do vencimento
+const GOAL_OVERDUE_LIMIT_DAYS = 30; // não recomendar metas vencidas há muito tempo
+const NOTE_NEAR_DAYS = 3; // anotações de hoje / amanhã / próximas
+const NOTE_STALE_LIMIT_DAYS = 14; // ignorar anotações planejadas há muito tempo
+
+// ---- Priority scale (lower number = higher relevance) ----------------------
+// Order requested by the product: tarefas atrasadas > vencendo hoje > amanhã >
+// ciclos abandonados > metas vencidas > metas próximas > eventos > anotações.
+
+const PRIORITY = {
+  TASK_OVERDUE: 100,
+  TASK_DUE: 200, // + days (0 = hoje, 1 = amanhã, 2 = depois)
+  CYCLE_IDLE: 350,
+  CYCLE_NEAR_END: 360,
+  GOAL_OVERDUE: 400,
+  GOAL_NEAR: 450,
+  EVENT_TODAY: 500,
+  TASK_STALLED: 600,
+  TASK_FORGOTTEN: 650,
+  NOTE: 700,
+} as const;
 
 // ---- Helpers ---------------------------------------------------------------
 
@@ -184,17 +221,23 @@ const taskDetails = (task: Task, now: Date): AssistantDetail[] => {
   return details;
 };
 
+const normalizeName = (name: string) => name.trim().toLowerCase();
+
 // ---- Candidate collection --------------------------------------------------
 
 /**
- * Builds every applicable recommendation in strict priority order.
- * The first item is the primary recommendation; the rest feed the
- * "Também merece atenção" list. Each rule contributes at most one candidate.
+ * Builds every applicable recommendation. Each rule contributes at most one
+ * candidate, tagged with an explicit `priority`, an `entityKey` (for
+ * de-duplication) and a short `reason`. The caller sorts by priority.
  */
 function collectCandidates(input: AssistantInput, now: Date): AssistantRecommendation[] {
   const { tasks, cycles, events, goals, notes, completedStatusName } = input;
   const candidates: AssistantRecommendation[] = [];
-  const openTasks = tasks.filter((t) => !isCompleted(t, completedStatusName));
+
+  const disabled = new Set((input.disabledSubjects ?? []).map(normalizeName));
+  const isEnabledSubject = (task: Task) => !task.subject_name || !disabled.has(normalizeName(task.subject_name));
+
+  const openTasks = tasks.filter((t) => !isCompleted(t, completedStatusName) && isEnabledSubject(t));
 
   // 1a. Tarefas próximas do vencimento (hoje / amanhã / depois de amanhã)
   const nearDue = openTasks
@@ -212,6 +255,9 @@ function collectCandidates(input: AssistantInput, now: Date): AssistantRecommend
       title: `Sua prioridade pode ser ${task.subject_name}`,
       message: description(task, `Essa entrega de ${task.subject_name} vence ${dueLabel(days)}. Que tal dar o próximo passo agora?`),
       tone: days === 0 ? "warning" : "default",
+      priority: PRIORITY.TASK_DUE + days,
+      entityKey: `task:${task.id}`,
+      reason: `Recomendado porque vence ${dueLabel(days)}.`,
       details: taskDetails(task, now),
       summary: `${task.subject_name} vence ${dueLabel(days)}.`,
       primaryAction: { label: "Abrir tarefa", to: `/task/${task.id}` },
@@ -233,6 +279,9 @@ function collectCandidates(input: AssistantInput, now: Date): AssistantRecommend
       title: `Que tal retomar ${overdue.subject_name}?`,
       message: description(overdue, `Essa tarefa de ${overdue.subject_name} ficou para trás. Um pequeno passo já ajuda a colocá-la em dia.`),
       tone: "destructive",
+      priority: PRIORITY.TASK_OVERDUE,
+      entityKey: `task:${overdue.id}`,
+      reason: `Está atrasada há ${daysLabel(days)}.`,
       details: taskDetails(overdue, now),
       summary: `${overdue.subject_name} atrasada há ${daysLabel(days)}.`,
       primaryAction: { label: "Abrir tarefa", to: `/task/${overdue.id}` },
@@ -254,6 +303,9 @@ function collectCandidates(input: AssistantInput, now: Date): AssistantRecommend
       title: `Vale a pena retomar ${stalledInProgress.subject_name}`,
       message: description(stalledInProgress, `Você tem uma tarefa em andamento há ${daysLabel(days)}. Talvez seja um bom momento para dar continuidade.`),
       tone: "default",
+      priority: PRIORITY.TASK_STALLED,
+      entityKey: `task:${stalledInProgress.id}`,
+      reason: `Em andamento sem atualização há ${daysLabel(days)}.`,
       details: taskDetails(stalledInProgress, now),
       summary: `${stalledInProgress.subject_name} em andamento há ${daysLabel(days)}.`,
       primaryAction: { label: "Abrir tarefa", to: `/task/${stalledInProgress.id}` },
@@ -275,6 +327,9 @@ function collectCandidates(input: AssistantInput, now: Date): AssistantRecommend
       title: `Que tal revisar ${forgotten.subject_name}?`,
       message: description(forgotten, `Essa tarefa está parada há um tempo. Vale a pena revisar se ela ainda faz sentido ou dar o próximo passo.`),
       tone: "default",
+      priority: PRIORITY.TASK_FORGOTTEN,
+      entityKey: `task:${forgotten.id}`,
+      reason: `Está sem atualização há ${daysLabel(days)}.`,
       details: taskDetails(forgotten, now),
       summary: `${forgotten.subject_name} sem atualização há ${daysLabel(days)}.`,
       primaryAction: { label: "Abrir tarefa", to: `/task/${forgotten.id}` },
@@ -310,6 +365,9 @@ function collectCandidates(input: AssistantInput, now: Date): AssistantRecommend
       title: `Reta final do ciclo "${cycle.name}"`,
       message: `Seu ciclo "${cycle.name}" termina ${dueLabel(days)}. Você está em um bom momento para consolidar os estudos.`,
       tone: "default",
+      priority: PRIORITY.CYCLE_NEAR_END,
+      entityKey: `cycle:${cycle.id}`,
+      reason: `Seu ciclo termina ${dueLabel(days)}.`,
       details: cycleSessionDetail(cycle),
       summary: `Ciclo "${cycle.name}" termina ${dueLabel(days)}.`,
       primaryAction: { label: "Abrir ciclo", to: "/estudos/ciclo" },
@@ -337,6 +395,9 @@ function collectCandidates(input: AssistantInput, now: Date): AssistantRecommend
       title: `Que tal retomar o ciclo "${cycle.name}"?`,
       message: `Seu ciclo de estudos "${cycle.name}" está há ${daysLabel(days)} sem novos registros. Uma sessão curta já mantém o ritmo.`,
       tone: "default",
+      priority: PRIORITY.CYCLE_IDLE,
+      entityKey: `cycle:${cycle.id}`,
+      reason: `Seu ciclo está sem estudos há ${daysLabel(days)}.`,
       details,
       summary: `Ciclo "${cycle.name}" sem registros há ${daysLabel(days)}.`,
       primaryAction: { label: "Registrar estudo", to: "/estudos/pomodoro" },
@@ -344,33 +405,44 @@ function collectCandidates(input: AssistantInput, now: Date): AssistantRecommend
     });
   }
 
-  // 3. EVENTOS VARIÁVEIS (hoje) -------------------------------------------
-  const todayEvent = events
+  // 3. EVENTOS VARIÁVEIS (apenas futuros) ---------------------------------
+  const upcomingEvent = events
     .filter((e) => e.specific_date)
-    .sort((a, b) => a.start_time.localeCompare(b.start_time))[0];
-  if (todayEvent) {
-    const time = todayEvent.start_time.slice(0, 5);
+    .map((e) => {
+      const [h, m] = e.start_time.split(":").map(Number);
+      const when = parsePlanner(e.specific_date!);
+      when.setHours(h || 0, m || 0, 0, 0);
+      return { event: e, when };
+    })
+    .filter(({ when }) => when.getTime() >= now.getTime())
+    .sort((a, b) => a.when.getTime() - b.when.getTime())[0];
+  if (upcomingEvent) {
+    const { event } = upcomingEvent;
+    const time = event.start_time.slice(0, 5);
     const details: AssistantDetail[] = [{ label: "Horário", value: `${time}` }];
-    if (todayEvent.specific_date) details.push({ label: "Data", value: formatDate(parsePlanner(todayEvent.specific_date)) });
+    if (event.specific_date) details.push({ label: "Data", value: formatDate(parsePlanner(event.specific_date)) });
     candidates.push({
-      id: `event-${todayEvent.id}`,
+      id: `event-${event.id}`,
       category: "event",
       icon: CalendarDays,
       meta: `Evento · hoje às ${time}`,
-      title: todayEvent.title,
+      title: event.title,
       message: `Você possui um evento agendado para hoje às ${time}. Vale a pena conferir sua agenda.`,
       tone: "default",
+      priority: PRIORITY.EVENT_TODAY,
+      entityKey: `event:${event.id}`,
+      reason: `Acontece hoje às ${time}.`,
       details,
-      summary: `${todayEvent.title} hoje às ${time}.`,
+      summary: `${event.title} hoje às ${time}.`,
       primaryAction: { label: "Visualizar agenda", to: "/planner" },
     });
   }
 
-  // 4. METAS ---------------------------------------------------------------
+  // 4. METAS (próximas ou vencidas dentro de um período razoável) ----------
   const goal = goals
     .filter((g) => g.target_date)
     .map((g) => ({ goal: g, days: differenceInCalendarDays(parsePlanner(g.target_date!), now) }))
-    .filter(({ days }) => days <= GOAL_NEAR_DAYS)
+    .filter(({ days }) => days <= GOAL_NEAR_DAYS && days >= -GOAL_OVERDUE_LIMIT_DAYS)
     .sort((a, b) => a.days - b.days)[0];
   if (goal) {
     const { goal: g, days } = goal;
@@ -385,32 +457,77 @@ function collectCandidates(input: AssistantInput, now: Date): AssistantRecommend
         ? `Essa meta ficou para trás. Que tal retomá-la e seguir avançando no seu objetivo?`
         : `Sua meta vence ${dueLabel(days)}. Pequenos passos hoje aproximam você do objetivo.`,
       tone: "default",
+      priority: overdueGoal ? PRIORITY.GOAL_OVERDUE : PRIORITY.GOAL_NEAR,
+      entityKey: `goal:${g.id}`,
+      reason: overdueGoal ? `Esta meta venceu há ${daysLabel(Math.abs(days))}.` : `Esta meta vence ${dueLabel(days)}.`,
       details: g.target_date ? [{ label: "Data prevista", value: formatDate(parsePlanner(g.target_date)) }] : [],
       summary: overdueGoal ? `Meta "${g.title}" ficou para trás.` : `Meta "${g.title}" vence ${dueLabel(days)}.`,
       primaryAction: { label: "Visualizar meta", to: "/planner" },
     });
   }
 
-  // 5. ANOTAÇÕES -----------------------------------------------------------
+  // 5. ANOTAÇÕES (apenas de hoje / amanhã / próximas) ---------------------
   const note = notes
     .filter((n) => n.planned_date)
-    .sort((a, b) => parsePlanner(a.planned_date!).getTime() - parsePlanner(b.planned_date!).getTime())[0];
+    .map((n) => ({ note: n, days: differenceInCalendarDays(parsePlanner(n.planned_date!), now) }))
+    .filter(({ days }) => days <= NOTE_NEAR_DAYS && days >= -NOTE_STALE_LIMIT_DAYS)
+    .sort((a, b) => a.days - b.days)[0];
   if (note) {
+    const { note: n, days } = note;
     candidates.push({
-      id: `note-${note.id}`,
+      id: `note-${n.id}`,
       category: "note",
       icon: StickyNote,
       meta: "Anotação planejada",
-      title: note.title,
+      title: n.title,
       message: "Você tem uma anotação planejada. Que tal revisá-la para manter tudo em dia?",
       tone: "default",
-      details: note.planned_date ? [{ label: "Planejada para", value: formatDate(parsePlanner(note.planned_date)) }] : [],
-      summary: `Anotação "${note.title}" planejada.`,
+      priority: PRIORITY.NOTE,
+      entityKey: `note:${n.id}`,
+      reason: days < 0
+        ? `Planejada há ${daysLabel(Math.abs(days))}.`
+        : `Planejada para ${dueLabel(days)}.`,
+      details: n.planned_date ? [{ label: "Planejada para", value: formatDate(parsePlanner(n.planned_date)) }] : [],
+      summary: `Anotação "${n.title}" planejada.`,
       primaryAction: { label: "Ver no planner", to: "/planner" },
     });
   }
 
-  return candidates;
+  // De-duplicate by underlying entity (keep the most relevant) and sort.
+  const byEntity = new Map<string, AssistantRecommendation>();
+  for (const candidate of candidates) {
+    const existing = byEntity.get(candidate.entityKey);
+    if (!existing || candidate.priority < existing.priority) {
+      byEntity.set(candidate.entityKey, candidate);
+    }
+  }
+
+  return Array.from(byEntity.values()).sort((a, b) => a.priority - b.priority);
+}
+
+// ---- Secondary list (favor category diversity) -----------------------------
+
+function pickSecondary(sorted: AssistantRecommendation[], primary: AssistantRecommendation, limit = 3): AssistantRecommendation[] {
+  const pool = sorted.filter((c) => c.entityKey !== primary.entityKey);
+  const chosen: AssistantRecommendation[] = [];
+  const usedCategories = new Set<AssistantCategory>([primary.category]);
+
+  // Pass 1: prefer categories not shown yet, to maximize diversity.
+  for (const candidate of pool) {
+    if (chosen.length >= limit) break;
+    if (!usedCategories.has(candidate.category)) {
+      chosen.push(candidate);
+      usedCategories.add(candidate.category);
+    }
+  }
+
+  // Pass 2: fill remaining slots with the next most relevant items.
+  for (const candidate of pool) {
+    if (chosen.length >= limit) break;
+    if (!chosen.includes(candidate)) chosen.push(candidate);
+  }
+
+  return chosen;
 }
 
 // ---- Clear state (nothing pending) -----------------------------------------
@@ -424,6 +541,9 @@ function clearRecommendation(): AssistantRecommendation {
     title: "Excelente! Você não possui pendências críticas hoje.",
     message: "Aproveite este momento para revisar conteúdos ou adiantar atividades futuras. Você está em um ótimo ritmo!",
     tone: "success",
+    priority: Number.MAX_SAFE_INTEGER,
+    entityKey: "clear",
+    reason: "Você não tem pendências críticas no momento.",
     details: [],
     summary: "Nenhuma pendência crítica no momento.",
     primaryAction: { label: "Iniciar foco", to: "/estudos/pomodoro" },
@@ -435,7 +555,10 @@ function clearRecommendation(): AssistantRecommendation {
 
 function computeState(input: AssistantInput, now: Date, candidates: AssistantRecommendation[]): AssistantState {
   const { tasks, completedStatusName } = input;
-  const openTasks = tasks.filter((t) => !isCompleted(t, completedStatusName));
+  const disabled = new Set((input.disabledSubjects ?? []).map(normalizeName));
+  const openTasks = tasks.filter(
+    (t) => !isCompleted(t, completedStatusName) && (!t.subject_name || !disabled.has(normalizeName(t.subject_name))),
+  );
 
   const overdueCount = openTasks.filter((t) => t.due_date && isTaskOverdue(t)).length;
   const nearDueCount = openTasks.filter((t) => {
@@ -469,7 +592,7 @@ export function buildAssistantRecommendation(input: AssistantInput): AssistantRe
 }
 
 /**
- * Full digest (Sprint 2.1): primary recommendation, secondary items and state.
+ * Full digest (Sprint 2.1+): primary recommendation, secondary items and state.
  */
 export function buildAssistantDigest(input: AssistantInput): AssistantDigest {
   const now = input.now ?? new Date();
@@ -480,9 +603,10 @@ export function buildAssistantDigest(input: AssistantInput): AssistantDigest {
     return { primary: clearRecommendation(), secondary: [], state };
   }
 
+  const primary = candidates[0];
   return {
-    primary: candidates[0],
-    secondary: candidates.slice(1, 4),
+    primary,
+    secondary: pickSecondary(candidates, primary),
     state,
   };
 }
