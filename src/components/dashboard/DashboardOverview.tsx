@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { type Task } from "@/services/tasks";
 import { fetchStudyCycles } from "@/services/studyCycles";
 import { fetchStudySchedules } from "@/services/studySchedules";
+import { fetchInactiveSubjectNames } from "@/services/subjects";
 import { isTaskDueToday, isTaskOverdue } from "@/hooks/useDashboardFilters";
 import {
   buildAssistantDigest,
@@ -131,7 +132,14 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
     enabled: !!user,
   });
 
-  // Métricas do painel do dia
+  // Disciplinas desativadas: excluídas das recomendações do assistente.
+  const { data: disabledSubjects = [] } = useQuery({
+    queryKey: ["inactive-subjects-overview", user?.id],
+    queryFn: fetchInactiveSubjectNames,
+    staleTime: 1000 * 60 * 5,
+    enabled: !!user,
+  });
+
   const todayTasks = useMemo(() => tasks.filter((task) => isTaskDueToday(task)), [tasks]);
   const overdueTasks = useMemo(() => tasks.filter(isTaskOverdue), [tasks]);
   const completedToday = useMemo(
@@ -171,9 +179,10 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
       goals,
       notes,
       completedStatusName,
+      disabledSubjects,
       now: today,
     });
-  }, [tasks, cycles, cycleActivity, todayEvents, goals, notes, completedStatusName, today]);
+  }, [tasks, cycles, cycleActivity, todayEvents, goals, notes, completedStatusName, disabledSubjects, today]);
 
   const recommendation = digest.primary;
   const RecIcon = recommendation.icon;
@@ -239,6 +248,12 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
               </Badge>
               <h2 className="line-clamp-2 break-words text-lg font-semibold text-foreground">{recommendation.title}</h2>
               <p className="line-clamp-2 break-words text-sm text-muted-foreground">{recommendation.message}</p>
+              {recommendation.reason && recommendation.category !== "clear" && (
+                <p className="flex items-start gap-1.5 break-words text-xs font-medium text-primary">
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span className="min-w-0">{recommendation.reason}</span>
+                </p>
+              )}
             </div>
           </div>
 

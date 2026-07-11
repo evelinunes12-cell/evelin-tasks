@@ -5,6 +5,7 @@ export interface Subject {
   id: string;
   name: string;
   color: string | null;
+  is_active: boolean;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -36,6 +37,26 @@ export const fetchSubjectNames = async () => {
   
   if (error) throw error;
   return data.map(s => s.name);
+};
+
+/** Names of subjects the user has deactivated (excluded from recommendations). */
+export const fetchInactiveSubjectNames = async () => {
+  const { data, error } = await supabase
+    .from("subjects")
+    .select("name")
+    .eq("is_active", false);
+
+  if (error) throw error;
+  return (data || []).map((s) => s.name);
+};
+
+export const setSubjectActive = async (id: string, isActive: boolean) => {
+  const { error } = await supabase
+    .from("subjects")
+    .update({ is_active: isActive })
+    .eq("id", id);
+
+  if (error) throw error;
 };
 
 export const ensureSubjectExists = async (

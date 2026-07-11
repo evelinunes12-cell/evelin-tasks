@@ -15,12 +15,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface Subject {
   id: string;
   name: string;
   color: string | null;
+  is_active: boolean;
 }
 
 export default function Subjects() {
@@ -138,6 +142,35 @@ export default function Subjects() {
     }
   };
 
+  const handleToggleActive = async (subject: Subject, isActive: boolean) => {
+    // Optimistic update for snappy UI.
+    setSubjects((prev) => prev.map((s) => (s.id === subject.id ? { ...s, is_active: isActive } : s)));
+    try {
+      const { error } = await supabase
+        .from("subjects")
+        .update({ is_active: isActive })
+        .eq("id", subject.id);
+
+      if (error) throw error;
+      toast({
+        title: isActive ? "Disciplina reativada" : "Disciplina desativada",
+        description: isActive
+          ? `"${subject.name}" voltará a aparecer nas recomendações.`
+          : `"${subject.name}" não participará mais das recomendações.`,
+      });
+    } catch (error: any) {
+      // Revert on failure.
+      setSubjects((prev) => prev.map((s) => (s.id === subject.id ? { ...s, is_active: !isActive } : s)));
+      toast({
+        title: "Erro ao atualizar disciplina",
+        description: error.message || "Não foi possível atualizar o status da disciplina.",
+        variant: "destructive",
+      });
+    }
+  };
+
+
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -177,15 +210,18 @@ export default function Subjects() {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {subjects.map((subject) => (
-            <Card key={subject.id}>
+            <Card key={subject.id} className={cn(!subject.is_active && "opacity-60")}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
                     <div
-                      className="w-4 h-4 rounded-full"
+                      className="w-4 h-4 rounded-full shrink-0"
                       style={{ backgroundColor: subject.color || "#3b82f6" }}
                     />
-                    <CardTitle className="text-lg">{subject.name}</CardTitle>
+                    <CardTitle className="truncate text-lg">{subject.name}</CardTitle>
+                    {!subject.is_active && (
+                      <Badge variant="outline" className="shrink-0">Inativa</Badge>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -207,6 +243,25 @@ export default function Subjects() {
                   </div>
                 </div>
               </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex items-center justify-between gap-2 rounded-lg border bg-muted/40 px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      {subject.is_active ? "Ativa" : "Inativa"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {subject.is_active
+                        ? "Participa das recomendações do assistente."
+                        : "Fora das recomendações. Pode ser reativada."}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={subject.is_active}
+                    onCheckedChange={(checked) => handleToggleActive(subject, checked)}
+                    aria-label={subject.is_active ? `Desativar ${subject.name}` : `Ativar ${subject.name}`}
+                  />
+                </div>
+              </CardContent>
             </Card>
           ))}
         </div>
