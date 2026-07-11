@@ -21,6 +21,7 @@ interface Subject {
   id: string;
   name: string;
   color: string | null;
+  is_active: boolean;
 }
 
 export default function Subjects() {
