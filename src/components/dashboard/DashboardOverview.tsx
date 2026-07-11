@@ -248,6 +248,12 @@ export function DashboardOverview({ username, tasks, completedStatusName }: Dash
               </Badge>
               <h2 className="line-clamp-2 break-words text-lg font-semibold text-foreground">{recommendation.title}</h2>
               <p className="line-clamp-2 break-words text-sm text-muted-foreground">{recommendation.message}</p>
+              {recommendation.reason && recommendation.category !== "clear" && (
+                <p className="flex items-start gap-1.5 break-words text-xs font-medium text-primary">
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span className="min-w-0">{recommendation.reason}</span>
+                </p>
+              )}
             </div>
           </div>
 
