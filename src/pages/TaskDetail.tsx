@@ -765,20 +765,78 @@ const TaskDetail = () => {
               <CardTitle>Informações Gerais</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Status:</span>
-                <Badge variant="secondary">
-                  {task.status}
-                </Badge>
-              </div>
-              {task.due_date && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    Data de entrega: {formatDateDisplay(task.due_date)}
-                  </span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-muted-foreground shrink-0">Status:</span>
+                <div className="w-full max-w-[240px]">
+                  <HierarchicalStatusSelect
+                    value={task.status}
+                    onChange={handleInlineStatusChange}
+                    statuses={statuses}
+                    open={openStatusCombo}
+                    onOpenChange={setOpenStatusCombo}
+                    allowCreate={false}
+                    environmentId={task.environment_id}
+                  />
                 </div>
-              )}
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-muted-foreground shrink-0 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Data de entrega:
+                </span>
+                <Popover open={openDatePopover} onOpenChange={setOpenDatePopover}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isSavingDate}
+                      className={cn(
+                        "w-full max-w-[240px] justify-start text-left font-normal",
+                        !task.due_date && "text-muted-foreground"
+                      )}
+                    >
+                      {isSavingDate ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Calendar className="mr-2 h-4 w-4" />
+                      )}
+                      <span className="truncate">
+                        {task.due_date
+                          ? formatDateDisplay(task.due_date)
+                          : "Definir data"}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <CalendarPicker
+                      mode="single"
+                      selected={task.due_date ? parseDueDate(task.due_date) : undefined}
+                      onSelect={handleInlineDueDateChange}
+                      initialFocus
+                      className="pointer-events-auto"
+                      locale={ptBR}
+                      modifiers={{
+                        weekend: (date) => date.getDay() === 0 || date.getDay() === 6,
+                      }}
+                      modifiersClassNames={{
+                        weekend: "text-red-500",
+                      }}
+                    />
+                    {task.due_date && (
+                      <div className="border-t p-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start text-muted-foreground"
+                          onClick={() => handleInlineDueDateChange(undefined)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remover data
+                        </Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
               {task.is_group_work && (
                 <div className="flex items-start gap-2">
                   <Users className="w-4 h-4 text-muted-foreground mt-1" />
