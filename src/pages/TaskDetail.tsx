@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useConfetti } from "@/hooks/useConfetti";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { Task, ChecklistItem } from "@/services/tasks";
+import { Task, ChecklistItem, parseDueDate, formatDateForDB } from "@/services/tasks";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +62,12 @@ import { NoteDialog } from "@/components/planner/NoteDialog";
 import { createNote } from "@/services/planner";
 import { fetchSubjects, Subject } from "@/services/subjects";
 import RichTextEditor from "@/components/RichTextEditor";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import HierarchicalStatusSelect, { HierarchicalStatus } from "@/components/HierarchicalStatusSelect";
+import { fetchStatusesHierarchical } from "@/services/statuses";
+import { fetchEnvironmentStatusesHierarchical } from "@/services/environmentData";
+import { cn } from "@/lib/utils";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -114,6 +120,13 @@ const TaskDetail = () => {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState("");
   const [isSavingDescription, setIsSavingDescription] = useState(false);
+  // Inline edit: status
+  const [statuses, setStatuses] = useState<HierarchicalStatus[]>([]);
+  const [openStatusCombo, setOpenStatusCombo] = useState(false);
+  const [isSavingStatus, setIsSavingStatus] = useState(false);
+  // Inline edit: data de entrega
+  const [openDatePopover, setOpenDatePopover] = useState(false);
+  const [isSavingDate, setIsSavingDate] = useState(false);
   
   // Tipos de arquivo suportados para preview
   const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
@@ -557,6 +570,102 @@ const TaskDetail = () => {
     }
   }, [task, subjects]);
 
+  // Carrega os status disponíveis (do ambiente ou pessoais) para edição inline
+  useEffect(() => {
+    if (!task) return;
+    const loadStatuses = async () => {
+      try {
+        const data = task.environment_id
+          ? await fetchEnvironmentStatusesHierarchical(task.environment_id)
+          : await fetchStatusesHierarchical();
+        setStatuses(data as unknown as HierarchicalStatus[]);
+      } catch (error) {
+        logError("Error fetching statuses", error);
+      }
+    };
+    loadStatuses();
+  }, [task?.environment_id]);
+
+  // Edição inline: altera o status salvando automaticamente
+  const handleInlineStatusChange = async (newStatus: string) => {
+    if (!task || !id || newStatus === task.status) {
+      setOpenStatusCombo(false);
+      return;
+    }
+    const previousStatus = task.status;
+    setTask({ ...task, status: newStatus });
+    setOpenStatusCombo(false);
+    setIsSavingStatus(true);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: newStatus })
+        .eq("id", id);
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      sonnerToast.success("Status atualizado!");
+
+      if (user?.id) {
+        if (newStatus.toLowerCase().includes("conclu")) {
+          triggerConfetti();
+          await registerActivity(user.id);
+          queryClient.invalidateQueries({ queryKey: ["user-streak", user.id] });
+          logXP(user.id, "task_completed", XP.TASK_COMPLETED);
+          logXPForTaskAssignees(id, "task_completed");
+        } else {
+          await registerActivity(user.id);
+          queryClient.invalidateQueries({ queryKey: ["user-streak", user.id] });
+          logXP(user.id, "status_change", XP.STATUS_CHANGE);
+          logXPForTaskAssignees(id, "status_change");
+        }
+      }
+    } catch (error) {
+      logError("Error updating status inline", error);
+      setTask((prev) => (prev ? { ...prev, status: previousStatus } : prev));
+      sonnerToast.error("Erro ao atualizar status");
+    } finally {
+      setIsSavingStatus(false);
+    }
+  };
+
+  // Edição inline: altera a data de entrega salvando automaticamente
+  const handleInlineDueDateChange = async (date: Date | undefined) => {
+    if (!task || !id) return;
+    const newDueDate = date ? formatDateForDB(date) : null;
+    if (newDueDate === task.due_date) {
+      setOpenDatePopover(false);
+      return;
+    }
+    const previousDueDate = task.due_date;
+    setTask({ ...task, due_date: newDueDate as string });
+    setOpenDatePopover(false);
+    setIsSavingDate(true);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ due_date: newDueDate })
+        .eq("id", id);
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      sonnerToast.success("Data de entrega atualizada!");
+
+      if (user?.id) {
+        registerActivity(user.id);
+        logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+        logXPForTaskAssignees(id, "edit_basic");
+      }
+    } catch (error) {
+      logError("Error updating due date inline", error);
+      setTask((prev) => (prev ? { ...prev, due_date: previousDueDate } : prev));
+      sonnerToast.error("Erro ao atualizar data de entrega");
+    } finally {
+      setIsSavingDate(false);
+    }
+  };
+
+
   const handleSaveNote = async (data: {
     title: string;
     content: string;
@@ -656,20 +765,78 @@ const TaskDetail = () => {
               <CardTitle>Informações Gerais</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Status:</span>
-                <Badge variant="secondary">
-                  {task.status}
-                </Badge>
-              </div>
-              {task.due_date && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    Data de entrega: {formatDateDisplay(task.due_date)}
-                  </span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-muted-foreground shrink-0">Status:</span>
+                <div className="w-full max-w-[240px]">
+                  <HierarchicalStatusSelect
+                    value={task.status}
+                    onChange={handleInlineStatusChange}
+                    statuses={statuses}
+                    open={openStatusCombo}
+                    onOpenChange={setOpenStatusCombo}
+                    allowCreate={false}
+                    environmentId={task.environment_id}
+                  />
                 </div>
-              )}
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-muted-foreground shrink-0 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Data de entrega:
+                </span>
+                <Popover open={openDatePopover} onOpenChange={setOpenDatePopover}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isSavingDate}
+                      className={cn(
+                        "w-full max-w-[240px] justify-start text-left font-normal",
+                        !task.due_date && "text-muted-foreground"
+                      )}
+                    >
+                      {isSavingDate ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Calendar className="mr-2 h-4 w-4" />
+                      )}
+                      <span className="truncate">
+                        {task.due_date
+                          ? formatDateDisplay(task.due_date)
+                          : "Definir data"}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <CalendarPicker
+                      mode="single"
+                      selected={task.due_date ? parseDueDate(task.due_date) : undefined}
+                      onSelect={handleInlineDueDateChange}
+                      initialFocus
+                      className="pointer-events-auto"
+                      locale={ptBR}
+                      modifiers={{
+                        weekend: (date) => date.getDay() === 0 || date.getDay() === 6,
+                      }}
+                      modifiersClassNames={{
+                        weekend: "text-red-500",
+                      }}
+                    />
+                    {task.due_date && (
+                      <div className="border-t p-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start text-muted-foreground"
+                          onClick={() => handleInlineDueDateChange(undefined)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remover data
+                        </Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
               {task.is_group_work && (
                 <div className="flex items-start gap-2">
                   <Users className="w-4 h-4 text-muted-foreground mt-1" />
