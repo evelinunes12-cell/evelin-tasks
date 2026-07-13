@@ -570,6 +570,102 @@ const TaskDetail = () => {
     }
   }, [task, subjects]);
 
+  // Carrega os status disponíveis (do ambiente ou pessoais) para edição inline
+  useEffect(() => {
+    if (!task) return;
+    const loadStatuses = async () => {
+      try {
+        const data = task.environment_id
+          ? await fetchEnvironmentStatusesHierarchical(task.environment_id)
+          : await fetchStatusesHierarchical();
+        setStatuses(data as unknown as HierarchicalStatus[]);
+      } catch (error) {
+        logError("Error fetching statuses", error);
+      }
+    };
+    loadStatuses();
+  }, [task?.environment_id]);
+
+  // Edição inline: altera o status salvando automaticamente
+  const handleInlineStatusChange = async (newStatus: string) => {
+    if (!task || !id || newStatus === task.status) {
+      setOpenStatusCombo(false);
+      return;
+    }
+    const previousStatus = task.status;
+    setTask({ ...task, status: newStatus });
+    setOpenStatusCombo(false);
+    setIsSavingStatus(true);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: newStatus })
+        .eq("id", id);
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      sonnerToast.success("Status atualizado!");
+
+      if (user?.id) {
+        if (newStatus.toLowerCase().includes("conclu")) {
+          triggerConfetti();
+          await registerActivity(user.id);
+          queryClient.invalidateQueries({ queryKey: ["user-streak", user.id] });
+          logXP(user.id, "task_completed", XP.TASK_COMPLETED);
+          logXPForTaskAssignees(id, "task_completed");
+        } else {
+          await registerActivity(user.id);
+          queryClient.invalidateQueries({ queryKey: ["user-streak", user.id] });
+          logXP(user.id, "status_change", XP.STATUS_CHANGE);
+          logXPForTaskAssignees(id, "status_change");
+        }
+      }
+    } catch (error) {
+      logError("Error updating status inline", error);
+      setTask((prev) => (prev ? { ...prev, status: previousStatus } : prev));
+      sonnerToast.error("Erro ao atualizar status");
+    } finally {
+      setIsSavingStatus(false);
+    }
+  };
+
+  // Edição inline: altera a data de entrega salvando automaticamente
+  const handleInlineDueDateChange = async (date: Date | undefined) => {
+    if (!task || !id) return;
+    const newDueDate = date ? formatDateForDB(date) : null;
+    if (newDueDate === task.due_date) {
+      setOpenDatePopover(false);
+      return;
+    }
+    const previousDueDate = task.due_date;
+    setTask({ ...task, due_date: newDueDate as string });
+    setOpenDatePopover(false);
+    setIsSavingDate(true);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ due_date: newDueDate })
+        .eq("id", id);
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      sonnerToast.success("Data de entrega atualizada!");
+
+      if (user?.id) {
+        registerActivity(user.id);
+        logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+        logXPForTaskAssignees(id, "edit_basic");
+      }
+    } catch (error) {
+      logError("Error updating due date inline", error);
+      setTask((prev) => (prev ? { ...prev, due_date: previousDueDate } : prev));
+      sonnerToast.error("Erro ao atualizar data de entrega");
+    } finally {
+      setIsSavingDate(false);
+    }
+  };
+
+
   const handleSaveNote = async (data: {
     title: string;
     content: string;
