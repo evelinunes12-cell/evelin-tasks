@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useConfetti } from "@/hooks/useConfetti";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { Task, ChecklistItem } from "@/services/tasks";
+import { Task, ChecklistItem, parseDueDate, formatDateForDB } from "@/services/tasks";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +62,12 @@ import { NoteDialog } from "@/components/planner/NoteDialog";
 import { createNote } from "@/services/planner";
 import { fetchSubjects, Subject } from "@/services/subjects";
 import RichTextEditor from "@/components/RichTextEditor";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import HierarchicalStatusSelect, { HierarchicalStatus } from "@/components/HierarchicalStatusSelect";
+import { fetchStatusesHierarchical } from "@/services/statuses";
+import { fetchEnvironmentStatusesHierarchical } from "@/services/environmentData";
+import { cn } from "@/lib/utils";
 
 import { Input } from "@/components/ui/input";
 import {
