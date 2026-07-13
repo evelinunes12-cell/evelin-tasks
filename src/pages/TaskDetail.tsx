@@ -120,6 +120,13 @@ const TaskDetail = () => {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState("");
   const [isSavingDescription, setIsSavingDescription] = useState(false);
+  // Inline edit: status
+  const [statuses, setStatuses] = useState<HierarchicalStatus[]>([]);
+  const [openStatusCombo, setOpenStatusCombo] = useState(false);
+  const [isSavingStatus, setIsSavingStatus] = useState(false);
+  // Inline edit: data de entrega
+  const [openDatePopover, setOpenDatePopover] = useState(false);
+  const [isSavingDate, setIsSavingDate] = useState(false);
   
   // Tipos de arquivo suportados para preview
   const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
