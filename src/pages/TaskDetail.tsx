@@ -19,7 +19,16 @@ import { uploadTaskFile } from "@/services/attachments";
 import { archiveTask } from "@/services/archive";
 import ChecklistManager from "@/components/ChecklistManager";
 import { AttachmentPreviewModal } from "@/components/AttachmentPreviewModal";
-import { safeOpen } from "@/utils/sanitize";
+import { safeOpen, safeUrl } from "@/utils/sanitize";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Check } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
