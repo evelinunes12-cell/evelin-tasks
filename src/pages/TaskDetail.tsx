@@ -137,6 +137,14 @@ const TaskDetail = () => {
   // Inline edit: data de entrega
   const [openDatePopover, setOpenDatePopover] = useState(false);
   const [isSavingDate, setIsSavingDate] = useState(false);
+  // Inline edit: disciplina
+  const [availableSubjectNames, setAvailableSubjectNames] = useState<string[]>([]);
+  const [openSubjectPopover, setOpenSubjectPopover] = useState(false);
+  const [isSavingSubject, setIsSavingSubject] = useState(false);
+  // Inline edit: link do trabalho escrito
+  const [isEditingDocsLink, setIsEditingDocsLink] = useState(false);
+  const [docsLinkDraft, setDocsLinkDraft] = useState("");
+  const [isSavingDocsLink, setIsSavingDocsLink] = useState(false);
   
   // Tipos de arquivo suportados para preview
   const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
