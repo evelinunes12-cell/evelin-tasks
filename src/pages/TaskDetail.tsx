@@ -824,7 +824,52 @@ const TaskDetail = () => {
       <Navbar minimal />
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex items-center justify-between mb-6 gap-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">{task.subject_name}</h1>
+          <div className="min-w-0 flex-1">
+            <Popover open={openSubjectPopover} onOpenChange={setOpenSubjectPopover}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  disabled={isSavingSubject}
+                  className="group flex items-center gap-2 min-w-0 text-left rounded-md px-2 -mx-2 py-1 hover:bg-muted/60 transition-colors max-w-full"
+                  title="Clique para alterar a disciplina"
+                >
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">
+                    {task.subject_name}
+                  </h1>
+                  {isSavingSubject ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0" />
+                  ) : (
+                    <Edit className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 w-[280px]" align="start">
+                <Command>
+                  <CommandInput placeholder="Buscar disciplina..." />
+                  <CommandList>
+                    <CommandEmpty>Nenhuma disciplina encontrada.</CommandEmpty>
+                    <CommandGroup>
+                      {availableSubjectNames.map((name) => (
+                        <CommandItem
+                          key={name}
+                          value={name}
+                          onSelect={() => handleInlineSubjectChange(name)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              task.subject_name === name ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
           <div className="flex items-center gap-2 shrink-0">
             <Button onClick={() => navigate(`/task/edit/${id}`)} size="sm" className="gap-2">
               <Edit className="w-4 h-4" />
