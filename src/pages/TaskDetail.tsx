@@ -604,6 +604,97 @@ const TaskDetail = () => {
     loadStatuses();
   }, [task?.environment_id]);
 
+  // Carrega disciplinas disponíveis para edição inline (apenas ativas, ou do ambiente)
+  useEffect(() => {
+    if (!task) return;
+    const loadSubjects = async () => {
+      try {
+        if (task.environment_id) {
+          const envSubs = await fetchEnvironmentSubjects(task.environment_id);
+          setAvailableSubjectNames(envSubs.map((s) => s.name));
+        } else {
+          const subs = await fetchSubjects();
+          setAvailableSubjectNames(subs.filter((s) => s.is_active).map((s) => s.name));
+        }
+      } catch (error) {
+        logError("Error fetching subjects for inline edit", error);
+      }
+    };
+    loadSubjects();
+  }, [task?.environment_id]);
+
+  // Edição inline: altera a disciplina salvando automaticamente
+  const handleInlineSubjectChange = async (newSubject: string) => {
+    if (!task || !id || newSubject === task.subject_name) {
+      setOpenSubjectPopover(false);
+      return;
+    }
+    const previousSubject = task.subject_name;
+    setTask({ ...task, subject_name: newSubject });
+    setOpenSubjectPopover(false);
+    setIsSavingSubject(true);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ subject_name: newSubject })
+        .eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      sonnerToast.success("Disciplina atualizada!");
+      if (user?.id) {
+        registerActivity(user.id);
+        logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+        logXPForTaskAssignees(id, "edit_basic");
+      }
+    } catch (error) {
+      logError("Error updating subject inline", error);
+      setTask((prev) => (prev ? { ...prev, subject_name: previousSubject } : prev));
+      sonnerToast.error("Erro ao atualizar disciplina");
+    } finally {
+      setIsSavingSubject(false);
+    }
+  };
+
+  // Edição inline: salva o link do trabalho escrito
+  const handleSaveDocsLink = async () => {
+    if (!task || !id) return;
+    const trimmed = docsLinkDraft.trim();
+    const newLink = trimmed === "" ? null : trimmed;
+    if (newLink === task.google_docs_link) {
+      setIsEditingDocsLink(false);
+      return;
+    }
+    // Valida protocolo se preenchido
+    if (newLink && !safeUrl(newLink)) {
+      sonnerToast.error("Link inválido. Use http(s)://");
+      return;
+    }
+    const previous = task.google_docs_link;
+    setTask({ ...task, google_docs_link: newLink });
+    setIsEditingDocsLink(false);
+    setIsSavingDocsLink(true);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ google_docs_link: newLink })
+        .eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      sonnerToast.success("Link atualizado!");
+      if (user?.id) {
+        registerActivity(user.id);
+        logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+        logXPForTaskAssignees(id, "edit_basic");
+      }
+    } catch (error) {
+      logError("Error updating docs link inline", error);
+      setTask((prev) => (prev ? { ...prev, google_docs_link: previous } : prev));
+      sonnerToast.error("Erro ao atualizar link");
+    } finally {
+      setIsSavingDocsLink(false);
+    }
+  };
+
   // Edição inline: altera o status salvando automaticamente
   const handleInlineStatusChange = async (newStatus: string) => {
     if (!task || !id || newStatus === task.status) {
