@@ -70,6 +70,7 @@ import TaskStepDisplay from "@/components/TaskStepDisplay";
 import { NoteDialog } from "@/components/planner/NoteDialog";
 import { createNote } from "@/services/planner";
 import { fetchSubjects, Subject } from "@/services/subjects";
+import { fetchEnvironmentSubjects } from "@/services/environmentData";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
