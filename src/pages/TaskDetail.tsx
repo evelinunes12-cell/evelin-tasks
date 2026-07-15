@@ -1119,44 +1119,93 @@ const TaskDetail = () => {
             </CardContent>
           </Card>
 
-          {(task.google_docs_link || task.canva_link) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <LinkIcon className="w-5 h-5" />
-                  Links
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {task.google_docs_link && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Link do Trabalho Escrito:</p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LinkIcon className="w-5 h-5" />
+                Links
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-medium mb-1">Link do Trabalho Escrito:</p>
+                {isEditingDocsLink ? (
+                  <Input
+                    autoFocus
+                    value={docsLinkDraft}
+                    onChange={(e) => setDocsLinkDraft(e.target.value)}
+                    onBlur={handleSaveDocsLink}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        (e.target as HTMLInputElement).blur();
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        setIsEditingDocsLink(false);
+                      }
+                    }}
+                    placeholder="https://..."
+                    disabled={isSavingDocsLink}
+                    className="text-sm"
+                  />
+                ) : task.google_docs_link ? (
+                  <div className="flex items-center gap-2 group">
                     <a
-                      href={task.google_docs_link}
+                      href={safeUrl(task.google_docs_link) || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline break-all"
+                      onClick={(e) => {
+                        if (!safeUrl(task.google_docs_link)) e.preventDefault();
+                      }}
+                      className="text-sm text-primary hover:underline break-all flex-1 min-w-0"
                     >
                       {task.google_docs_link}
                     </a>
-                  </div>
-                )}
-                {task.canva_link && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Link da Apresentação:</p>
-                    <a
-                      href={task.canva_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline break-all"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      onClick={() => {
+                        setDocsLinkDraft(task.google_docs_link || "");
+                        setIsEditingDocsLink(true);
+                      }}
+                      title="Editar link"
                     >
-                      {task.canva_link}
-                    </a>
+                      {isSavingDocsLink ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Edit className="w-4 h-4" />
+                      )}
+                    </Button>
                   </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDocsLinkDraft("");
+                      setIsEditingDocsLink(true);
+                    }}
+                    className="text-sm text-muted-foreground italic hover:bg-muted/50 rounded-md p-2 -m-2 transition-colors w-full text-left"
+                  >
+                    Clique para adicionar um link...
+                  </button>
                 )}
-              </CardContent>
-            </Card>
-          )}
+              </div>
+              {task.canva_link && (
+                <div>
+                  <p className="text-sm font-medium mb-1">Link da Apresentação:</p>
+                  <a
+                    href={task.canva_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline break-all"
+                  >
+                    {task.canva_link}
+                  </a>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {linkedNotes.length > 0 && (
             <Card>
