@@ -19,7 +19,16 @@ import { uploadTaskFile } from "@/services/attachments";
 import { archiveTask } from "@/services/archive";
 import ChecklistManager from "@/components/ChecklistManager";
 import { AttachmentPreviewModal } from "@/components/AttachmentPreviewModal";
-import { safeOpen } from "@/utils/sanitize";
+import { safeOpen, safeUrl } from "@/utils/sanitize";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Check } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +70,7 @@ import TaskStepDisplay from "@/components/TaskStepDisplay";
 import { NoteDialog } from "@/components/planner/NoteDialog";
 import { createNote } from "@/services/planner";
 import { fetchSubjects, Subject } from "@/services/subjects";
+import { fetchEnvironmentSubjects } from "@/services/environmentData";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -127,6 +137,14 @@ const TaskDetail = () => {
   // Inline edit: data de entrega
   const [openDatePopover, setOpenDatePopover] = useState(false);
   const [isSavingDate, setIsSavingDate] = useState(false);
+  // Inline edit: disciplina
+  const [availableSubjectNames, setAvailableSubjectNames] = useState<string[]>([]);
+  const [openSubjectPopover, setOpenSubjectPopover] = useState(false);
+  const [isSavingSubject, setIsSavingSubject] = useState(false);
+  // Inline edit: link do trabalho escrito
+  const [isEditingDocsLink, setIsEditingDocsLink] = useState(false);
+  const [docsLinkDraft, setDocsLinkDraft] = useState("");
+  const [isSavingDocsLink, setIsSavingDocsLink] = useState(false);
   
   // Tipos de arquivo suportados para preview
   const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
@@ -586,6 +604,97 @@ const TaskDetail = () => {
     loadStatuses();
   }, [task?.environment_id]);
 
+  // Carrega disciplinas disponíveis para edição inline (apenas ativas, ou do ambiente)
+  useEffect(() => {
+    if (!task) return;
+    const loadSubjects = async () => {
+      try {
+        if (task.environment_id) {
+          const envSubs = await fetchEnvironmentSubjects(task.environment_id);
+          setAvailableSubjectNames(envSubs.map((s) => s.name));
+        } else {
+          const subs = await fetchSubjects();
+          setAvailableSubjectNames(subs.filter((s) => s.is_active).map((s) => s.name));
+        }
+      } catch (error) {
+        logError("Error fetching subjects for inline edit", error);
+      }
+    };
+    loadSubjects();
+  }, [task?.environment_id]);
+
+  // Edição inline: altera a disciplina salvando automaticamente
+  const handleInlineSubjectChange = async (newSubject: string) => {
+    if (!task || !id || newSubject === task.subject_name) {
+      setOpenSubjectPopover(false);
+      return;
+    }
+    const previousSubject = task.subject_name;
+    setTask({ ...task, subject_name: newSubject });
+    setOpenSubjectPopover(false);
+    setIsSavingSubject(true);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ subject_name: newSubject })
+        .eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      sonnerToast.success("Disciplina atualizada!");
+      if (user?.id) {
+        registerActivity(user.id);
+        logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+        logXPForTaskAssignees(id, "edit_basic");
+      }
+    } catch (error) {
+      logError("Error updating subject inline", error);
+      setTask((prev) => (prev ? { ...prev, subject_name: previousSubject } : prev));
+      sonnerToast.error("Erro ao atualizar disciplina");
+    } finally {
+      setIsSavingSubject(false);
+    }
+  };
+
+  // Edição inline: salva o link do trabalho escrito
+  const handleSaveDocsLink = async () => {
+    if (!task || !id) return;
+    const trimmed = docsLinkDraft.trim();
+    const newLink = trimmed === "" ? null : trimmed;
+    if (newLink === task.google_docs_link) {
+      setIsEditingDocsLink(false);
+      return;
+    }
+    // Valida protocolo se preenchido
+    if (newLink && !safeUrl(newLink)) {
+      sonnerToast.error("Link inválido. Use http(s)://");
+      return;
+    }
+    const previous = task.google_docs_link;
+    setTask({ ...task, google_docs_link: newLink });
+    setIsEditingDocsLink(false);
+    setIsSavingDocsLink(true);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ google_docs_link: newLink })
+        .eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      sonnerToast.success("Link atualizado!");
+      if (user?.id) {
+        registerActivity(user.id);
+        logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+        logXPForTaskAssignees(id, "edit_basic");
+      }
+    } catch (error) {
+      logError("Error updating docs link inline", error);
+      setTask((prev) => (prev ? { ...prev, google_docs_link: previous } : prev));
+      sonnerToast.error("Erro ao atualizar link");
+    } finally {
+      setIsSavingDocsLink(false);
+    }
+  };
+
   // Edição inline: altera o status salvando automaticamente
   const handleInlineStatusChange = async (newStatus: string) => {
     if (!task || !id || newStatus === task.status) {
@@ -715,7 +824,52 @@ const TaskDetail = () => {
       <Navbar minimal />
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex items-center justify-between mb-6 gap-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">{task.subject_name}</h1>
+          <div className="min-w-0 flex-1">
+            <Popover open={openSubjectPopover} onOpenChange={setOpenSubjectPopover}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  disabled={isSavingSubject}
+                  className="group flex items-center gap-2 min-w-0 text-left rounded-md px-2 -mx-2 py-1 hover:bg-muted/60 transition-colors max-w-full"
+                  title="Clique para alterar a disciplina"
+                >
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">
+                    {task.subject_name}
+                  </h1>
+                  {isSavingSubject ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0" />
+                  ) : (
+                    <Edit className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 w-[280px]" align="start">
+                <Command>
+                  <CommandInput placeholder="Buscar disciplina..." />
+                  <CommandList>
+                    <CommandEmpty>Nenhuma disciplina encontrada.</CommandEmpty>
+                    <CommandGroup>
+                      {availableSubjectNames.map((name) => (
+                        <CommandItem
+                          key={name}
+                          value={name}
+                          onSelect={() => handleInlineSubjectChange(name)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              task.subject_name === name ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
           <div className="flex items-center gap-2 shrink-0">
             <Button onClick={() => navigate(`/task/edit/${id}`)} size="sm" className="gap-2">
               <Edit className="w-4 h-4" />
@@ -965,44 +1119,93 @@ const TaskDetail = () => {
             </CardContent>
           </Card>
 
-          {(task.google_docs_link || task.canva_link) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <LinkIcon className="w-5 h-5" />
-                  Links
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {task.google_docs_link && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Link do Trabalho Escrito:</p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LinkIcon className="w-5 h-5" />
+                Links
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-medium mb-1">Link do Trabalho Escrito:</p>
+                {isEditingDocsLink ? (
+                  <Input
+                    autoFocus
+                    value={docsLinkDraft}
+                    onChange={(e) => setDocsLinkDraft(e.target.value)}
+                    onBlur={handleSaveDocsLink}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        (e.target as HTMLInputElement).blur();
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        setIsEditingDocsLink(false);
+                      }
+                    }}
+                    placeholder="https://..."
+                    disabled={isSavingDocsLink}
+                    className="text-sm"
+                  />
+                ) : task.google_docs_link ? (
+                  <div className="flex items-center gap-2 group">
                     <a
-                      href={task.google_docs_link}
+                      href={safeUrl(task.google_docs_link) || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline break-all"
+                      onClick={(e) => {
+                        if (!safeUrl(task.google_docs_link)) e.preventDefault();
+                      }}
+                      className="text-sm text-primary hover:underline break-all flex-1 min-w-0"
                     >
                       {task.google_docs_link}
                     </a>
-                  </div>
-                )}
-                {task.canva_link && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Link da Apresentação:</p>
-                    <a
-                      href={task.canva_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline break-all"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      onClick={() => {
+                        setDocsLinkDraft(task.google_docs_link || "");
+                        setIsEditingDocsLink(true);
+                      }}
+                      title="Editar link"
                     >
-                      {task.canva_link}
-                    </a>
+                      {isSavingDocsLink ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Edit className="w-4 h-4" />
+                      )}
+                    </Button>
                   </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDocsLinkDraft("");
+                      setIsEditingDocsLink(true);
+                    }}
+                    className="text-sm text-muted-foreground italic hover:bg-muted/50 rounded-md p-2 -m-2 transition-colors w-full text-left"
+                  >
+                    Clique para adicionar um link...
+                  </button>
                 )}
-              </CardContent>
-            </Card>
-          )}
+              </div>
+              {task.canva_link && (
+                <div>
+                  <p className="text-sm font-medium mb-1">Link da Apresentação:</p>
+                  <a
+                    href={task.canva_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline break-all"
+                  >
+                    {task.canva_link}
+                  </a>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {linkedNotes.length > 0 && (
             <Card>
