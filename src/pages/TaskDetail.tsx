@@ -1309,19 +1309,70 @@ const TaskDetail = () => {
                   </button>
                 )}
               </div>
-              {task.canva_link && (
-                <div>
-                  <p className="text-sm font-medium mb-1">Link da Apresentação:</p>
-                  <a
-                    href={task.canva_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline break-all"
+              <div>
+                <p className="text-sm font-medium mb-1">Link da Apresentação:</p>
+                {isEditingCanvaLink ? (
+                  <Input
+                    autoFocus
+                    value={canvaLinkDraft}
+                    onChange={(e) => setCanvaLinkDraft(e.target.value)}
+                    onBlur={handleSaveCanvaLink}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        (e.target as HTMLInputElement).blur();
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        setIsEditingCanvaLink(false);
+                      }
+                    }}
+                    placeholder="https://..."
+                    disabled={isSavingCanvaLink}
+                    className="text-sm"
+                  />
+                ) : task.canva_link ? (
+                  <div className="flex items-center gap-2 group">
+                    <a
+                      href={safeUrl(task.canva_link) || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        if (!safeUrl(task.canva_link)) e.preventDefault();
+                      }}
+                      className="text-sm text-primary hover:underline break-all flex-1 min-w-0"
+                    >
+                      {task.canva_link}
+                    </a>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      onClick={() => {
+                        setCanvaLinkDraft(task.canva_link || "");
+                        setIsEditingCanvaLink(true);
+                      }}
+                      title="Editar link"
+                    >
+                      {isSavingCanvaLink ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Edit className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCanvaLinkDraft("");
+                      setIsEditingCanvaLink(true);
+                    }}
+                    className="text-sm text-muted-foreground italic hover:bg-muted/50 rounded-md p-2 -m-2 transition-colors w-full text-left"
                   >
-                    {task.canva_link}
-                  </a>
-                </div>
-              )}
+                    Clique para adicionar um link...
+                  </button>
+                )}
+              </div>
             </CardContent>
           </Card>
 
