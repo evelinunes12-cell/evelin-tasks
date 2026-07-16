@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { logError } from "@/lib/logger";
 import { registerActivity } from "@/services/activity";
 import { logXP, logXPForTaskAssignees, XP } from "@/services/scoring";
-import { uploadTaskFile } from "@/services/attachments";
+import { uploadTaskFile, saveTaskLink } from "@/services/attachments";
 import { archiveTask } from "@/services/archive";
 import ChecklistManager from "@/components/ChecklistManager";
 import { AttachmentPreviewModal } from "@/components/AttachmentPreviewModal";
