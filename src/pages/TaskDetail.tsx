@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { logError } from "@/lib/logger";
 import { registerActivity } from "@/services/activity";
 import { logXP, logXPForTaskAssignees, XP } from "@/services/scoring";
-import { uploadTaskFile } from "@/services/attachments";
+import { uploadTaskFile, saveTaskLink } from "@/services/attachments";
 import { archiveTask } from "@/services/archive";
 import ChecklistManager from "@/components/ChecklistManager";
 import { AttachmentPreviewModal } from "@/components/AttachmentPreviewModal";
@@ -145,6 +145,20 @@ const TaskDetail = () => {
   const [isEditingDocsLink, setIsEditingDocsLink] = useState(false);
   const [docsLinkDraft, setDocsLinkDraft] = useState("");
   const [isSavingDocsLink, setIsSavingDocsLink] = useState(false);
+  // Inline edit: link da apresentação (Canva)
+  const [isEditingCanvaLink, setIsEditingCanvaLink] = useState(false);
+  const [canvaLinkDraft, setCanvaLinkDraft] = useState("");
+  const [isSavingCanvaLink, setIsSavingCanvaLink] = useState(false);
+  // Anexos: adicionar novo link
+  const [isAddingLink, setIsAddingLink] = useState(false);
+  const [newLinkName, setNewLinkName] = useState("");
+  const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [isSavingNewLink, setIsSavingNewLink] = useState(false);
+  // Anexos: editar link existente
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [editLinkName, setEditLinkName] = useState("");
+  const [editLinkUrl, setEditLinkUrl] = useState("");
+  const [isSavingEditLink, setIsSavingEditLink] = useState(false);
   
   // Tipos de arquivo suportados para preview
   const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
@@ -695,6 +709,110 @@ const TaskDetail = () => {
     }
   };
 
+  // Edição inline: salva o link da apresentação (Canva)
+  const handleSaveCanvaLink = async () => {
+    if (!task || !id) return;
+    const trimmed = canvaLinkDraft.trim();
+    const newLink = trimmed === "" ? null : trimmed;
+    if (newLink === task.canva_link) {
+      setIsEditingCanvaLink(false);
+      return;
+    }
+    if (newLink && !safeUrl(newLink)) {
+      sonnerToast.error("Link inválido. Use http(s)://");
+      return;
+    }
+    const previous = task.canva_link;
+    setTask({ ...task, canva_link: newLink });
+    setIsEditingCanvaLink(false);
+    setIsSavingCanvaLink(true);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ canva_link: newLink })
+        .eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      sonnerToast.success("Link atualizado!");
+      if (user?.id) {
+        registerActivity(user.id);
+        logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+        logXPForTaskAssignees(id, "edit_basic");
+      }
+    } catch (error) {
+      logError("Error updating canva link inline", error);
+      setTask((prev) => (prev ? { ...prev, canva_link: previous } : prev));
+      sonnerToast.error("Erro ao atualizar link");
+    } finally {
+      setIsSavingCanvaLink(false);
+    }
+  };
+
+  // Anexos: adiciona novo link
+  const handleAddNewLink = async () => {
+    if (!id) return;
+    const name = newLinkName.trim();
+    const url = newLinkUrl.trim();
+    if (!name || !url) {
+      sonnerToast.error("Preencha nome e URL");
+      return;
+    }
+    if (!safeUrl(url)) {
+      sonnerToast.error("Link inválido. Use http(s)://");
+      return;
+    }
+    setIsSavingNewLink(true);
+    try {
+      await saveTaskLink(id, { name, url });
+      await fetchAttachments();
+      setNewLinkName("");
+      setNewLinkUrl("");
+      setIsAddingLink(false);
+      sonnerToast.success("Link adicionado!");
+    } catch (error: any) {
+      logError("Error adding link", error);
+      sonnerToast.error(error?.message || "Erro ao adicionar link");
+    } finally {
+      setIsSavingNewLink(false);
+    }
+  };
+
+  // Anexos: salva edição de link existente
+  const handleSaveEditLink = async (attachment: Attachment) => {
+    const name = editLinkName.trim();
+    const url = editLinkUrl.trim();
+    if (!name || !url) {
+      sonnerToast.error("Preencha nome e URL");
+      return;
+    }
+    if (!safeUrl(url)) {
+      sonnerToast.error("Link inválido. Use http(s)://");
+      return;
+    }
+    if (name === attachment.file_name && url === attachment.file_path) {
+      setEditingLinkId(null);
+      return;
+    }
+    setIsSavingEditLink(true);
+    try {
+      const { error } = await supabase
+        .from("task_attachments")
+        .update({ file_name: name, file_path: url })
+        .eq("id", attachment.id);
+      if (error) throw error;
+      setAttachments((prev) =>
+        prev.map((a) => (a.id === attachment.id ? { ...a, file_name: name, file_path: url } : a))
+      );
+      setEditingLinkId(null);
+      sonnerToast.success("Link atualizado!");
+    } catch (error) {
+      logError("Error updating link", error);
+      sonnerToast.error("Erro ao atualizar link");
+    } finally {
+      setIsSavingEditLink(false);
+    }
+  };
+
   // Edição inline: altera o status salvando automaticamente
   const handleInlineStatusChange = async (newStatus: string) => {
     if (!task || !id || newStatus === task.status) {
@@ -1191,19 +1309,70 @@ const TaskDetail = () => {
                   </button>
                 )}
               </div>
-              {task.canva_link && (
-                <div>
-                  <p className="text-sm font-medium mb-1">Link da Apresentação:</p>
-                  <a
-                    href={task.canva_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline break-all"
+              <div>
+                <p className="text-sm font-medium mb-1">Link da Apresentação:</p>
+                {isEditingCanvaLink ? (
+                  <Input
+                    autoFocus
+                    value={canvaLinkDraft}
+                    onChange={(e) => setCanvaLinkDraft(e.target.value)}
+                    onBlur={handleSaveCanvaLink}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        (e.target as HTMLInputElement).blur();
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        setIsEditingCanvaLink(false);
+                      }
+                    }}
+                    placeholder="https://..."
+                    disabled={isSavingCanvaLink}
+                    className="text-sm"
+                  />
+                ) : task.canva_link ? (
+                  <div className="flex items-center gap-2 group">
+                    <a
+                      href={safeUrl(task.canva_link) || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        if (!safeUrl(task.canva_link)) e.preventDefault();
+                      }}
+                      className="text-sm text-primary hover:underline break-all flex-1 min-w-0"
+                    >
+                      {task.canva_link}
+                    </a>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      onClick={() => {
+                        setCanvaLinkDraft(task.canva_link || "");
+                        setIsEditingCanvaLink(true);
+                      }}
+                      title="Editar link"
+                    >
+                      {isSavingCanvaLink ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Edit className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCanvaLinkDraft("");
+                      setIsEditingCanvaLink(true);
+                    }}
+                    className="text-sm text-muted-foreground italic hover:bg-muted/50 rounded-md p-2 -m-2 transition-colors w-full text-left"
                   >
-                    {task.canva_link}
-                  </a>
-                </div>
-              )}
+                    Clique para adicionar um link...
+                  </button>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -1270,7 +1439,7 @@ const TaskDetail = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Upload section */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Input
                   ref={fileInputRef}
                   type="file"
@@ -1299,15 +1468,115 @@ const TaskDetail = () => {
                     </>
                   )}
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setNewLinkName("");
+                    setNewLinkUrl("");
+                    setIsAddingLink((v) => !v);
+                  }}
+                  className="gap-2"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  Adicionar link
+                </Button>
                 <span className="text-xs text-muted-foreground">
                   Máx. 10MB por arquivo
                 </span>
               </div>
 
+              {/* Formulário inline para adicionar novo link */}
+              {isAddingLink && (
+                <div className="rounded-lg border p-3 space-y-2 bg-muted/30">
+                  <Input
+                    autoFocus
+                    placeholder="Nome do link"
+                    value={newLinkName}
+                    onChange={(e) => setNewLinkName(e.target.value)}
+                    disabled={isSavingNewLink}
+                    className="text-sm"
+                  />
+                  <Input
+                    placeholder="https://..."
+                    value={newLinkUrl}
+                    onChange={(e) => setNewLinkUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddNewLink();
+                      } else if (e.key === "Escape") {
+                        setIsAddingLink(false);
+                      }
+                    }}
+                    disabled={isSavingNewLink}
+                    className="text-sm"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsAddingLink(false)}
+                      disabled={isSavingNewLink}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button size="sm" onClick={handleAddNewLink} disabled={isSavingNewLink}>
+                      {isSavingNewLink && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Attachments list */}
               {attachments.length > 0 ? (
                 <div className="space-y-2">
                   {attachments.map((attachment) => (
+                    editingLinkId === attachment.id ? (
+                      <div key={attachment.id} className="rounded-lg border p-3 space-y-2 bg-muted/30">
+                        <Input
+                          autoFocus
+                          placeholder="Nome do link"
+                          value={editLinkName}
+                          onChange={(e) => setEditLinkName(e.target.value)}
+                          disabled={isSavingEditLink}
+                          className="text-sm"
+                        />
+                        <Input
+                          placeholder="https://..."
+                          value={editLinkUrl}
+                          onChange={(e) => setEditLinkUrl(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleSaveEditLink(attachment);
+                            } else if (e.key === "Escape") {
+                              setEditingLinkId(null);
+                            }
+                          }}
+                          disabled={isSavingEditLink}
+                          className="text-sm"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingLinkId(null)}
+                            disabled={isSavingEditLink}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleSaveEditLink(attachment)}
+                            disabled={isSavingEditLink}
+                          >
+                            {isSavingEditLink && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+                            Salvar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
                     <div
                       key={attachment.id}
                       className="flex items-center justify-between p-3 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
@@ -1363,6 +1632,28 @@ const TaskDetail = () => {
                             </TooltipContent>
                           </Tooltip>
 
+                          {/* Botão de Editar Link */}
+                          {attachment.is_link && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditLinkName(attachment.file_name);
+                                    setEditLinkUrl(attachment.file_path);
+                                    setEditingLinkId(attachment.id);
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Editar link</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+
                           {/* Botão de Excluir */}
                           <AlertDialog>
                             <Tooltip>
@@ -1398,6 +1689,7 @@ const TaskDetail = () => {
                         </TooltipProvider>
                       </div>
                     </div>
+                    )
                   ))}
                 </div>
               ) : (
