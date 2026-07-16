@@ -1532,6 +1532,51 @@ const TaskDetail = () => {
               {attachments.length > 0 ? (
                 <div className="space-y-2">
                   {attachments.map((attachment) => (
+                    editingLinkId === attachment.id ? (
+                      <div key={attachment.id} className="rounded-lg border p-3 space-y-2 bg-muted/30">
+                        <Input
+                          autoFocus
+                          placeholder="Nome do link"
+                          value={editLinkName}
+                          onChange={(e) => setEditLinkName(e.target.value)}
+                          disabled={isSavingEditLink}
+                          className="text-sm"
+                        />
+                        <Input
+                          placeholder="https://..."
+                          value={editLinkUrl}
+                          onChange={(e) => setEditLinkUrl(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleSaveEditLink(attachment);
+                            } else if (e.key === "Escape") {
+                              setEditingLinkId(null);
+                            }
+                          }}
+                          disabled={isSavingEditLink}
+                          className="text-sm"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingLinkId(null)}
+                            disabled={isSavingEditLink}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleSaveEditLink(attachment)}
+                            disabled={isSavingEditLink}
+                          >
+                            {isSavingEditLink && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+                            Salvar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
                     <div
                       key={attachment.id}
                       className="flex items-center justify-between p-3 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
