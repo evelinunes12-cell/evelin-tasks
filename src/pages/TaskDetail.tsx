@@ -145,6 +145,20 @@ const TaskDetail = () => {
   const [isEditingDocsLink, setIsEditingDocsLink] = useState(false);
   const [docsLinkDraft, setDocsLinkDraft] = useState("");
   const [isSavingDocsLink, setIsSavingDocsLink] = useState(false);
+  // Inline edit: link da apresentação (Canva)
+  const [isEditingCanvaLink, setIsEditingCanvaLink] = useState(false);
+  const [canvaLinkDraft, setCanvaLinkDraft] = useState("");
+  const [isSavingCanvaLink, setIsSavingCanvaLink] = useState(false);
+  // Anexos: adicionar novo link
+  const [isAddingLink, setIsAddingLink] = useState(false);
+  const [newLinkName, setNewLinkName] = useState("");
+  const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [isSavingNewLink, setIsSavingNewLink] = useState(false);
+  // Anexos: editar link existente
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [editLinkName, setEditLinkName] = useState("");
+  const [editLinkUrl, setEditLinkUrl] = useState("");
+  const [isSavingEditLink, setIsSavingEditLink] = useState(false);
   
   // Tipos de arquivo suportados para preview
   const PREVIEWABLE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
