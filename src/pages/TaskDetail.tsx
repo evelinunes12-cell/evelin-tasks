@@ -709,6 +709,110 @@ const TaskDetail = () => {
     }
   };
 
+  // Edição inline: salva o link da apresentação (Canva)
+  const handleSaveCanvaLink = async () => {
+    if (!task || !id) return;
+    const trimmed = canvaLinkDraft.trim();
+    const newLink = trimmed === "" ? null : trimmed;
+    if (newLink === task.canva_link) {
+      setIsEditingCanvaLink(false);
+      return;
+    }
+    if (newLink && !safeUrl(newLink)) {
+      sonnerToast.error("Link inválido. Use http(s)://");
+      return;
+    }
+    const previous = task.canva_link;
+    setTask({ ...task, canva_link: newLink });
+    setIsEditingCanvaLink(false);
+    setIsSavingCanvaLink(true);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ canva_link: newLink })
+        .eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      sonnerToast.success("Link atualizado!");
+      if (user?.id) {
+        registerActivity(user.id);
+        logXP(user.id, "edit_basic", XP.EDIT_BASIC);
+        logXPForTaskAssignees(id, "edit_basic");
+      }
+    } catch (error) {
+      logError("Error updating canva link inline", error);
+      setTask((prev) => (prev ? { ...prev, canva_link: previous } : prev));
+      sonnerToast.error("Erro ao atualizar link");
+    } finally {
+      setIsSavingCanvaLink(false);
+    }
+  };
+
+  // Anexos: adiciona novo link
+  const handleAddNewLink = async () => {
+    if (!id) return;
+    const name = newLinkName.trim();
+    const url = newLinkUrl.trim();
+    if (!name || !url) {
+      sonnerToast.error("Preencha nome e URL");
+      return;
+    }
+    if (!safeUrl(url)) {
+      sonnerToast.error("Link inválido. Use http(s)://");
+      return;
+    }
+    setIsSavingNewLink(true);
+    try {
+      await saveTaskLink(id, { name, url });
+      await fetchAttachments();
+      setNewLinkName("");
+      setNewLinkUrl("");
+      setIsAddingLink(false);
+      sonnerToast.success("Link adicionado!");
+    } catch (error: any) {
+      logError("Error adding link", error);
+      sonnerToast.error(error?.message || "Erro ao adicionar link");
+    } finally {
+      setIsSavingNewLink(false);
+    }
+  };
+
+  // Anexos: salva edição de link existente
+  const handleSaveEditLink = async (attachment: Attachment) => {
+    const name = editLinkName.trim();
+    const url = editLinkUrl.trim();
+    if (!name || !url) {
+      sonnerToast.error("Preencha nome e URL");
+      return;
+    }
+    if (!safeUrl(url)) {
+      sonnerToast.error("Link inválido. Use http(s)://");
+      return;
+    }
+    if (name === attachment.file_name && url === attachment.file_path) {
+      setEditingLinkId(null);
+      return;
+    }
+    setIsSavingEditLink(true);
+    try {
+      const { error } = await supabase
+        .from("task_attachments")
+        .update({ file_name: name, file_path: url })
+        .eq("id", attachment.id);
+      if (error) throw error;
+      setAttachments((prev) =>
+        prev.map((a) => (a.id === attachment.id ? { ...a, file_name: name, file_path: url } : a))
+      );
+      setEditingLinkId(null);
+      sonnerToast.success("Link atualizado!");
+    } catch (error) {
+      logError("Error updating link", error);
+      sonnerToast.error("Erro ao atualizar link");
+    } finally {
+      setIsSavingEditLink(false);
+    }
+  };
+
   // Edição inline: altera o status salvando automaticamente
   const handleInlineStatusChange = async (newStatus: string) => {
     if (!task || !id || newStatus === task.status) {
