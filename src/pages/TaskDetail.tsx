@@ -1632,6 +1632,28 @@ const TaskDetail = () => {
                             </TooltipContent>
                           </Tooltip>
 
+                          {/* Botão de Editar Link */}
+                          {attachment.is_link && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditLinkName(attachment.file_name);
+                                    setEditLinkUrl(attachment.file_path);
+                                    setEditingLinkId(attachment.id);
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Editar link</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+
                           {/* Botão de Excluir */}
                           <AlertDialog>
                             <Tooltip>
@@ -1667,6 +1689,7 @@ const TaskDetail = () => {
                         </TooltipProvider>
                       </div>
                     </div>
+                    )
                   ))}
                 </div>
               ) : (
