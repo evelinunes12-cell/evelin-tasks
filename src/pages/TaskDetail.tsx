@@ -1439,7 +1439,7 @@ const TaskDetail = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Upload section */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Input
                   ref={fileInputRef}
                   type="file"
@@ -1468,10 +1468,65 @@ const TaskDetail = () => {
                     </>
                   )}
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setNewLinkName("");
+                    setNewLinkUrl("");
+                    setIsAddingLink((v) => !v);
+                  }}
+                  className="gap-2"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  Adicionar link
+                </Button>
                 <span className="text-xs text-muted-foreground">
                   Máx. 10MB por arquivo
                 </span>
               </div>
+
+              {/* Formulário inline para adicionar novo link */}
+              {isAddingLink && (
+                <div className="rounded-lg border p-3 space-y-2 bg-muted/30">
+                  <Input
+                    autoFocus
+                    placeholder="Nome do link"
+                    value={newLinkName}
+                    onChange={(e) => setNewLinkName(e.target.value)}
+                    disabled={isSavingNewLink}
+                    className="text-sm"
+                  />
+                  <Input
+                    placeholder="https://..."
+                    value={newLinkUrl}
+                    onChange={(e) => setNewLinkUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddNewLink();
+                      } else if (e.key === "Escape") {
+                        setIsAddingLink(false);
+                      }
+                    }}
+                    disabled={isSavingNewLink}
+                    className="text-sm"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsAddingLink(false)}
+                      disabled={isSavingNewLink}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button size="sm" onClick={handleAddNewLink} disabled={isSavingNewLink}>
+                      {isSavingNewLink && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Attachments list */}
               {attachments.length > 0 ? (
