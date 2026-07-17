@@ -66,7 +66,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { sanitizeHtml } from "@/utils/sanitize";
-import TaskStepDisplay from "@/components/TaskStepDisplay";
+import EditableStepsChecklist from "@/components/EditableStepsChecklist";
 import { NoteDialog } from "@/components/planner/NoteDialog";
 import { createNote } from "@/services/planner";
 import { fetchSubjects, Subject } from "@/services/subjects";
