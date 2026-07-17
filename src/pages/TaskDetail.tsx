@@ -66,7 +66,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { sanitizeHtml } from "@/utils/sanitize";
-import TaskStepDisplay from "@/components/TaskStepDisplay";
+import EditableStepsChecklist from "@/components/EditableStepsChecklist";
 import { NoteDialog } from "@/components/planner/NoteDialog";
 import { createNote } from "@/services/planner";
 import { fetchSubjects, Subject } from "@/services/subjects";
@@ -1424,10 +1424,29 @@ const TaskDetail = () => {
             </CardContent>
           </Card>
 
-          <TaskStepDisplay 
-            steps={steps} 
-            stepAttachments={stepAttachments} 
-            onDownloadAttachment={downloadStepAttachment}
+          <EditableStepsChecklist
+            taskId={id!}
+            steps={steps.map((s) => ({ id: s.id, title: s.title, status: s.status, order_index: s.order_index }))}
+            onStepsChange={(next) => {
+              const byId = new Map(steps.map((s) => [s.id, s]));
+              setSteps(
+                next.map((n) => {
+                  const prev = byId.get(n.id);
+                  return prev
+                    ? { ...prev, title: n.title, status: n.status, order_index: n.order_index }
+                    : {
+                        id: n.id,
+                        title: n.title,
+                        description: null,
+                        due_date: null,
+                        status: n.status,
+                        google_docs_link: null,
+                        canva_link: null,
+                        order_index: n.order_index,
+                      };
+                })
+              );
+            }}
           />
 
           <Card>
