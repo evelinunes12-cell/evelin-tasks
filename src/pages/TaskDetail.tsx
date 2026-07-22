@@ -1426,22 +1426,40 @@ const TaskDetail = () => {
 
           <EditableStepsChecklist
             taskId={id!}
-            steps={steps.map((s) => ({ id: s.id, title: s.title, status: s.status, order_index: s.order_index }))}
+            steps={steps.map((s) => ({
+              id: s.id,
+              title: s.title,
+              status: s.status,
+              order_index: s.order_index,
+              description: s.description,
+              due_date: s.due_date,
+              google_docs_link: s.google_docs_link,
+              canva_link: s.canva_link,
+            }))}
             onStepsChange={(next) => {
               const byId = new Map(steps.map((s) => [s.id, s]));
               setSteps(
                 next.map((n) => {
                   const prev = byId.get(n.id);
                   return prev
-                    ? { ...prev, title: n.title, status: n.status, order_index: n.order_index }
+                    ? {
+                        ...prev,
+                        title: n.title,
+                        status: n.status,
+                        order_index: n.order_index,
+                        description: n.description ?? prev.description,
+                        due_date: n.due_date ?? prev.due_date,
+                        google_docs_link: n.google_docs_link ?? prev.google_docs_link,
+                        canva_link: n.canva_link ?? prev.canva_link,
+                      }
                     : {
                         id: n.id,
                         title: n.title,
-                        description: null,
-                        due_date: null,
+                        description: n.description ?? null,
+                        due_date: n.due_date ?? null,
                         status: n.status,
-                        google_docs_link: null,
-                        canva_link: null,
+                        google_docs_link: n.google_docs_link ?? null,
+                        canva_link: n.canva_link ?? null,
                         order_index: n.order_index,
                       };
                 })
